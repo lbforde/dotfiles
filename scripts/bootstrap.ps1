@@ -222,8 +222,13 @@ $windowsRuntimes = Get-ManifestJson "manifests\windows.runtimes.json"
 # ─── Execution Policy ────────────────────────────────────────────────────────
 
 Write-Step "Configuring Execution Policy"
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-Write-OK "Execution policy set to RemoteSigned"
+try {
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction Stop
+    Write-OK "Execution policy set to RemoteSigned"
+} catch {
+    Write-Warn "Could not set CurrentUser execution policy (likely overridden by Process/Group Policy). Continuing."
+    Write-Host "  Effective policy: $(Get-ExecutionPolicy)" -ForegroundColor DarkGray
+}
 
 # NuGet is required for Install-Module to work without prompting on a fresh machine
 Write-Step "Checking NuGet Provider"
