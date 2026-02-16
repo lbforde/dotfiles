@@ -565,9 +565,9 @@ if (-not (Test-Path "$nvimConfigDir\init.lua")) {
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
-Write-Host "`n" + "═"*60 -ForegroundColor Green
+Write-Host "`n============================================================" -ForegroundColor Green
 Write-Host "  ✓  Dev environment setup complete!" -ForegroundColor Green
-Write-Host "═"*60 -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
 Write-Host @"
 
 Next steps:
@@ -584,3 +584,4 @@ Next steps:
        gopass setup
 
 "@ -ForegroundColor White
+
