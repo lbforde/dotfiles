@@ -1,0 +1,6 @@
+{
+  "packageManager": "apt",
+  "notes": "Used by scripts/bootstrap-linux.sh. Edit systemPackages and miseRuntimes for your Ubuntu/WSL setup.",
+  "systemPackages": [],
+  "miseRuntimes": []
+}

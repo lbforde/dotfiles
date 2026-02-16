@@ -1,0 +1,11 @@
+{
+  "miseRuntimes": [
+    "node@lts",
+    "rust@stable",
+    "go@latest",
+    "bun@latest",
+    "pnpm@latest",
+    "zig@latest",
+    "python@latest"
+  ]
+}

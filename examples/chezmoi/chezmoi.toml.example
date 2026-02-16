@@ -1,0 +1,27 @@
+# Local Chezmoi runtime config example.
+# Copy to: ~/.config/chezmoi/chezmoi.toml
+#
+# This file is intentionally not managed by chezmoi source-state because values
+# like name/email are machine-specific and should never be overwritten.
+
+[data]
+    name  = "Your Name"
+    email = "your@email.com"
+
+[edit]
+    command = "nvim"
+
+[merge]
+    command = "nvim"
+    args    = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}"]
+
+[diff]
+    command = "code"
+    args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Source }}"]
+
+[git]
+    autoCommit = false
+    autoPush   = false
+
+[template]
+    options = ["missingkey=warn"]

@@ -1,0 +1,6 @@
+{
+  "packageManager": "pacman",
+  "notes": "Used by scripts/bootstrap-linux.sh. Edit systemPackages and miseRuntimes for your Arch setup.",
+  "systemPackages": [],
+  "miseRuntimes": []
+}

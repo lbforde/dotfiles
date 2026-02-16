@@ -1,0 +1,338 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# ─── Format ───────────────────────────────────────────────────────────────────
+# Single line: directory | git | language versions | newline + character
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$c\
+$cpp\
+$rust\
+$golang\
+$nodejs\
+$bun\
+$python\
+$zig\
+$lua\
+$docker_context\
+$env_var\
+$fill\
+$cmd_duration\
+$line_break\
+$character"""
+
+# ─── Palette (One Dark Pro Darker) ────────────────────────────────────────────
+palette = 'one_dark'
+
+[palettes.one_dark]
+fg       = '#abb2bf'
+blue     = '#61afef'
+green    = '#98c379'
+red      = '#e06c75'
+yellow   = '#e5c07b'
+orange   = '#d19a66'
+cyan     = '#56b6c2'
+magenta  = '#c678dd'
+comment  = '#5c6370'
+bg       = '#1f2126'
+
+# ─── Character ────────────────────────────────────────────────────────────────
+# ❯ rendered as a bold coloured arrow — green on success, red on error.
+# Same style as Gruvbox Rainbow but using the One Dark palette.
+[character]
+disabled             = false
+success_symbol       = '[❯](bold fg:green)'
+error_symbol         = '[❯](bold fg:red)'
+vimcmd_symbol        = '[❮](bold fg:green)'
+vimcmd_replace_one_symbol = '[❮](bold fg:orange)'
+vimcmd_replace_symbol     = '[❮](bold fg:orange)'
+vimcmd_visual_symbol      = '[❮](bold fg:yellow)'
+
+# ─── Directory ────────────────────────────────────────────────────────────────
+[directory]
+style            = 'bold fg:blue'
+format           = '[$path]($style)[$read_only]($read_only_style) '
+truncation_length = 3
+truncation_symbol = '…/'
+read_only        = ' 󰌾'
+read_only_style  = 'fg:red'
+
+[directory.substitutions]
+'~'          = '~'
+'Documents'  = '󰈙 Docs'
+'Downloads'  = ' DL'
+'projects'   = '󰲋 projects'
+'Desktop'    = '󰇄 Desktop'
+
+# ─── Git ──────────────────────────────────────────────────────────────────────
+[git_branch]
+symbol = ' '
+style  = 'fg:magenta'
+format = '[${symbol}${branch}]($style) '
+
+[git_commit]
+tag_symbol = '  '
+
+[git_status]
+style           = 'fg:yellow'
+format          = '([$all_status$ahead_behind]($style) )'
+conflicted      = '󰩋 '
+ahead           = '⇡${count}'
+behind          = '⇣${count}'
+diverged        = '⇕⇡${ahead_count}⇣${behind_count}'
+up_to_date      = ''
+untracked       = '? '
+stashed         = '󰏗 '
+modified        = '! '
+staged          = '+ '
+renamed         = '» '
+deleted         = '✘ '
+
+[git_state]
+style  = 'fg:orange'
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+
+# ─── Languages ────────────────────────────────────────────────────────────────
+# Only show the version when inside a relevant project — all disabled by default
+# unless a config file / toolchain file is detected.
+
+[c]
+symbol = ' '
+style  = 'fg:cyan'
+format = '[${symbol}(${version})]($style) '
+
+[cpp]
+symbol = ' '
+style  = 'fg:cyan'
+format = '[${symbol}(${version})]($style) '
+
+[rust]
+symbol = '󱘗 '
+style  = 'fg:orange'
+format = '[${symbol}(${version})]($style) '
+
+[golang]
+symbol = ' '
+style  = 'fg:cyan'
+format = '[${symbol}(${version})]($style) '
+
+[nodejs]
+symbol = ' '
+style  = 'fg:green'
+format = '[${symbol}(${version})]($style) '
+
+[bun]
+symbol = ' '
+style  = 'fg:yellow'
+format = '[${symbol}(${version})]($style) '
+
+[python]
+symbol   = ' '
+style    = 'fg:yellow'
+format   = '[${symbol}(${version})(\($virtualenv\))]($style) '
+
+[zig]
+symbol = ' '
+style  = 'fg:orange'
+format = '[${symbol}(${version})]($style) '
+
+[lua]
+symbol = ' '
+style  = 'fg:blue'
+format = '[${symbol}(${version})]($style) '
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+[docker_context]
+symbol = ' '
+style  = 'fg:blue'
+format = '[${symbol}${context}]($style) '
+only_with_files = true
+
+# ─── Right side ───────────────────────────────────────────────────────────────
+[fill]
+symbol = ' '
+
+[cmd_duration]
+min_time          = 2_000    # only show for commands taking ≥ 2 seconds
+style             = 'fg:comment'
+format            = '[$duration]($style)'
+show_milliseconds = false
+
+# ─── Nerd Font Symbols ────────────────────────────────────────────────────────
+# Remaining symbol overrides from the nerd-font-symbols preset
+
+[aws]
+symbol = ' '
+
+[buf]
+symbol = ' '
+
+[conda]
+symbol = ' '
+
+[cmake]
+symbol = ' '
+
+[dart]
+symbol = ' '
+
+[deno]
+symbol = ' '
+
+[elixir]
+symbol = ' '
+
+[elm]
+symbol = ' '
+
+[fennel]
+symbol = ' '
+
+[fortran]
+symbol = ' '
+
+[fossil_branch]
+symbol = ' '
+
+[gcloud]
+symbol = ' '
+
+[gradle]
+symbol = ' '
+
+[guix_shell]
+symbol = ' '
+
+[haskell]
+symbol = ' '
+
+[haxe]
+symbol = ' '
+
+[hg_branch]
+symbol = ' '
+
+[java]
+symbol = ' '
+
+[julia]
+symbol = ' '
+
+[kotlin]
+symbol = ' '
+
+[memory_usage]
+symbol = '󰍛 '
+
+[nim]
+symbol = '󰆥 '
+
+[nix_shell]
+symbol = ' '
+
+[ocaml]
+symbol = ' '
+
+[os.symbols]
+Alpaquita = ' '
+Alpine = ' '
+AlmaLinux = ' '
+Amazon = ' '
+Android = ' '
+AOSC = ' '
+Arch = ' '
+Artix = ' '
+CachyOS = ' '
+CentOS = ' '
+Debian = ' '
+DragonFly = ' '
+Elementary = ' '
+Emscripten = ' '
+EndeavourOS = ' '
+Fedora = ' '
+FreeBSD = ' '
+Garuda = '󰛓 '
+Gentoo = ' '
+HardenedBSD = '󰞌 '
+Illumos = '󰈸 '
+Ios = '󰀷 '
+Kali = ' '
+Linux = ' '
+Mabox = ' '
+Macos = ' '
+Manjaro = ' '
+Mariner = ' '
+MidnightBSD = ' '
+Mint = ' '
+NetBSD = ' '
+NixOS = ' '
+Nobara = ' '
+OpenBSD = '󰈺 '
+openSUSE = ' '
+OracleLinux = '󰌷 '
+Pop = ' '
+Raspbian = ' '
+Redhat = ' '
+RedHatEnterprise = ' '
+RockyLinux = ' '
+Redox = '󰀘 '
+Solus = '󰠳 '
+SUSE = ' '
+Ubuntu = ' '
+Unknown = ' '
+Void = ' '
+Windows = '󰍲 '
+Zorin = ' '
+
+[package]
+symbol = '󰏗 '
+style  = 'fg:orange'
+format = '[${symbol}${version}]($style) '
+
+[perl]
+symbol = ' '
+
+[php]
+symbol = ' '
+
+[pijul_channel]
+symbol = ' '
+
+[pixi]
+symbol = '󰏗 '
+
+[rlang]
+symbol = '󰟔 '
+
+[ruby]
+symbol = ' '
+
+[scala]
+symbol = ' '
+
+[swift]
+symbol = ' '
+
+[xmake]
+symbol = ' '
+
+# ─── Disabled modules ─────────────────────────────────────────────────────────
+# These add noise without benefit in a daily terminal session.
+
+[username]
+disabled = true
+
+[hostname]
+disabled = true
+ssh_symbol = ' '
+
+[time]
+disabled = true
+
+[battery]
+disabled = true
+
+[os]
+disabled = true

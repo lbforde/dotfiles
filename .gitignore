@@ -1,0 +1,39 @@
+@'
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor/IDE junk
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs/temp
+*.log
+*.tmp
+*.bak
+
+# Build/cache junk
+.cache/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+'@ | Set-Content .gitignore

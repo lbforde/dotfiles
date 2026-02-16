@@ -1,0 +1,57 @@
+[user]
+    name  = {{ .name | quote }}
+    email = {{ .email | quote }}
+
+[core]
+    autocrlf  = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
+    longpaths = true
+    editor    = nvim
+
+[init]
+    defaultBranch = main
+
+[push]
+    default       = current
+    autoSetupRemote = true
+
+[pull]
+    rebase = false
+
+[fetch]
+    prune = true
+
+[merge]
+    conflictstyle = zdiff3
+
+[diff]
+    algorithm     = histogram
+    colorMoved    = default
+
+[rebase]
+    autosquash = true
+    autostash  = true
+
+[rerere]
+    enabled = true
+
+[branch]
+    sort = -committerdate
+
+[tag]
+    sort = version:refname
+
+[color]
+    ui = auto
+
+[alias]
+    # Shortcuts matching the profile aliases so muscle memory transfers
+    st  = status
+    co  = checkout
+    sw  = switch
+    br  = branch
+    lg  = log --oneline --graph --decorate --all
+    undo = reset HEAD~1 --mixed
+    wip  = commit -am "wip"
+
+[url "git@github.com:"]
+    insteadOf = https://github.com/
