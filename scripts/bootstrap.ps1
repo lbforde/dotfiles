@@ -74,6 +74,50 @@ function Install-ScoopApp {
     }
 }
 
+function Get-MiseRuntimeCommand {
+    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
+
+    $runtimeName = ($RuntimeSpec -split "@")[0].ToLowerInvariant()
+    switch ($runtimeName) {
+        "rust"   { return "rustc" }
+        "python" { return "python" }
+        default  { return $runtimeName }
+    }
+}
+
+function Validate-MiseRuntimeCommands {
+    param([Parameter(Mandatory = $true)][string[]]$RuntimeSpecs)
+
+    $missing = @()
+    foreach ($runtime in $RuntimeSpecs) {
+        $command = Get-MiseRuntimeCommand -RuntimeSpec $runtime
+        if (-not (Test-CommandExists $command)) {
+            $resolvedPath = ""
+            try {
+                $resolvedPath = (& mise which $command 2>$null | Out-String).Trim()
+            } catch {
+                $resolvedPath = ""
+            }
+
+            $missing += [PSCustomObject]@{
+                Runtime      = $runtime
+                Command      = $command
+                MiseResolved = if ($resolvedPath) { $resolvedPath } else { "<not found by mise which>" }
+            }
+        }
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Warn "mise runtime validation failed. Commands missing from PATH:"
+        foreach ($item in $missing) {
+            Write-Warn "  runtime=$($item.Runtime) command=$($item.Command) miseWhich=$($item.MiseResolved)"
+        }
+        throw "Runtime validation failed. Ensure MISE_DATA_DIR shims are on PATH, then run 'mise reshim'."
+    }
+
+    Write-OK "Validated runtime commands on PATH"
+}
+
 function Get-ChezmoiSourcePath {
     # Returns empty string when chezmoi has not been initialised yet.
     if (-not (Test-CommandExists "chezmoi")) { return "" }
@@ -95,6 +139,18 @@ function Get-ChezmoiRemoteOrigin {
         return $origin
     } catch {
         return ""
+    }
+}
+
+function Test-ChezmoiHasManagedFiles {
+    # Returns true when chezmoi currently has at least one managed target.
+    if (-not (Test-CommandExists "chezmoi")) { return $false }
+
+    try {
+        $managed = (& chezmoi managed 2>$null | Out-String).Trim()
+        return -not [string]::IsNullOrWhiteSpace($managed)
+    } catch {
+        return $false
     }
 }
 
@@ -154,7 +210,8 @@ function Ensure-LocalChezmoiConfig {
     autoPush   = false
 
 [template]
-    options = ["missingkey=warn"]
+    # Valid options are default/invalid, zero, or error.
+    options = ["missingkey=default"]
 "@ | Set-Content -Path $chezmoiConfigPath -Encoding UTF8
 
     Write-OK "Created local chezmoi config at $chezmoiConfigPath"
@@ -176,7 +233,10 @@ function InitializeOrApplyChezmoi {
     }
 
     $currentSource = Get-ChezmoiSourcePath
-    if (-not $currentSource) {
+    $hasManagedFiles = Test-ChezmoiHasManagedFiles
+
+    # Treat "source exists but manages nothing" as effectively uninitialised.
+    if ((-not $currentSource) -or (-not $hasManagedFiles)) {
         chezmoi init --apply $DesiredSource
         Write-OK "Chezmoi initialised and applied from $DesiredSource"
         return
@@ -429,6 +489,7 @@ if (Test-Path $devDrive) {
         "$devDrive\tools\pnpm",
         "$devDrive\tools\npm-global",
         "$devDrive\tools\mise",
+        "$devDrive\tools\mise\shims",
         "$devDrive\go",
         "$devDrive\caches\npm",
         "$devDrive\caches\gomod",
@@ -466,6 +527,7 @@ if (Test-Path $devDrive) {
         "$devDrive\tools\pnpm",
         "$devDrive\tools\npm-global\bin",
         "$devDrive\tools\cargo\bin",
+        "$devDrive\tools\mise\shims",
         "$devDrive\go\bin"
     )
     $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
@@ -520,6 +582,15 @@ if (Test-CommandExists "mise") {
         mise use --global $runtime
         Write-OK "$runtime installed"
     }
+
+    # Ensure all runtime entrypoints (e.g. go.exe) are materialized under the shims directory.
+    mise reshim
+    Write-OK "mise shims refreshed"
+
+    # Reload PATH from registry and fail fast if any configured runtime command is unresolved.
+    Refresh-Path
+    Validate-MiseRuntimeCommands -RuntimeSpecs $runtimes
+
     Write-OK "All runtimes installed — managed by mise"
 } else {
     Write-Warn "mise not found — skipping runtime installs. Run 'scoop install mise' then re-run."
