@@ -140,6 +140,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 - Runs `mise reshim` so runtime binaries (for example `go`) are immediately available
 - Validates configured runtime commands are resolvable on PATH (fails fast if not)
 - Sets up Chezmoi (init/apply) and deploys managed dotfiles
+- Syncs PowerShell profile to the real `$PROFILE.CurrentUserAllHosts` path when Documents is redirected
 - Installs VS Code extensions from manifest
 
 ### 3. Post-bootstrap auth
@@ -202,6 +203,7 @@ Source-state path:
 
 Applied Windows target:
 - `%USERPROFILE%\Documents\PowerShell\profile.ps1`
+- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors to `$PROFILE.CurrentUserAllHosts`.
 
 Highlights:
 

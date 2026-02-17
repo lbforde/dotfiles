@@ -154,6 +154,71 @@ function Test-ChezmoiHasManagedFiles {
     }
 }
 
+function Get-ExpectedPowerShellProfilePath {
+    # Resolve the real PowerShell user profile target, including known-folder redirection.
+    if (Test-CommandExists "pwsh") {
+        try {
+            $profilePath = (& pwsh -NoProfile -Command '$PROFILE.CurrentUserAllHosts' 2>$null | Out-String).Trim()
+            if (-not [string]::IsNullOrWhiteSpace($profilePath)) {
+                return $profilePath
+            }
+        } catch {
+            # Fall back to MyDocuments below.
+        }
+    }
+
+    $documentsDir = [Environment]::GetFolderPath("MyDocuments")
+    if ([string]::IsNullOrWhiteSpace($documentsDir)) {
+        $documentsDir = Join-Path $env:USERPROFILE "Documents"
+    }
+
+    return (Join-Path $documentsDir "PowerShell\profile.ps1")
+}
+
+function Sync-PowerShellProfileToExpectedPath {
+    # Chezmoi manages home/Documents/PowerShell/profile.ps1, but Windows can redirect Documents.
+    # Mirror the managed profile into the actual PowerShell profile location when they differ.
+    $managedProfilePath = Join-Path $env:USERPROFILE "Documents\PowerShell\profile.ps1"
+    if (-not (Test-Path $managedProfilePath)) {
+        Write-Warn "Managed profile not found at $managedProfilePath; skipping redirected profile sync."
+        return
+    }
+
+    $expectedProfilePath = Get-ExpectedPowerShellProfilePath
+    if ([string]::IsNullOrWhiteSpace($expectedProfilePath)) {
+        Write-Warn "Could not resolve PowerShell profile target path; skipping redirected profile sync."
+        return
+    }
+
+    $managedResolved = (Resolve-Path $managedProfilePath).Path
+    try {
+        $expectedResolved = (Resolve-Path $expectedProfilePath -ErrorAction Stop).Path
+    } catch {
+        $expectedResolved = $expectedProfilePath
+    }
+
+    if ($managedResolved -eq $expectedResolved) {
+        Write-OK "PowerShell profile path is not redirected"
+        return
+    }
+
+    $expectedDir = Split-Path $expectedProfilePath -Parent
+    if (-not (Test-Path $expectedDir)) {
+        New-Item -ItemType Directory -Path $expectedDir -Force | Out-Null
+    }
+
+    $managedHash = (Get-FileHash $managedProfilePath -Algorithm SHA256).Hash
+    $expectedHash = if (Test-Path $expectedProfilePath) { (Get-FileHash $expectedProfilePath -Algorithm SHA256).Hash } else { "" }
+
+    if ($managedHash -eq $expectedHash) {
+        Write-OK "PowerShell profile already synced to redirected path: $expectedProfilePath"
+        return
+    }
+
+    Copy-Item -Path $managedProfilePath -Destination $expectedProfilePath -Force
+    Write-OK "Synced PowerShell profile to redirected path: $expectedProfilePath"
+}
+
 function Ensure-LocalChezmoiConfig {
     # ~/.config/chezmoi/chezmoi.toml is machine-local state and is never managed by source-state.
     $chezmoiConfigDir  = Join-Path $env:USERPROFILE ".config\chezmoi"
@@ -434,6 +499,7 @@ if (-not $SkipChezmoi) {
     Ensure-LocalChezmoiConfig
     $desiredChezmoiSource = Resolve-DesiredChezmoiSource
     InitializeOrApplyChezmoi -DesiredSource $desiredChezmoiSource
+    Sync-PowerShellProfileToExpectedPath
 }
 
 # ─── Dev Drive Setup (Z:\) ───────────────────────────────────────────────────
