@@ -177,6 +177,7 @@ $_devPaths = @(
     "$_devDrive\tools\pnpm",
     "$_devDrive\tools\npm-global\bin",
     "$_devDrive\tools\cargo\bin",
+    "$_devDrive\tools\mise\shims",
     "$_devDrive\go\bin"
 )
 foreach ($p in $_devPaths) {
