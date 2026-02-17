@@ -136,6 +136,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 - Installs PowerShell modules
 - Installs configured `mise` runtimes
 - Configures Dev Drive directories and environment variables
+- Adds Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) to user PATH
+- Runs `mise reshim` so runtime binaries (for example `go`) are immediately available
+- Validates configured runtime commands are resolvable on PATH (fails fast if not)
 - Sets up Chezmoi (init/apply) and deploys managed dotfiles
 - Installs VS Code extensions from manifest
 
@@ -265,6 +268,39 @@ Git identity data:
 
 - Managed by `mise`.
 - Global runtime list from `manifests/windows.runtimes.json`.
+- Bootstrap persists the `mise` shims path to user PATH and refreshes shims after install.
+- Quick verification:
+  - `mise which go`
+  - `where.exe go`
+  - `go version`
+
+Repair existing machine (if runtime commands are missing):
+
+```powershell
+$devDrive = [Environment]::GetEnvironmentVariable("DEV_DRIVE", "User")
+if (-not $devDrive) { $devDrive = "Z:" }
+
+$miseDataDir = "$devDrive\tools\mise"
+$miseShims = "$miseDataDir\shims"
+
+New-Item -ItemType Directory -Path $miseShims -Force | Out-Null
+[Environment]::SetEnvironmentVariable("MISE_DATA_DIR", $miseDataDir, "User")
+
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*$miseShims*") {
+  [Environment]::SetEnvironmentVariable("Path", "$miseShims;$userPath", "User")
+}
+
+$env:MISE_DATA_DIR = $miseDataDir
+$env:Path = "$miseShims;$env:Path"
+
+mise reshim
+
+where.exe go
+go version
+```
+
+Then close all terminals and VS Code windows, and reopen.
 
 ### Neovim
 
