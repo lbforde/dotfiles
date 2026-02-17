@@ -24,4 +24,4 @@
     autoPush   = false
 
 [template]
-    options = ["missingkey=warn"]
+    options = ["missingkey=default"]
