@@ -58,13 +58,6 @@ truncation_symbol = '…/'
 read_only        = ' 󰌾'
 read_only_style  = 'fg:red'
 
-[directory.substitutions]
-'~'          = '~'
-'Documents'  = '󰈙 Docs'
-'Downloads'  = ' DL'
-'projects'   = '󰲋 projects'
-'Desktop'    = '󰇄 Desktop'
-
 # ─── Git ──────────────────────────────────────────────────────────────────────
 [git_branch]
 symbol = ' '
