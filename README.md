@@ -315,6 +315,38 @@ Then close all terminals and VS Code windows, and reopen.
 - Installed via Scoop.
 - Kickstart cloned by bootstrap if no existing config found.
 
+
+### Git Commit Signing (SSH)
+
+Use this if you want signed commits in terminal and VS Code without GPG.
+
+```powershell
+git config --global gpg.format ssh
+git config --global user.signingkey "<SSH_PUBLIC_KEY_PATH>"
+git config --global commit.gpgsign true
+git config --global gpg.ssh.allowedSignersFile "$env:USERPROFILE\.ssh\allowed_signers"
+```
+
+Create/update `~/.ssh/allowed_signers` with one line:
+
+```text
+<SIGNING_EMAIL> namespaces="git" <KEY_TYPE> <BASE64_KEY_DATA>
+```
+
+Placeholder guide:
+- `<SSH_PUBLIC_KEY_PATH>`: path to your signing public key, for example `$env:USERPROFILE\.ssh\github_signing_key.pub`
+- `<SIGNING_EMAIL>`: the value from `git config user.email`
+- `<KEY_TYPE> <BASE64_KEY_DATA>`: copy the key type + base64 payload from the `.pub` file
+
+Verification:
+
+```powershell
+git config --global --get gpg.format
+git config --global --get user.signingkey
+git config --global --get commit.gpgsign
+git log --show-signature -1
+```
+
 ---
 
 ## Customisation
@@ -337,5 +369,4 @@ chezmoi apply
 
 ---
 
-Maintained for this repo; keep docs aligned with script behavior.
 

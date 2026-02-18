@@ -43,17 +43,16 @@ bg       = '#1f2126'
 # Same style as Gruvbox Rainbow but using the One Dark palette.
 [character]
 disabled             = false
-success_symbol       = '[❯](bold fg:green)'
-error_symbol         = '[❯](bold fg:red)'
-vimcmd_symbol        = '[❮](bold fg:green)'
-vimcmd_replace_one_symbol = '[❮](bold fg:orange)'
-vimcmd_replace_symbol     = '[❮](bold fg:orange)'
-vimcmd_visual_symbol      = '[❮](bold fg:yellow)'
+success_symbol       = '[](bold fg:green)'
+error_symbol         = '[](bold fg:red)'
+vimcmd_symbol        = '[](bold fg:green)'
+vimcmd_replace_one_symbol = '[](bold fg:orange)'
+vimcmd_replace_symbol     = '[](bold fg:orange)'
+vimcmd_visual_symbol      = '[](bold fg:yellow)'
 
 # ─── Directory ────────────────────────────────────────────────────────────────
 [directory]
 style            = 'bold fg:blue'
-format           = '[$path]($style)[$read_only]($read_only_style) '
 truncation_length = 3
 truncation_symbol = '…/'
 read_only        = ' 󰌾'
@@ -70,14 +69,12 @@ read_only_style  = 'fg:red'
 [git_branch]
 symbol = ' '
 style  = 'fg:magenta'
-format = '[${symbol}${branch}]($style) '
 
 [git_commit]
 tag_symbol = '  '
 
 [git_status]
 style           = 'fg:yellow'
-format          = '([$all_status$ahead_behind]($style) )'
 conflicted      = '󰩋 '
 ahead           = '⇡${count}'
 behind          = '⇣${count}'
@@ -92,7 +89,6 @@ deleted         = '✘ '
 
 [git_state]
 style  = 'fg:orange'
-format = '\([$state( $progress_current/$progress_total)]($style)\) '
 
 # ─── Languages ────────────────────────────────────────────────────────────────
 # Only show the version when inside a relevant project — all disabled by default
@@ -101,53 +97,43 @@ format = '\([$state( $progress_current/$progress_total)]($style)\) '
 [c]
 symbol = ' '
 style  = 'fg:cyan'
-format = '[${symbol}(${version})]($style) '
 
 [cpp]
 symbol = ' '
 style  = 'fg:cyan'
-format = '[${symbol}(${version})]($style) '
 
 [rust]
 symbol = '󱘗 '
 style  = 'fg:orange'
-format = '[${symbol}(${version})]($style) '
 
 [golang]
 symbol = ' '
 style  = 'fg:cyan'
-format = '[${symbol}(${version})]($style) '
 
 [nodejs]
 symbol = ' '
 style  = 'fg:green'
-format = '[${symbol}(${version})]($style) '
 
 [bun]
 symbol = ' '
 style  = 'fg:yellow'
-format = '[${symbol}(${version})]($style) '
 
 [python]
 symbol   = ' '
 style    = 'fg:yellow'
-format   = '[${symbol}(${version})(\($virtualenv\))]($style) '
 
 [zig]
 symbol = ' '
 style  = 'fg:orange'
-format = '[${symbol}(${version})]($style) '
 
 [lua]
 symbol = ' '
 style  = 'fg:blue'
-format = '[${symbol}(${version})]($style) '
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 [docker_context]
 symbol = ' '
 style  = 'fg:blue'
-format = '[${symbol}${context}]($style) '
 only_with_files = true
 
 # ─── Right side ───────────────────────────────────────────────────────────────
@@ -157,7 +143,6 @@ symbol = ' '
 [cmd_duration]
 min_time          = 2_000    # only show for commands taking ≥ 2 seconds
 style             = 'fg:comment'
-format            = '[$duration]($style)'
 show_milliseconds = false
 
 # ─── Nerd Font Symbols ────────────────────────────────────────────────────────
@@ -289,7 +274,6 @@ Zorin = ' '
 [package]
 symbol = '󰏗 '
 style  = 'fg:orange'
-format = '[${symbol}${version}]($style) '
 
 [perl]
 symbol = ' '
