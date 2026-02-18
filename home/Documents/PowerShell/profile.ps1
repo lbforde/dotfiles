@@ -777,7 +777,7 @@ Set-Alias -Name editprofile -Value Invoke-ProfileEdit
 Set-Alias -Name ep          -Value Invoke-ProfileEdit
 
 # Count lines of code in a directory
-function cloc-simple {
+function Measure-CodeLineCount {
     param([string]$Path = ".", [string[]]$Extensions = @("*.ps1","*.py","*.js","*.ts","*.go","*.rs"))
     $total = 0
     foreach ($ext in $Extensions) {
@@ -790,6 +790,7 @@ function cloc-simple {
     }
     Write-Host "Total: $total lines" -ForegroundColor Cyan
 }
+Set-Alias -Name cloc-simple -Value Measure-CodeLineCount
 
 # Quick HTTP server in current directory (requires Python)
 function serve {

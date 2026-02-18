@@ -40,7 +40,7 @@ function Test-CommandExists {
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
-function Refresh-Path {
+function Update-PathEnvironment {
     # Reload PATH from the registry so tools installed earlier in this session are immediately usable
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
                 [System.Environment]::GetEnvironmentVariable("Path", "User")
@@ -85,7 +85,7 @@ function Get-MiseRuntimeCommand {
     }
 }
 
-function Validate-MiseRuntimeCommands {
+function Test-MiseRuntimeCommands {
     param([Parameter(Mandatory = $true)][string[]]$RuntimeSpecs)
 
     $missing = @()
@@ -233,7 +233,7 @@ function Sync-PowerShellProfileToExpectedPath {
     Write-OK "Synced PowerShell profile to redirected path: $expectedProfilePath"
 }
 
-function Ensure-LocalChezmoiConfig {
+function Initialize-LocalChezmoiConfig {
     # ~/.config/chezmoi/chezmoi.toml is machine-local state and is never managed by source-state.
     $chezmoiConfigDir  = Join-Path $env:USERPROFILE ".config\chezmoi"
     $chezmoiConfigPath = Join-Path $chezmoiConfigDir "chezmoi.toml"
@@ -383,7 +383,7 @@ if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyCo
 Write-Step "Installing Scoop"
 if (-not (Test-CommandExists "scoop")) {
     Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-    Refresh-Path
+    Update-PathEnvironment
     Write-OK "Scoop installed"
 } else {
     Write-OK "Scoop already installed"
@@ -424,7 +424,7 @@ if (-not (Test-CommandExists "pwsh")) {
     $pwshWingetSource = if ($pwshWinget -and $pwshWinget.source) { $pwshWinget.source } else { "winget" }
 
     winget install --id $pwshWingetId --source $pwshWingetSource --accept-source-agreements --accept-package-agreements --silent
-    Refresh-Path
+    Update-PathEnvironment
     Write-OK "PowerShell 7 installed via winget"
 } else {
     Write-OK "PowerShell 7 already installed"
@@ -461,7 +461,7 @@ if (-not $SkipFonts) {
 
 Write-Step "Installing PowerShell Modules"
 # Refresh PATH so fzf, git, and other just-installed tools are visible to modules that check for them
-Refresh-Path
+Update-PathEnvironment
 $modules = @($windowsPackages.powershellModules)
 
 foreach ($mod in $modules) {
@@ -510,7 +510,7 @@ python  = "latest"
 
 if (-not $SkipChezmoi) {
     Write-Step "Configuring Chezmoi"
-    Ensure-LocalChezmoiConfig
+    Initialize-LocalChezmoiConfig
     $desiredChezmoiSource = Resolve-DesiredChezmoiSource
     InitializeOrApplyChezmoi -DesiredSource $desiredChezmoiSource
     Sync-PowerShellProfileToExpectedPath
@@ -617,7 +617,7 @@ if (Test-Path $devDrive) {
         }
     }
     [System.Environment]::SetEnvironmentVariable("PATH", $currentPath, "User")
-    Refresh-Path
+    Update-PathEnvironment
     Write-OK "Dev Drive paths added to user PATH"
 
 } else {
@@ -668,8 +668,8 @@ if (Test-CommandExists "mise") {
     Write-OK "mise shims refreshed"
 
     # Reload PATH from registry and fail fast if any configured runtime command is unresolved.
-    Refresh-Path
-    Validate-MiseRuntimeCommands -RuntimeSpecs $runtimes
+    Update-PathEnvironment
+    Test-MiseRuntimeCommands -RuntimeSpecs $runtimes
 
     Write-OK "All runtimes installed — managed by mise"
 } else {
@@ -735,5 +735,3 @@ Next steps:
        gopass setup
 
 "@ -ForegroundColor White
-
-
