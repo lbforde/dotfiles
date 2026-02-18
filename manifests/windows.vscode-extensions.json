@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "100lvlmaster.one-for-all",
+    "zhuangtongfa.Material-theme",
     "usernamehw.errorlens",
     "eamodio.gitlens",
     "esbenp.prettier-vscode",
@@ -27,3 +27,4 @@
     "ms-vscode.powershell"
   ]
 }
+
