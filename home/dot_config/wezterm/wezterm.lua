@@ -100,8 +100,19 @@ config.initial_cols         = 220
 config.initial_rows         = 50
 config.window_padding       = { left = 12, right = 12, top = 10, bottom = 10 }
 config.window_decorations   = "RESIZE"           -- removes title bar, keeps resize border
-config.window_background_opacity = 0.95
-config.macos_window_background_blur = 20         -- no-op on Windows; kept for cross-compat
+
+-- Windows Terminal-like glass effect: semi-transparent + blurred backdrop.
+config.window_background_opacity = 0.90
+config.text_background_opacity   = 0.95
+
+if wezterm.target_triple and wezterm.target_triple:find("windows") then
+    -- Acrylic gives the closest "frosted" look on Windows 11.
+    config.win32_system_backdrop = "Acrylic"
+else
+    -- Keep blur behavior for macOS/Linux compositors that support it.
+    config.macos_window_background_blur = 20
+end
+
 config.enable_scroll_bar    = false
 config.scrollback_lines     = 10000
 
@@ -112,7 +123,7 @@ config.use_fancy_tab_bar            = false
 config.tab_bar_at_bottom            = false
 config.show_tab_index_in_tab_bar    = true
 config.tab_max_width                = 32
-config.hide_tab_bar_if_only_one_tab = true
+config.hide_tab_bar_if_only_one_tab = false
 
 -- Retitle tab to show CWD basename
 wezterm.on("format-tab-title", function(tab, tabs, panes, cfg, hover, max_width)
@@ -248,3 +259,5 @@ config.check_for_updates     = false   -- manage updates via Scoop
 config.automatically_reload_config = true
 
 return config
+
+
