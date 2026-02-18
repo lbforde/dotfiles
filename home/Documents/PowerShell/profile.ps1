@@ -206,14 +206,14 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineOption -ShowToolTips:$true
     Set-PSReadLineOption -BellStyle None
     Set-PSReadLineOption -Colors @{
-        Command          = '#61afef'   # blue
-        Parameter        = '#98c379'   # green
-        Operator         = '#56b6c2'   # cyan
-        Variable         = '#e06c75'   # red
-        String           = '#98c379'   # green
-        Number           = '#d19a66'   # orange
-        Member           = '#e5c07b'   # yellow
-        InlinePrediction = '#5c6370'   # comment grey
+        Command          = '#4aa5f0'   # OneDark Pro darker blue
+        Parameter        = '#8cc265'   # OneDark Pro darker green
+        Operator         = '#42b3c2'   # OneDark Pro darker cyan
+        Variable         = '#e05561'   # OneDark Pro darker red
+        String           = '#8cc265'   # OneDark Pro darker green
+        Number           = '#d19a66'   # OneDark Pro darker orange
+        Member           = '#d18f52'   # OneDark Pro darker yellow
+        InlinePrediction = '#4f5666'   # OneDark Pro darker comment
     }
 
     # Key bindings
@@ -1147,3 +1147,4 @@ function Show-Greeting {
 Show-Greeting
 
 # ─── End of Profile ──────────────────────────────────────────────────────────
+
