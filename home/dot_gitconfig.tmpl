@@ -1,6 +1,24 @@
 [user]
     name  = {{ .name | quote }}
     email = {{ .email | quote }}
+{{- if .git_signing_key }}
+    signingkey = {{ .git_signing_key | quote }}
+{{- end }}
+
+{{- if .git_gpg_format }}
+[gpg]
+    format = {{ .git_gpg_format | quote }}
+{{- end }}
+
+{{- if .git_commit_gpgsign }}
+[commit]
+    gpgsign = true
+{{- end }}
+
+{{- if .git_allowed_signers_file }}
+[gpg "ssh"]
+    allowedSignersFile = {{ .git_allowed_signers_file | quote }}
+{{- end }}
 
 [core]
     autocrlf  = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
