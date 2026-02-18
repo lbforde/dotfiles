@@ -178,9 +178,23 @@ function Get-ExpectedPowerShellProfilePath {
 function Sync-PowerShellProfileToExpectedPath {
     # Chezmoi manages home/Documents/PowerShell/profile.ps1, but Windows can redirect Documents.
     # Mirror the managed profile into the actual PowerShell profile location when they differ.
-    $managedProfilePath = Join-Path $env:USERPROFILE "Documents\PowerShell\profile.ps1"
-    if (-not (Test-Path $managedProfilePath)) {
-        Write-Warn "Managed profile not found at $managedProfilePath; skipping redirected profile sync."
+    $sourceCandidates = @(
+        (Join-Path $env:USERPROFILE "Documents\PowerShell\profile.ps1"),
+        (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "home\Documents\PowerShell\profile.ps1")
+    )
+
+    $chezmoiSourcePath = Get-ChezmoiSourcePath
+    if (-not [string]::IsNullOrWhiteSpace($chezmoiSourcePath)) {
+        $sourceCandidates += (Join-Path $chezmoiSourcePath "Documents\PowerShell\profile.ps1")
+    }
+
+    $managedProfilePath = $sourceCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ([string]::IsNullOrWhiteSpace($managedProfilePath)) {
+        Write-Warn "Managed profile source not found; checked:"
+        foreach ($candidate in $sourceCandidates | Select-Object -Unique) {
+            Write-Warn "  $candidate"
+        }
+        Write-Warn "Skipping redirected profile sync."
         return
     }
 
@@ -721,4 +735,5 @@ Next steps:
        gopass setup
 
 "@ -ForegroundColor White
+
 

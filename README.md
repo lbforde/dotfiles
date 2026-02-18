@@ -201,12 +201,18 @@ Conventions:
 Source-state path:
 - `home/Documents/PowerShell/profile.ps1`
 
-Applied Windows target:
+Chezmoi-managed path (non-redirected default):
 - `%USERPROFILE%\Documents\PowerShell\profile.ps1`
-- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors to `$PROFILE.CurrentUserAllHosts`.
+
+Actual PowerShell runtime path:
+- `$PROFILE.CurrentUserAllHosts`
+- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors the managed profile to this runtime path automatically.
+
+Quick verification:
+- `echo $PROFILE.CurrentUserAllHosts`
+- `Test-Path $PROFILE.CurrentUserAllHosts`
 
 Highlights:
-
 - Dev Drive environment routing
 - Linux-style aliases/functions
 - Argument completers (`git`, `winget`, `gh`, `mise`, `chezmoi`, etc.)
@@ -332,3 +338,4 @@ chezmoi apply
 ---
 
 Maintained for this repo; keep docs aligned with script behavior.
+
