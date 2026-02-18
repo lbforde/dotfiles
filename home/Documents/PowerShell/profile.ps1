@@ -192,8 +192,15 @@ foreach ($p in $_devPaths) {
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
     Set-PSReadLineOption -EditMode Windows
-    Set-PSReadLineOption -PredictionSource HistoryAndPlugin
-    Set-PSReadLineOption -PredictionViewStyle ListView
+    # Prediction UI fails in redirected/non-interactive hosts; enable only when supported.
+    try {
+        if ((-not [Console]::IsOutputRedirected) -and $Host.UI.SupportsVirtualTerminal) {
+            Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction Stop
+            Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction Stop
+        }
+    } catch {
+        # Skip prediction settings when the current host cannot render them.
+    }
     Set-PSReadLineOption -HistoryNoDuplicates:$true
     Set-PSReadLineOption -HistorySearchCursorMovesToEnd:$true
     Set-PSReadLineOption -ShowToolTips:$true
@@ -265,7 +272,8 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 # ─── Mise (runtime version manager) ──────────────────────────────────────────
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&mise activate pwsh)
+    # mise can emit multiple objects/lines; coerce to a single script string before Invoke-Expression.
+    Invoke-Expression (& { (mise activate pwsh | Out-String) })
 }
 
 # ─── Navigation & Directory Aliases ─────────────────────────────────────────
@@ -376,8 +384,9 @@ function Invoke-GitClone   { git clone @args }
 
 Set-Alias -Name gs   -Value Invoke-GitStatus   -Option AllScope
 Set-Alias -Name ga   -Value Invoke-GitAdd      -Option AllScope
-Set-Alias -Name gc   -Value Invoke-GitCommit   -Option AllScope
-Set-Alias -Name gp   -Value Invoke-GitPush     -Option AllScope
+# Use explicit aliases here to avoid clobbering built-in PowerShell aliases (gc/gp).
+Set-Alias -Name gcommit -Value Invoke-GitCommit -Option AllScope
+Set-Alias -Name gpush   -Value Invoke-GitPush   -Option AllScope
 Set-Alias -Name gpl  -Value Invoke-GitPull     -Option AllScope
 Set-Alias -Name glog -Value Invoke-GitLog      -Option AllScope
 Set-Alias -Name gd   -Value Invoke-GitDiff     -Option AllScope
@@ -1009,7 +1018,7 @@ ${y}─────────────────────────�
 
 ${c}Git${r}
 ${y}──────────────────────────────────────────${r}
-  ${g}gs${r}  ${g}ga${r}  ${g}gc${r}  ${g}gp${r}  ${g}gpl${r}     status / add / commit / push / pull
+  ${g}gs${r}  ${g}ga${r}  ${g}gcommit${r}  ${g}gpush${r}  ${g}gpl${r}     status / add / commit / push / pull
   ${g}gd${r}  ${g}gb${r}  ${g}gco${r}  ${g}gsw${r}        diff / branch / checkout / switch
   ${g}glog${r}                Pretty graph log (all branches)
   ${g}gst${r}                 git stash
