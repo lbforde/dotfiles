@@ -39,7 +39,7 @@
       "id": "User.commandPalette.commandLine"
     },
     {
-      "name": "New tab...",
+      "name": "New tab",
       "icon": "➕",
       "commands": [
         {
