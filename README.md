@@ -183,7 +183,7 @@ dotfiles/
     |-- .chezmoiignore.tmpl
     |-- dot_gitconfig.tmpl
     |-- Documents/PowerShell/profile.ps1
-    |-- AppData/Roaming/Code/User/settings.json
+    |-- scoop/persist/vscode/data/user-data/User/settings.json
     |-- AppData/Local/Packages/
     |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
     `-- dot_config/
@@ -277,7 +277,11 @@ Git identity data:
 ### VS Code
 
 - Settings managed on Windows via Chezmoi target:
-  - `%APPDATA%\Code\User\settings.json`
+  - `%USERPROFILE%\scoop\persist\vscode\data\user-data\User\settings.json`
+- Scoop path note:
+  - `%USERPROFILE%\scoop\apps\vscode\current\data\user-data\User` points to the same persisted data.
+- Migration note:
+  - Legacy `%APPDATA%\Code\User\settings.json` may remain on disk but is no longer managed by this repo for Scoop VS Code installs.
 - Extensions installed via:
   - `manifests/windows.vscode-extensions.json`
   - `.\scripts\install-vscode-extensions.ps1`
@@ -366,7 +370,7 @@ Main files to edit:
 
 - `home/dot_config/starship.toml`
 - `home/Documents/PowerShell/profile.ps1`
-- `home/AppData/Roaming/Code/User/settings.json`
+- `home/scoop/persist/vscode/data/user-data/User/settings.json`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 - `manifests/windows.packages.json`
 - `manifests/windows.runtimes.json`
