@@ -287,7 +287,7 @@ function Update-LocalChezmoiEditorConfig {
     ) -Changed ([ref]$changed)
     $content = Set-TomlSection -Content $content -Section "diff" -Lines @(
         'command = "code"',
-        'args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Source }}"]'
+        'args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Target }}"]'
     ) -Changed ([ref]$changed)
 
     if (-not $changed) {
@@ -353,7 +353,7 @@ function Initialize-LocalChezmoiConfig {
 
 [diff]
     command = "code"
-    args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Source }}"]
+    args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Target }}"]
 
 [git]
     autoCommit = false
