@@ -908,12 +908,24 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
     Invoke-Expression -Command $(gh completion -s powershell | Out-String)
 }
 
-# mise — native completion via `mise complete`
+# mise - static subcommand completion (avoids external `usage` CLI dependency)
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     Register-ArgumentCompleter -Native -CommandName mise -ScriptBlock {
         param($wordToComplete, $commandAst, $cursorPosition)
-        mise complete --shell powershell -- $commandAst.ToString() | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        $subcommands = @(
+            'activate','tool-alias','backends','bin-paths','cache','completion',
+            'config','deactivate','doctor','en','env','exec','fmt','generate',
+            'implode','edit','install','install-into','latest','link','lock',
+            'ls','ls-remote','mcp','outdated','plugins','prepare','prune',
+            'registry','reshim','run','search','self-update','set','settings',
+            'shell','shell-alias','sync','tasks','test-tool','tool','tool-stub',
+            'trust','uninstall','unset','unuse','upgrade','use','version','watch',
+            'where','which','help'
+        )
+        if ($commandAst.CommandElements.Count -le 2) {
+            $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
         }
     }
 }
@@ -927,14 +939,14 @@ Register-ArgumentCompleter -Native -CommandName scoop -ScriptBlock {
         'hold','unhold','prefix','home','cat','which','checkup','help'
     )
     $elements = $commandAst.CommandElements
-    if ($elements.Count -eq 2) {
-        # Completing the subcommand itself
-        $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
-    } elseif ($elements.Count -ge 3 -and $elements[1].Value -eq 'bucket') {
+    if ($elements.Count -ge 2 -and $elements[1].Value -eq 'bucket') {
         # scoop bucket <subcommand>
         @('add','remove','list','known','update') | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+    } elseif ($elements.Count -le 2) {
+        # Completing the top-level subcommand
+        $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
@@ -950,7 +962,7 @@ Register-ArgumentCompleter -Native -CommandName chezmoi -ScriptBlock {
         'merge-all','purge','re-add','remove','secret','source-path',
         'state','status','unmanage','unmanaged','update','upgrade','verify'
     )
-    if ($commandAst.CommandElements.Count -eq 2) {
+    if ($commandAst.CommandElements.Count -le 2) {
         $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
@@ -966,7 +978,7 @@ if (Get-Command doppler -ErrorAction SilentlyContinue) {
             'login','logout','open','projects','run','secrets','setup',
             'update'
         )
-        if ($commandAst.CommandElements.Count -eq 2) {
+        if ($commandAst.CommandElements.Count -le 2) {
             $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
                 [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
