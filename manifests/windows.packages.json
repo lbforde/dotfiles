@@ -12,10 +12,6 @@
   ],
   "scoopTools": [
     {
-      "name": "wezterm",
-      "bucket": "extras"
-    },
-    {
       "name": "chezmoi",
       "bucket": "main"
     },
@@ -84,10 +80,6 @@
       "bucket": "extras"
     },
     {
-      "name": "neovim",
-      "bucket": "main"
-    },
-    {
       "name": "cmake",
       "bucket": "main"
     }
@@ -119,6 +111,10 @@
     "packageName": "doppler"
   },
   "wingetPackages": [
+    {
+      "id": "Microsoft.WindowsTerminal",
+      "source": "winget"
+    },
     {
       "id": "Microsoft.PowerShell",
       "source": "winget"

@@ -1,0 +1,175 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "actions": [
+    {
+      "command": {
+        "action": "copy",
+        "singleLine": false
+      },
+      "id": "User.copy.644BA8F2"
+    },
+    {
+      "command": "paste",
+      "id": "User.paste"
+    },
+    {
+      "command": "find",
+      "id": "User.find"
+    },
+    {
+      "command": {
+        "action": "splitPane",
+        "split": "auto",
+        "splitMode": "duplicate"
+      },
+      "id": "User.splitPane.A6751878"
+    },
+    {
+      "command": "commandPalette",
+      "icon": "📋",
+      "id": "User.commandPalette"
+    },
+    {
+      "command": {
+        "action": "commandPalette",
+        "launchMode": "commandLine"
+      },
+      "icon": "⌨️",
+      "id": "User.commandPalette.commandLine"
+    },
+    {
+      "name": "New tab...",
+      "icon": "➕",
+      "commands": [
+        {
+          "iterateOn": "profiles",
+          "icon": "${profile.icon}",
+          "name": "${profile.name}",
+          "command": {
+            "action": "newTab",
+            "profile": "${profile.name}"
+          }
+        }
+      ]
+    }
+  ],
+  "copyFormatting": "none",
+  "copyOnSelect": false,
+  "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+  "keybindings": [
+    {
+      "id": "User.copy.644BA8F2",
+      "keys": "ctrl+shift+c"
+    },
+    {
+      "id": "User.paste",
+      "keys": "ctrl+v"
+    },
+    {
+      "id": "User.find",
+      "keys": "ctrl+shift+f"
+    },
+    {
+      "id": "User.splitPane.A6751878",
+      "keys": "alt+shift+d"
+    },
+    {
+      "id": "User.commandPalette",
+      "keys": "ctrl+shift+p"
+    },
+    {
+      "id": "User.commandPalette.commandLine",
+      "keys": "ctrl+alt+p"
+    }
+  ],
+  "newTabMenu": [
+    {
+      "type": "profile",
+      "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}"
+    },
+    {
+      "type": "matchProfiles",
+      "source": "Microsoft.WSL"
+    },
+    {
+      "type": "remainingProfiles"
+    }
+  ],
+  "profiles": {
+    "defaults": {
+      "colorScheme": "OneDark-Pro-Darker",
+      "font": {
+        "builtinGlyphs": false,
+        "face": "JetBrainsMonoNL Nerd Font"
+      },
+      "opacity": 75,
+      "useAcrylic": true
+    },
+    "list": [
+      {
+        "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+        "hidden": true,
+        "name": "Windows PowerShell"
+      },
+      {
+        "commandline": "%SystemRoot%\\System32\\cmd.exe",
+        "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+        "hidden": true,
+        "name": "Command Prompt"
+      },
+      {
+        "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+        "hidden": true,
+        "name": "Azure Cloud Shell",
+        "source": "Windows.Terminal.Azure"
+      },
+      {
+        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+        "hidden": false,
+        "name": "PowerShell",
+        "source": "Windows.Terminal.PowershellCore"
+      },
+      {
+        "guid": "{2ece5bfe-50ed-5f3a-ab87-5cd4baafed2b}",
+        "hidden": false,
+        "name": "Git Bash",
+        "source": "Git"
+      },
+      {
+        "guid": "{a1095650-85e1-50f7-b436-3ac81018996c}",
+        "hidden": false,
+        "name": "Ubuntu",
+        "source": "Microsoft.WSL"
+      }
+    ]
+  },
+  "schemes": [
+    {
+      "name": "OneDark-Pro-Darker",
+      "background": "#23272e",
+      "black": "#3f4451",
+      "blue": "#4aa5f0",
+      "brightBlack": "#4f5666",
+      "brightBlue": "#4dc4ff",
+      "brightCyan": "#4cd1e0",
+      "brightGreen": "#a5e075",
+      "brightPurple": "#de73ff",
+      "brightRed": "#ff616e",
+      "brightWhite": "#e6e6e6",
+      "brightYellow": "#f0a45d",
+      "cursorColor": "#528bff",
+      "cyan": "#42b3c2",
+      "foreground": "#abb2bf",
+      "green": "#8cc265",
+      "purple": "#c162de",
+      "red": "#e05561",
+      "selectionBackground": "#3e4451",
+      "white": "#d7dae0",
+      "yellow": "#d18f52"
+    }
+  ],
+  "themes": [],
+  "useAcrylicInTabRow": true
+}

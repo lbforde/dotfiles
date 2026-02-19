@@ -107,11 +107,7 @@ $Host.UI.RawUI.WindowTitle = "PowerShell $($PSVersionTable.PSVersion)$_adminSuff
 
 # ─── Environment Setup ───────────────────────────────────────────────────────
 
-$env:EDITOR = if (Get-Command nvim      -ErrorAction SilentlyContinue) { "nvim" }
-         elseif (Get-Command pvim       -ErrorAction SilentlyContinue) { "pvim" }
-         elseif (Get-Command vim        -ErrorAction SilentlyContinue) { "vim" }
-         elseif (Get-Command vi         -ErrorAction SilentlyContinue) { "vi" }
-         elseif (Get-Command code       -ErrorAction SilentlyContinue) { "code --wait" }
+$env:EDITOR = if (Get-Command code       -ErrorAction SilentlyContinue) { "code --wait" }
          elseif (Get-Command codium     -ErrorAction SilentlyContinue) { "codium --wait" }
          elseif (Get-Command notepad++  -ErrorAction SilentlyContinue) { "notepad++" }
          elseif (Get-Command sublime_text -ErrorAction SilentlyContinue) { "sublime_text" }
@@ -133,8 +129,8 @@ function Invoke-Editor {
     & $env:EDITOR @Args
 }
 
-# Keep vim as the canonical "open in editor" command regardless of actual editor backend.
-Set-Alias -Name vim -Value Invoke-Editor -Option AllScope -Force -ErrorAction SilentlyContinue
+# Keep a neutral editor command that respects $env:EDITOR.
+Set-Alias -Name edit -Value Invoke-Editor -Option AllScope -Force -ErrorAction SilentlyContinue
 
 $env:PAGER    = if (Get-Command bat -ErrorAction SilentlyContinue) { "bat" } else { "more" }
 $env:BAT_THEME = "OneHalfDark"   # closest bat theme to One Dark Pro; change with: bat --list-themes
@@ -417,17 +413,17 @@ function which {
 function sudo {
     if ($args.Count -gt 0) {
         $argList = $args -join ' '
-        # Prefer opening in WezTerm; fall back to plain pwsh if not found
-        if (Get-Command wezterm -ErrorAction SilentlyContinue) {
-            Start-Process wezterm -Verb RunAs -ArgumentList "start -- pwsh -NoExit -Command `"$argList`""
+        # Prefer opening in Windows Terminal; fall back to plain pwsh if not found.
+        if (Get-Command wt -ErrorAction SilentlyContinue) {
+            Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit", "-Command", $argList)
         } else {
-            Start-Process pwsh -Verb RunAs -ArgumentList "-NoExit -Command `"$argList`""
+            Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit", "-Command", $argList)
         }
     } else {
-        if (Get-Command wezterm -ErrorAction SilentlyContinue) {
-            Start-Process wezterm -Verb RunAs
+        if (Get-Command wt -ErrorAction SilentlyContinue) {
+            Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit")
         } else {
-            Start-Process pwsh -Verb RunAs
+            Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit")
         }
     }
 }
@@ -1033,8 +1029,8 @@ ${y}─────────────────────────�
   ${g}pkill <pattern>${r}     Kill processes by name pattern
   ${g}kill -Name/-Id${r}      Kill by exact name or PID
   ${g}k9 <n>${r}           Kill process by exact name (shorthand)
-  ${g}sudo <cmd>${r}          Run elevated in new WezTerm window
-  ${g}su${r}                  Open elevated WezTerm session
+  ${g}sudo <cmd>${r}          Run elevated in new Windows Terminal window
+  ${g}su${r}                  Open elevated Windows Terminal session
   ${g}sysinfo${r}             OS / CPU / RAM / hostname summary
   ${g}uptime${r}              Boot time and formatted uptime
   ${g}reboot${r}              Restart computer immediately
@@ -1123,7 +1119,7 @@ ${c}Utilities${r}
 ${y}──────────────────────────────────────────${r}
   ${g}reload${r}              Reload this profile in the current session
   ${g}editprofile${r}  ${g}ep${r}    Open profile in \$EDITOR
-  ${g}vim${r}                 \$EDITOR alias (nvim → vim → vi → code → notepad)
+  ${g}edit <file>${r}         Open file in \$EDITOR (code --wait → codium --wait → notepad++ → sublime_text → notepad)
   ${g}serve [port]${r}        Python HTTP server in current dir (default 8000)
   ${g}cloc-simple${r}         Count lines of code by file extension
 "@

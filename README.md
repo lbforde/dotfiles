@@ -13,7 +13,7 @@ Reproducible dotfiles + tooling bootstrap using Chezmoi and manifest-driven inst
 5. [Step-by-Step Installation (Windows)](#step-by-step-installation-windows)
 6. [File Structure](#file-structure)
 7. [PowerShell Profile Reference](#powershell-profile-reference)
-8. [WezTerm Keybindings](#wezterm-keybindings)
+8. [Windows Terminal Keybindings](#windows-terminal-keybindings)
 9. [Chezmoi Dotfile Management](#chezmoi-dotfile-management)
 10. [Tool Reference](#tool-reference)
 11. [Customisation](#customisation)
@@ -28,7 +28,7 @@ This setup gives you:
 - Manifest-driven installs for packages, runtimes, and VS Code extensions
 - Windows-focused bootstrap flow today, with Linux bootstrap scaffolded
 - Runtime management with `mise`
-- Terminal/editor stack with WezTerm, Starship, PowerShell profile, and VS Code settings
+- Terminal/editor stack with Windows Terminal, Starship, PowerShell profile, and VS Code settings
 
 ---
 
@@ -68,6 +68,7 @@ Optional:
 First run behavior:
 - Prompts for git name/email if local `~/.config/chezmoi/chezmoi.toml` is missing.
 - Creates local `~/.config/chezmoi/chezmoi.toml` once (machine-local, untracked by source-state).
+- Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
 
 ### Linux (Ubuntu / Arch / WSL2)
 
@@ -97,7 +98,7 @@ Bootstrap reads install inventories from:
 - `manifests/windows.packages.json`
   - Scoop buckets/tools
   - PowerShell modules
-  - Winget packages
+  - Winget packages (PowerShell + Windows Terminal)
   - Doppler bucket/package
 - `manifests/windows.runtimes.json`
   - Global `mise` runtime list
@@ -133,6 +134,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 - Installs Scoop and configured buckets/tools
 - Installs PowerShell 7 (winget)
+- Installs Windows Terminal (winget)
 - Installs PowerShell modules
 - Installs configured `mise` runtimes
 - Configures Dev Drive directories and environment variables
@@ -151,11 +153,11 @@ doppler login
 gopass setup
 ```
 
-### 4. First Neovim launch
+### 4. First launch workflow
 
-```powershell
-nvim
-```
+1. Open Windows Terminal.
+2. Start `pwsh` and confirm your profile loaded.
+3. Open VS Code and verify extensions/settings were applied.
 
 ---
 
@@ -163,28 +165,29 @@ nvim
 
 ```text
 dotfiles/
-├── .chezmoiroot
-├── examples/
-│   └── chezmoi/
-│       └── chezmoi.toml.example
-├── manifests/
-│   ├── windows.packages.json
-│   ├── windows.runtimes.json
-│   ├── windows.vscode-extensions.json
-│   ├── linux.ubuntu.packages.json
-│   └── linux.arch.packages.json
-├── scripts/
-│   ├── bootstrap.ps1
-│   ├── bootstrap-linux.sh
-│   └── install-vscode-extensions.ps1
-└── home/
-    ├── .chezmoiignore.tmpl
-    ├── dot_gitconfig.tmpl
-    ├── Documents/PowerShell/profile.ps1
-    ├── AppData/Roaming/Code/User/settings.json
-    └── dot_config/
-        ├── wezterm/wezterm.lua
-        └── starship.toml
+|-- .chezmoiroot
+|-- examples/
+|   `-- chezmoi/
+|       `-- chezmoi.toml.example
+|-- manifests/
+|   |-- windows.packages.json
+|   |-- windows.runtimes.json
+|   |-- windows.vscode-extensions.json
+|   |-- linux.ubuntu.packages.json
+|   `-- linux.arch.packages.json
+|-- scripts/
+|   |-- bootstrap.ps1
+|   |-- bootstrap-linux.sh
+|   `-- install-vscode-extensions.ps1
+`-- home/
+    |-- .chezmoiignore.tmpl
+    |-- dot_gitconfig.tmpl
+    |-- Documents/PowerShell/profile.ps1
+    |-- AppData/Roaming/Code/User/settings.json
+    |-- AppData/Local/Packages/
+    |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
+    `-- dot_config/
+        `-- starship.toml
 ```
 
 Conventions:
@@ -215,24 +218,30 @@ Quick verification:
 Highlights:
 - Dev Drive environment routing
 - Linux-style aliases/functions
+- VS Code-first `$EDITOR` resolution (`code --wait`)
+- `edit <file>` alias for opening files in `$EDITOR` (replaces Vim-style naming)
 - Argument completers (`git`, `winget`, `gh`, `mise`, `chezmoi`, etc.)
 - `Show-Help` command for in-shell command reference
 
 ---
 
-## WezTerm Keybindings
+## Windows Terminal Keybindings
 
-Leader key: `Ctrl+A`
+Managed settings path:
+- `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
 
-Common bindings:
+Keybindings (balanced port):
 
-- `Leader + |` split horizontal
-- `Leader + -` split vertical
-- `Leader + h/j/k/l` move panes
-- `Leader + H/J/K/L` resize panes
-- `Leader + c` new tab
-- `Leader + n/p` next/prev tab
-- `Leader + r` reload config
+- `Alt+Shift+-` split pane vertical
+- `Alt+Shift+\` split pane horizontal
+- `Alt+h/j/k/l` move pane focus
+- `Alt+Shift+h/j/k/l` resize panes
+- `Alt+Shift+c` new tab
+- `Alt+n / Alt+p` next/prev tab
+- `Alt+Shift+z` toggle pane zoom
+- `Alt+Shift+x` close pane
+- `Ctrl+Shift+c / Ctrl+Shift+v` copy/paste
+- `Ctrl+Shift+f` find
 
 ---
 
@@ -243,6 +252,7 @@ Bootstrap behavior:
 - `-ChezmoiRepo` provided: init/apply from that source.
 - Not provided: init/apply from current checked-out repo.
 - Already initialized with different source: warn, keep existing source, run `chezmoi apply`.
+- Existing local `~/.config/chezmoi/chezmoi.toml`: editor sections are migrated to VS Code defaults and backup is created.
 
 Daily workflow:
 
@@ -271,6 +281,13 @@ Git identity data:
 - Extensions installed via:
   - `manifests/windows.vscode-extensions.json`
   - `.\scripts\install-vscode-extensions.ps1`
+
+### Windows Terminal
+
+- Settings managed on Windows via Chezmoi target:
+  - `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
+- Installed by bootstrap via winget package:
+  - `Microsoft.WindowsTerminal`
 
 ### Runtimes
 
@@ -310,12 +327,6 @@ go version
 
 Then close all terminals and VS Code windows, and reopen.
 
-### Neovim
-
-- Installed via Scoop.
-- Kickstart cloned by bootstrap if no existing config found.
-
-
 ### Git Commit Signing (SSH)
 
 Use this if you want signed commits in terminal and VS Code without GPG.
@@ -354,9 +365,9 @@ git log --show-signature -1
 Main files to edit:
 
 - `home/dot_config/starship.toml`
-- `home/dot_config/wezterm/wezterm.lua`
 - `home/Documents/PowerShell/profile.ps1`
 - `home/AppData/Roaming/Code/User/settings.json`
+- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 - `manifests/windows.packages.json`
 - `manifests/windows.runtimes.json`
 - `manifests/windows.vscode-extensions.json`
@@ -366,7 +377,3 @@ After updates:
 ```powershell
 chezmoi apply
 ```
-
----
-
-

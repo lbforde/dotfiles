@@ -233,6 +233,75 @@ function Sync-PowerShellProfileToExpectedPath {
     Write-OK "Synced PowerShell profile to redirected path: $expectedProfilePath"
 }
 
+function Set-TomlSection {
+    param(
+        [Parameter(Mandatory = $true)][string]$Content,
+        [Parameter(Mandatory = $true)][string]$Section,
+        [Parameter(Mandatory = $true)][string[]]$Lines,
+        [Parameter(Mandatory = $true)][ref]$Changed
+    )
+
+    $sectionHeader = "[{0}]" -f $Section
+    $sectionBody = ($Lines | ForEach-Object { "    $_" }) -join "`n"
+    $replacement = "$sectionHeader`n$sectionBody`n"
+    $pattern = "(?ms)^\[" + [regex]::Escape($Section) + "\][\s\S]*?(?=^\[|\z)"
+
+    if ([regex]::IsMatch($Content, $pattern)) {
+        $updated = [regex]::Replace($Content, $pattern, $replacement)
+        if ($updated -ne $Content) {
+            $Changed.Value = $true
+        }
+        return $updated
+    }
+
+    $trimmed = $Content.TrimEnd("`r", "`n")
+    if ([string]::IsNullOrWhiteSpace($trimmed)) {
+        $updated = $replacement
+    } else {
+        $updated = "$trimmed`n`n$replacement"
+    }
+
+    $Changed.Value = $true
+    return $updated
+}
+
+function Update-LocalChezmoiEditorConfig {
+    param([Parameter(Mandatory = $true)][string]$ConfigPath)
+
+    if (-not (Test-Path $ConfigPath)) { return }
+
+    $content = Get-Content $ConfigPath -Raw -ErrorAction SilentlyContinue
+    if ($null -eq $content) {
+        Write-Warn "Could not read local chezmoi config for editor migration: $ConfigPath"
+        return
+    }
+
+    $changed = $false
+    $content = Set-TomlSection -Content $content -Section "edit" -Lines @(
+        'command = "code"',
+        'args    = ["--wait"]'
+    ) -Changed ([ref]$changed)
+    $content = Set-TomlSection -Content $content -Section "merge" -Lines @(
+        'command = "code"',
+        'args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]'
+    ) -Changed ([ref]$changed)
+    $content = Set-TomlSection -Content $content -Section "diff" -Lines @(
+        'command = "code"',
+        'args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Source }}"]'
+    ) -Changed ([ref]$changed)
+
+    if (-not $changed) {
+        Write-OK "Local chezmoi editor settings already use VS Code"
+        return
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = "$ConfigPath.$timestamp.bak"
+    Copy-Item -Path $ConfigPath -Destination $backupPath -Force
+    $content | Set-Content -Path $ConfigPath -Encoding UTF8
+    Write-OK "Migrated local chezmoi editor settings to VS Code (backup: $backupPath)"
+}
+
 function Initialize-LocalChezmoiConfig {
     # ~/.config/chezmoi/chezmoi.toml is machine-local state and is never managed by source-state.
     $chezmoiConfigDir  = Join-Path $env:USERPROFILE ".config\chezmoi"
@@ -245,6 +314,7 @@ function Initialize-LocalChezmoiConfig {
         } else {
             Write-OK "Local chezmoi config already present"
         }
+        Update-LocalChezmoiEditorConfig -ConfigPath $chezmoiConfigPath
         return
     }
 
@@ -274,11 +344,12 @@ function Initialize-LocalChezmoiConfig {
     email = "$email"
 
 [edit]
-    command = "nvim"
+    command = "code"
+    args    = ["--wait"]
 
 [merge]
-    command = "nvim"
-    args    = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}"]
+    command = "code"
+    args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]
 
 [diff]
     command = "code"
@@ -428,6 +499,21 @@ if (-not (Test-CommandExists "pwsh")) {
     Write-OK "PowerShell 7 installed via winget"
 } else {
     Write-OK "PowerShell 7 already installed"
+}
+
+# ─── Windows Terminal ─────────────────────────────────────────────────────────
+
+Write-Step "Installing Windows Terminal"
+if (-not (Test-CommandExists "wt")) {
+    $wtWinget = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Microsoft.WindowsTerminal" } | Select-Object -First 1
+    $wtWingetId = if ($wtWinget) { $wtWinget.id } else { "Microsoft.WindowsTerminal" }
+    $wtWingetSource = if ($wtWinget -and $wtWinget.source) { $wtWinget.source } else { "winget" }
+
+    winget install --id $wtWingetId --source $wtWingetSource --accept-source-agreements --accept-package-agreements --silent
+    Update-PathEnvironment
+    Write-OK "Windows Terminal installed via winget"
+} else {
+    Write-OK "Windows Terminal already installed"
 }
 
 # ─── Core CLI Tools (Scoop) ───────────────────────────────────────────────────
@@ -694,26 +780,6 @@ if ((Test-Path $extScript) -and (Test-CommandExists "code")) {
     Write-Warn "  .\scripts\install-vscode-extensions.ps1"
 }
 
-# ─── Neovim / Kickstart ───────────────────────────────────────────────────────
-
-Write-Step "Setting up Neovim (Kickstart)"
-$nvimConfigDir = "$env:LOCALAPPDATA\nvim"
-
-if (-not (Test-Path "$nvimConfigDir\init.lua")) {
-    if (Test-CommandExists "nvim") {
-        Write-Host "  Kickstart not found — cloning nvim-lua/kickstart.nvim..." -ForegroundColor Gray
-        Write-Host "  Tip: fork kickstart.nvim on GitHub first and clone your fork instead." -ForegroundColor DarkGray
-        Write-Host "  Fork URL: https://github.com/nvim-lua/kickstart.nvim" -ForegroundColor DarkGray
-        git clone https://github.com/nvim-lua/kickstart.nvim $nvimConfigDir
-        Write-OK "Kickstart cloned to $nvimConfigDir"
-        Write-Host "  Run 'nvim' to launch and let lazy.nvim bootstrap all plugins." -ForegroundColor DarkGray
-    } else {
-        Write-Warn "nvim not found — skipping Kickstart clone."
-    }
-} else {
-    Write-OK "Neovim config already present at $nvimConfigDir"
-}
-
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
 Write-Host "`n============================================================" -ForegroundColor Green
@@ -722,16 +788,14 @@ Write-Host "============================================================" -Foreg
 Write-Host @"
 
 Next steps:
-  1. Open WezTerm (dotfiles are deployed by chezmoi apply)
+  1. Open Windows Terminal (dotfiles are deployed by chezmoi apply)
   2. Launch pwsh and verify the profile loads correctly
   3. Open VS Code — extensions were installed automatically
-  4. Run 'nvim' for the first time and wait for lazy.nvim to install Kickstart plugins
-     Fork kickstart.nvim on GitHub and point your clone at your fork to track changes
-  5. Authenticate GitHub CLI:
+  4. Authenticate GitHub CLI:
        gh auth login
-  6. Authenticate Doppler (opens browser, once per workplace):
+  5. Authenticate Doppler (opens browser, once per workplace):
        doppler login
-  7. Configure gopass:
+  6. Configure gopass:
        gopass setup
 
 "@ -ForegroundColor White

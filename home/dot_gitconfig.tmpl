@@ -23,10 +23,10 @@
 [core]
     autocrlf  = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
     longpaths = true
-    editor    = nvim
+    editor    = code --wait
 
 [init]
-    defaultBranch = main
+    defaultBranch = master
 
 [push]
     default       = current

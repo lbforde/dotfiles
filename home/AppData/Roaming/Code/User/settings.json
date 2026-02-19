@@ -1,7 +1,6 @@
 {
   // ─── Theme & Appearance ──────────────────────────────────────────────────────
   "workbench.colorTheme": "One Dark Pro Darker",
-  "workbench.iconTheme": "vscode-icons",
   "editor.fontFamily": "'JetBrainsMono Nerd Font', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
   "editor.fontSize": 13,
   "editor.lineHeight": 1.6,

@@ -9,11 +9,12 @@
     email = "your@email.com"
 
 [edit]
-    command = "nvim"
+    command = "code"
+    args    = ["--wait"]
 
 [merge]
-    command = "nvim"
-    args    = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}"]
+    command = "code"
+    args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]
 
 [diff]
     command = "code"
