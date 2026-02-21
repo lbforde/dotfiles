@@ -178,13 +178,28 @@ function Test-ScoopBucketExists {
         return $false
     }
 
-    foreach ($line in $bucketLines) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $trimmed = $line.Trim()
-        if ($trimmed -match "^(Name|----)\b") { continue }
+    foreach ($entry in $bucketLines) {
+        if ($null -eq $entry) { continue }
 
-        $parts = $trimmed -split "\s+"
-        if ($parts.Count -gt 0 -and $parts[0] -eq $BucketName) {
+        $name = ""
+        if ($entry -is [string]) {
+            $trimmed = $entry.Trim()
+            if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+            if ($trimmed -match "^(Name|----)\b") { continue }
+
+            $parts = $trimmed -split "\s+"
+            if ($parts.Count -gt 0) {
+                $name = $parts[0]
+            }
+        }
+        elseif ($entry.PSObject.Properties.Name -contains "Name") {
+            $name = [string]$entry.Name
+        }
+        else {
+            $name = [string]$entry
+        }
+
+        if ($name -eq $BucketName) {
             return $true
         }
     }
