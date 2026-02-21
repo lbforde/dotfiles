@@ -139,9 +139,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 - Installs PowerShell 7 (winget)
 - Installs Windows Terminal (winget)
 - Installs PowerShell modules
-- Installs configured `mise` runtimes
-- Configures Dev Drive directories and environment variables
-- Adds Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) to user PATH
+- Ensures configured `mise` runtimes are installed (missing runtimes are installed; existing ones are reported as already installed)
+- Configures Dev Drive directories and environment variables (idempotent on reruns)
+- Ensures Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) are on user PATH without duplicate entries
 - Runs `mise reshim` so runtime binaries (for example `go`) are immediately available
 - Validates configured runtime commands are resolvable on PATH (fails fast if not)
 - Sets up Chezmoi (init/apply) and deploys managed dotfiles
@@ -311,7 +311,8 @@ Git identity data:
 
 - Managed by `mise`.
 - Global runtime list from `manifests/windows.runtimes.json`.
-- Bootstrap persists the `mise` shims path to user PATH and refreshes shims after install.
+- Bootstrap checks each configured runtime and installs only missing ones.
+- Bootstrap keeps the `mise` shims path on user PATH (deduped) and refreshes shims after runtime checks.
 - Quick verification:
   - `mise which go`
   - `where.exe go`
