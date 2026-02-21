@@ -93,6 +93,35 @@ function Get-MiseRuntimeCommand {
     }
 }
 
+function Test-MiseRuntimeInstalled {
+    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
+
+    try {
+        $null = (& mise where $RuntimeSpec 2>$null | Out-String).Trim()
+        return ($LASTEXITCODE -eq 0)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Ensure-MiseRuntimeInstalled {
+    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
+
+    if (Test-MiseRuntimeInstalled -RuntimeSpec $RuntimeSpec) {
+        Write-OK "$RuntimeSpec already installed"
+        return
+    }
+
+    Write-Host "  Installing $RuntimeSpec..." -ForegroundColor Gray
+    $output = (& mise use --global $RuntimeSpec 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install $RuntimeSpec via mise. Output: $output"
+    }
+
+    Write-OK "$RuntimeSpec installed"
+}
+
 function Test-MiseRuntimeCommands {
     param([Parameter(Mandatory = $true)][string[]]$RuntimeSpecs)
 
@@ -1043,9 +1072,7 @@ if (Test-CommandExists "mise") {
     # Runtime inventory is stored in manifests/windows.runtimes.json.
     $runtimes = @($windowsRuntimes.miseRuntimes)
     foreach ($runtime in $runtimes) {
-        Write-Host "  Installing $runtime..." -ForegroundColor Gray
-        mise use --global $runtime
-        Write-OK "$runtime installed"
+        Ensure-MiseRuntimeInstalled -RuntimeSpec $runtime
     }
 
     # Ensure all runtime entrypoints (e.g. go.exe) are materialized under the shims directory.
