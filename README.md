@@ -285,6 +285,9 @@ Git identity data:
 - Extensions installed via:
   - `manifests/windows.vscode-extensions.json`
   - `.\scripts\install-vscode-extensions.ps1`
+- Formatter policy:
+  - Format on save is enabled with language-specific formatters (for example: Ruff for Python, Prettier for web/text formats, and language-native formatter extensions for Go/Rust/PowerShell/C/C++).
+  - Save-time safe fixes are explicitly enabled for ESLint and Ruff.
 
 ### Windows Terminal
 
