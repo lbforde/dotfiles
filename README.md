@@ -268,6 +268,18 @@ czmu          # chezmoi update
 czmadd <path> # chezmoi add
 ```
 
+Backport destination-file changes (generic flow for any Chezmoi-managed path):
+
+```powershell
+chezmoi status
+chezmoi re-add "<destination-path-from-status>"
+chezmoi diff
+chezmoi apply
+git -C Z:\projects\dotfiles add .
+git -C Z:\projects\dotfiles commit -m "Backport managed file updates"
+git -C Z:\projects\dotfiles push origin master
+```
+
 Verification:
 
 ```powershell
