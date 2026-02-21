@@ -47,6 +47,13 @@ function Update-PathEnvironment {
     Write-Host "  ⟳ PATH refreshed" -ForegroundColor DarkGray
 }
 
+function Normalize-PathEntry {
+    param([string]$PathEntry)
+
+    if ([string]::IsNullOrWhiteSpace($PathEntry)) { return "" }
+    return $PathEntry.Trim().TrimEnd('\')
+}
+
 function Get-ManifestJson {
     param([Parameter(Mandatory = $true)][string]$RelativePath)
 
@@ -157,6 +164,32 @@ function Test-ChezmoiHasManagedFiles {
     catch {
         return $false
     }
+}
+
+function Test-ScoopBucketExists {
+    param([Parameter(Mandatory = $true)][string]$BucketName)
+
+    if (-not (Test-CommandExists "scoop")) { return $false }
+
+    try {
+        $bucketLines = scoop bucket list 2>$null
+    }
+    catch {
+        return $false
+    }
+
+    foreach ($line in $bucketLines) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $trimmed = $line.Trim()
+        if ($trimmed -match "^(Name|----)\b") { continue }
+
+        $parts = $trimmed -split "\s+"
+        if ($parts.Count -gt 0 -and $parts[0] -eq $BucketName) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Get-ChezmoiSourceRootPath {
@@ -630,8 +663,7 @@ Write-Step "Configuring Scoop Buckets"
 $buckets = @($windowsPackages.scoopBuckets)
 foreach ($bucket in $buckets) {
     $bucketName = $bucket.name
-    $existing = scoop bucket list 2>&1
-    if ($existing -notmatch $bucketName) {
+    if (-not (Test-ScoopBucketExists -BucketName $bucketName)) {
         if ($bucket.PSObject.Properties.Name -contains "url" -and $bucket.url) {
             scoop bucket add $bucketName $bucket.url
         }
@@ -778,6 +810,22 @@ if (-not $SkipChezmoi) {
 
 Write-Step "Configuring Dev Drive"
 
+# Re-use existing user DEV_DRIVE on re-runs to avoid unnecessary prompts.
+if (-not $DevDrive) {
+    $existingDevDrive = [System.Environment]::GetEnvironmentVariable("DEV_DRIVE", "User")
+    if (-not [string]::IsNullOrWhiteSpace($existingDevDrive)) {
+        $candidateDrive = $existingDevDrive.TrimEnd('\')
+        if (Test-Path $candidateDrive) {
+            $DevDrive = $candidateDrive
+            Write-OK "Using existing DEV_DRIVE: $DevDrive"
+        }
+        else {
+            Write-Warn "Existing DEV_DRIVE is set but path is missing: $candidateDrive"
+            Write-Warn "Falling back to drive selection prompt."
+        }
+    }
+}
+
 # ── Drive picker ──────────────────────────────────────────────────────────────
 if (-not $DevDrive) {
     $drives = Get-PSDrive -PSProvider FileSystem |
@@ -854,9 +902,16 @@ if (Test-Path $devDrive) {
         "PROJECTS"             = "$devDrive\projects"
     }
     foreach ($kv in $devEnvVars.GetEnumerator()) {
-        [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "User")
+        $currentUserValue = [System.Environment]::GetEnvironmentVariable($kv.Key, "User")
+        if ($currentUserValue -ne $kv.Value) {
+            [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "User")
+        }
+
         # Mirror to current session so later install steps see updated values immediately.
-        Set-Item -Path "Env:$($kv.Key)" -Value $kv.Value
+        $currentSessionValue = [System.Environment]::GetEnvironmentVariable($kv.Key, "Process")
+        if ($currentSessionValue -ne $kv.Value) {
+            Set-Item -Path "Env:$($kv.Key)" -Value $kv.Value
+        }
     }
     Write-OK "Dev Drive environment variables set (User scope)"
 
@@ -868,13 +923,43 @@ if (Test-Path $devDrive) {
         "$devDrive\tools\mise\shims",
         "$devDrive\go\bin"
     )
+
     $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-    foreach ($p in $devPaths) {
-        if ($currentPath -notlike "*$p*") {
-            $currentPath = "$p;$currentPath"
+    $existingEntries = @()
+    if (-not [string]::IsNullOrWhiteSpace($currentPath)) {
+        $existingEntries = $currentPath -split ";" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    }
+
+    $seen = @{}
+    $dedupedExisting = New-Object System.Collections.Generic.List[string]
+    foreach ($entry in $existingEntries) {
+        $normalized = Normalize-PathEntry -PathEntry $entry
+        if ([string]::IsNullOrWhiteSpace($normalized)) { continue }
+
+        $key = $normalized.ToLowerInvariant()
+        if (-not $seen.ContainsKey($key)) {
+            $seen[$key] = $true
+            $dedupedExisting.Add($normalized) | Out-Null
         }
     }
-    [System.Environment]::SetEnvironmentVariable("PATH", $currentPath, "User")
+
+    $missingDevPaths = New-Object System.Collections.Generic.List[string]
+    foreach ($devPath in $devPaths) {
+        $normalizedDevPath = Normalize-PathEntry -PathEntry $devPath
+        if ([string]::IsNullOrWhiteSpace($normalizedDevPath)) { continue }
+
+        $key = $normalizedDevPath.ToLowerInvariant()
+        if (-not $seen.ContainsKey($key)) {
+            $seen[$key] = $true
+            $missingDevPaths.Add($normalizedDevPath) | Out-Null
+        }
+    }
+
+    $finalPathEntries = @($missingDevPaths) + @($dedupedExisting)
+    $newPath = ($finalPathEntries -join ";")
+    if ($newPath -ne $currentPath) {
+        [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+    }
     Update-PathEnvironment
     Write-OK "Dev Drive paths added to user PATH"
 
@@ -892,8 +977,7 @@ $dopplerBucketUrl = $windowsPackages.doppler.bucketUrl
 $dopplerPackage = $windowsPackages.doppler.packageName
 
 if (-not (Test-CommandExists $dopplerPackage)) {
-    $existing = scoop bucket list 2>&1
-    if ($existing -notmatch $dopplerBucket) {
+    if (-not (Test-ScoopBucketExists -BucketName $dopplerBucket)) {
         scoop bucket add $dopplerBucket $dopplerBucketUrl
         Write-OK "Added bucket: $dopplerBucket"
     }

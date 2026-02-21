@@ -70,6 +70,7 @@ First run behavior:
 - Creates local `~/.config/chezmoi/chezmoi.toml` once (machine-local, untracked by source-state).
 - Sets local `sourceDir` to the checked-out repo root so Chezmoi uses this repo directly.
 - If legacy source-state exists at `~/.local/share/chezmoi`, bootstrap creates a timestamped backup before switching.
+- Re-runs reuse existing user `DEV_DRIVE` automatically when it is valid (skip drive picker prompt).
 - Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
 
 ### Linux (Ubuntu / Arch / WSL2)
