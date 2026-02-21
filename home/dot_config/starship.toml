@@ -27,61 +27,61 @@ $character"""
 palette = 'one_dark_pro_darker'
 
 [palettes.one_dark_pro_darker]
-fg       = '#abb2bf'
-blue     = '#4aa5f0'
-green    = '#8cc265'
-red      = '#e05561'
-yellow   = '#d18f52'
-orange   = '#d19a66'
-cyan     = '#42b3c2'
-magenta  = '#c162de'
-comment  = '#4f5666'
-bg       = '#23272e'
+fg = '#abb2bf'
+blue = '#4aa5f0'
+green = '#8cc265'
+red = '#e05561'
+yellow = '#d18f52'
+orange = '#d19a66'
+cyan = '#42b3c2'
+magenta = '#c162de'
+comment = '#4f5666'
+bg = '#23272e'
 
 # ─── Character ────────────────────────────────────────────────────────────────
 # ❯ rendered as a bold coloured arrow — green on success, red on error.
 # Same style as Gruvbox Rainbow but using the One Dark palette.
 [character]
-disabled             = false
-success_symbol       = '[](bold fg:green)'
-error_symbol         = '[](bold fg:red)'
-vimcmd_symbol        = '[](bold fg:green)'
+disabled = false
+success_symbol = '[](bold fg:green)'
+error_symbol = '[](bold fg:red)'
+vimcmd_symbol = '[](bold fg:green)'
 vimcmd_replace_one_symbol = '[](bold fg:orange)'
-vimcmd_replace_symbol     = '[](bold fg:orange)'
-vimcmd_visual_symbol      = '[](bold fg:yellow)'
+vimcmd_replace_symbol = '[](bold fg:orange)'
+vimcmd_visual_symbol = '[](bold fg:yellow)'
 
 # ─── Directory ────────────────────────────────────────────────────────────────
 [directory]
-style            = 'bold fg:blue'
+style = 'bold fg:blue'
 truncation_length = 3
 truncation_symbol = '…/'
-read_only        = ' 󰌾'
-read_only_style  = 'fg:red'
+read_only = ' 󰌾'
+read_only_style = 'fg:red'
 
 # ─── Git ──────────────────────────────────────────────────────────────────────
 [git_branch]
 symbol = ' '
-style  = 'fg:magenta'
+style = 'fg:magenta'
 
 [git_commit]
 tag_symbol = '  '
 
 [git_status]
-style           = 'fg:yellow'
-conflicted      = '󰩋 '
-ahead           = '⇡${count}'
-behind          = '⇣${count}'
-diverged        = '⇕⇡${ahead_count}⇣${behind_count}'
-up_to_date      = ''
-untracked       = '? '
-stashed         = '󰏗 '
-modified        = '! '
-staged          = '+ '
-renamed         = '» '
-deleted         = '✘ '
+style = 'fg:yellow'
+conflicted = '󰩋 '
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
+up_to_date = ''
+untracked = '? '
+stashed = '󰏗 '
+modified = '! '
+staged = '+ '
+renamed = '» '
+deleted = '✘ '
 
 [git_state]
-style  = 'fg:orange'
+style = 'fg:orange'
 
 # ─── Languages ────────────────────────────────────────────────────────────────
 # Only show the version when inside a relevant project — all disabled by default
@@ -89,44 +89,44 @@ style  = 'fg:orange'
 
 [c]
 symbol = ' '
-style  = 'fg:cyan'
+style = 'fg:cyan'
 
 [cpp]
 symbol = ' '
-style  = 'fg:cyan'
+style = 'fg:cyan'
 
 [rust]
 symbol = '󱘗 '
-style  = 'fg:orange'
+style = 'fg:orange'
 
 [golang]
 symbol = ' '
-style  = 'fg:cyan'
+style = 'fg:cyan'
 
 [nodejs]
 symbol = ' '
-style  = 'fg:green'
+style = 'fg:green'
 
 [bun]
 symbol = ' '
-style  = 'fg:yellow'
+style = 'fg:yellow'
 
 [python]
-symbol   = ' '
-style    = 'fg:yellow'
+symbol = ' '
+style = 'fg:yellow'
 
 [zig]
 symbol = ' '
-style  = 'fg:orange'
+style = 'fg:orange'
 
 [lua]
 symbol = ' '
-style  = 'fg:blue'
+style = 'fg:blue'
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 [docker_context]
 symbol = ' '
-style  = 'fg:blue'
+style = 'fg:blue'
 only_with_files = true
 
 # ─── Right side ───────────────────────────────────────────────────────────────
@@ -134,8 +134,8 @@ only_with_files = true
 symbol = ' '
 
 [cmd_duration]
-min_time          = 2_000    # only show for commands taking ≥ 2 seconds
-style             = 'fg:comment'
+min_time = 2_000          # only show for commands taking ≥ 2 seconds
+style = 'fg:comment'
 show_milliseconds = false
 
 # ─── Nerd Font Symbols ────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ Zorin = ' '
 
 [package]
 symbol = '󰏗 '
-style  = 'fg:orange'
+style = 'fg:orange'
 
 [perl]
 symbol = ' '
@@ -313,4 +313,3 @@ disabled = true
 
 [os]
 disabled = true
-
