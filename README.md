@@ -26,7 +26,7 @@ This setup gives you:
 
 - Chezmoi-first dotfile deployment (single source of truth)
 - Manifest-driven installs for packages, runtimes, and VS Code extensions
-- Windows-focused bootstrap flow today, with Linux bootstrap scaffolded
+- Windows bootstrap plus WSL2 Ubuntu bootstrap flow
 - Runtime management with `mise`
 - Terminal/editor stack with Windows Terminal, Starship, PowerShell profile, and VS Code settings
 
@@ -40,7 +40,7 @@ Windows:
 - Internet connection
 - Administrator rights for bootstrap
 
-Linux (Ubuntu/Arch, including WSL2):
+Linux (Ubuntu/WSL2):
 - `bash`, `python3`, `sudo`
 - Internet connection
 - Sudo-capable user
@@ -73,24 +73,32 @@ First run behavior:
 - Re-runs reuse existing user `DEV_DRIVE` automatically when it is valid (skip drive picker prompt).
 - Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
 
-### Linux (Ubuntu / Arch / WSL2)
+### WSL2 (Ubuntu / Debian-family)
 
 ```bash
-chmod +x ./scripts/bootstrap-linux.sh
-./scripts/bootstrap-linux.sh
+chmod +x ./scripts/bootstrap-wsl.sh
+./scripts/bootstrap-wsl.sh
 ```
 
 Useful options:
 
 ```bash
-./scripts/bootstrap-linux.sh --dry-run
-./scripts/bootstrap-linux.sh --skip-runtimes
-./scripts/bootstrap-linux.sh --manifest manifests/linux.ubuntu.packages.json
-./scripts/bootstrap-linux.sh --manifest manifests/linux.arch.packages.json
+./scripts/bootstrap-wsl.sh --dry-run
+./scripts/bootstrap-wsl.sh --skip-runtimes
+./scripts/bootstrap-wsl.sh --manifest manifests/linux.ubuntu.packages.json
 ```
 
-Note:
-- Linux manifests are placeholders for now. The script is wired, but package/runtime lists are intentionally empty.
+Post-bootstrap verification:
+
+```bash
+zsh --version
+gh --version
+doppler --version
+mise --version
+starship --version
+opencode --version
+gopass version
+```
 
 ---
 
@@ -107,20 +115,31 @@ Bootstrap reads install inventories from:
   - Global `mise` runtime list
 - `manifests/windows.vscode-extensions.json`
   - VS Code extension install list
-- `manifests/linux.ubuntu.packages.json` (placeholder)
-- `manifests/linux.arch.packages.json` (placeholder)
+- `manifests/linux.ubuntu.packages.json`
+  - apt repositories (`aptRepositories`)
+  - required apt packages (`systemPackages`)
+  - script-based installers (`scriptInstalls`)
+  - `mise` runtime inventory (`miseRuntimes`)
+- `manifests/linux.arch.packages.json`
+  - reserved for non-WSL Linux workflows; not used by `bootstrap-wsl.sh`
 
 Scripts consuming manifests:
 
 - `scripts/bootstrap.ps1`
 - `scripts/install-vscode-extensions.ps1`
-- `scripts/bootstrap-linux.sh`
+- `scripts/bootstrap-wsl.sh`
 
-Linux manifest schema (placeholder-ready):
+Linux manifest schema:
 
 - `packageManager`: `apt` or `pacman`
+- `aptRepositories`: apt repository/key configuration objects
 - `systemPackages`: distro packages
+- `scriptInstalls`: install script objects (`name`, `checkCommand`, `installCommand`)
 - `miseRuntimes`: runtime identifiers (e.g. `node@lts`)
+
+WSL bootstrap constraints:
+- `scripts/bootstrap-wsl.sh` is Ubuntu/Debian-only.
+- Use `manifests/linux.ubuntu.packages.json` with `packageManager: apt`.
 
 ---
 
@@ -180,10 +199,11 @@ dotfiles/
 |   `-- linux.arch.packages.json
 |-- scripts/
 |   |-- bootstrap.ps1
-|   |-- bootstrap-linux.sh
+|   |-- bootstrap-wsl.sh
 |   `-- install-vscode-extensions.ps1
 `-- home/
     |-- .chezmoiignore.tmpl
+    |-- dot_zshrc
     |-- dot_gitconfig.tmpl
     |-- Documents/PowerShell/profile.ps1
     |-- scoop/persist/vscode/data/user-data/User/settings.json

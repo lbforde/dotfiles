@@ -12,11 +12,10 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
 {{- end }}
 
 # Linux/macOS-only files — ignore on Windows
-# (uncomment and extend as WSL/Arch configs are added)
-# {{- if eq .chezmoi.os "windows" }}
-# dot_config/zsh
-# dot_config/hyprland
-# {{- end }}
+{{- if eq .chezmoi.os "windows" }}
+dot_zshrc
+dot_config/zsh
+{{- end }}
 
 # Never manage local chezmoi runtime config from source state.
 dot_config/chezmoi/chezmoi.toml

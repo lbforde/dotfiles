@@ -1,6 +1,6 @@
 {
   "packageManager": "pacman",
-  "notes": "Used by scripts/bootstrap-linux.sh. Edit systemPackages and miseRuntimes for your Arch setup.",
+  "notes": "Reserved for future non-WSL Arch bootstrap flow. Not used by scripts/bootstrap-wsl.sh.",
   "systemPackages": [],
   "miseRuntimes": []
 }

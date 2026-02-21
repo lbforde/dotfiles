@@ -1,6 +1,69 @@
 {
   "packageManager": "apt",
-  "notes": "Used by scripts/bootstrap-linux.sh. Edit systemPackages and miseRuntimes for your Ubuntu/WSL setup.",
-  "systemPackages": [],
-  "miseRuntimes": []
+  "notes": "Used by scripts/bootstrap-wsl.sh. Ubuntu/WSL2 manifest with apt repos, apt packages, script installs, and mise runtimes.",
+  "aptRepositories": [
+    {
+      "name": "github-cli",
+      "keyUrl": "https://cli.github.com/packages/githubcli-archive-keyring.gpg",
+      "keyringPath": "/etc/apt/keyrings/githubcli-archive-keyring.gpg",
+      "sourceLine": "deb [arch=amd64 signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main",
+      "listPath": "/etc/apt/sources.list.d/github-cli.list"
+    },
+    {
+      "name": "doppler-cli",
+      "keyUrl": "https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key",
+      "keyringPath": "/etc/apt/keyrings/doppler-archive-keyring.gpg",
+      "sourceLine": "deb [signed-by=/etc/apt/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main",
+      "listPath": "/etc/apt/sources.list.d/doppler-cli.list"
+    }
+  ],
+  "systemPackages": [
+    "zsh",
+    "git",
+    "curl",
+    "wget",
+    "ca-certificates",
+    "gnupg",
+    "lsb-release",
+    "build-essential",
+    "pkg-config",
+    "jq",
+    "unzip",
+    "zip",
+    "fzf",
+    "ripgrep",
+    "fd-find",
+    "bat",
+    "gopass",
+    "pinentry-curses",
+    "gh",
+    "doppler"
+  ],
+  "optionalPackages": [],
+  "scriptInstalls": [
+    {
+      "name": "mise",
+      "checkCommand": "command -v mise",
+      "installCommand": "curl https://mise.run | sh"
+    },
+    {
+      "name": "starship",
+      "checkCommand": "command -v starship",
+      "installCommand": "curl -sS https://starship.rs/install.sh | sh -s -- -y"
+    },
+    {
+      "name": "opencode",
+      "checkCommand": "command -v opencode",
+      "installCommand": "curl -fsSL https://opencode.ai/install | bash"
+    }
+  ],
+  "miseRuntimes": [
+    "node@lts",
+    "rust@stable",
+    "go@latest",
+    "bun@latest",
+    "pnpm@latest",
+    "zig@latest",
+    "python@latest"
+  ]
 }
