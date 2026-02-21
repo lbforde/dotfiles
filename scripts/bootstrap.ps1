@@ -235,6 +235,24 @@ function Ensure-LocalChezmoiSourceDir {
     $changed = $false
     $updated = $content
 
+    # Remove legacy section-scoped sourceDir values written by older bootstrap logic.
+    if ($updated -match "(?ms)^\[chezmoi\][\s\S]*?(?=^\[|\z)") {
+        $updated = [regex]::Replace(
+            $updated,
+            "(?ms)^(\[chezmoi\][\s\S]*?)(?=^\[|\z)",
+            {
+                param($m)
+                $section = $m.Groups[1].Value
+                $cleaned = [regex]::Replace($section, "(?m)^\s*sourceDir\s*=.*(?:\r?\n)?", "")
+                return $cleaned
+            }
+        )
+        if ($updated -ne $content) {
+            $changed = $true
+        }
+    }
+
+    # sourceDir must be top-level. Insert/update it before the first table header.
     if ($updated -match "(?m)^sourceDir\s*=") {
         $replaced = [regex]::Replace($updated, "(?m)^sourceDir\s*=.*$", $line)
         if ($replaced -ne $updated) {
@@ -243,9 +261,14 @@ function Ensure-LocalChezmoiSourceDir {
         }
     }
     else {
-        $trimmed = $updated.TrimEnd("`r", "`n")
-        $append = "$line`n"
-        $updated = if ([string]::IsNullOrWhiteSpace($trimmed)) { $append } else { "$trimmed`n`n$append" }
+        $firstTableMatch = [regex]::Match($updated, "(?m)^\[")
+        if ($firstTableMatch.Success) {
+            $updated = $updated.Insert($firstTableMatch.Index, "$line`n`n")
+        }
+        else {
+            $trimmed = $updated.TrimEnd("`r", "`n")
+            $updated = if ([string]::IsNullOrWhiteSpace($trimmed)) { "$line`n" } else { "$line`n`n$trimmed`n" }
+        }
         $changed = $true
     }
 
