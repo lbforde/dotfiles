@@ -13,7 +13,7 @@ param(
     [switch]$SkipFonts,
     [switch]$SkipChezmoi,
     [string]$ChezmoiRepo = "",   # e.g. "https://github.com/yourname/dotfiles"
-    [string]$DevDrive    = ""    # leave blank to be prompted; or pass e.g. "D:" to skip prompt
+    [string]$DevDrive = ""    # leave blank to be prompted; or pass e.g. "D:" to skip prompt
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,7 +43,7 @@ function Test-CommandExists {
 function Update-PathEnvironment {
     # Reload PATH from the registry so tools installed earlier in this session are immediately usable
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-                [System.Environment]::GetEnvironmentVariable("Path", "User")
+    [System.Environment]::GetEnvironmentVariable("Path", "User")
     Write-Host "  ⟳ PATH refreshed" -ForegroundColor DarkGray
 }
 
@@ -69,7 +69,8 @@ function Install-ScoopApp {
         Write-Host "  Installing $packageRef..." -ForegroundColor Gray
         scoop install $packageRef
         Write-OK "$App installed"
-    } else {
+    }
+    else {
         Write-OK "$App already installed"
     }
 }
@@ -79,9 +80,9 @@ function Get-MiseRuntimeCommand {
 
     $runtimeName = ($RuntimeSpec -split "@")[0].ToLowerInvariant()
     switch ($runtimeName) {
-        "rust"   { return "rustc" }
+        "rust" { return "rustc" }
         "python" { return "python" }
-        default  { return $runtimeName }
+        default { return $runtimeName }
     }
 }
 
@@ -95,7 +96,8 @@ function Test-MiseRuntimeCommands {
             $resolvedPath = ""
             try {
                 $resolvedPath = (& mise which $command 2>$null | Out-String).Trim()
-            } catch {
+            }
+            catch {
                 $resolvedPath = ""
             }
 
@@ -125,7 +127,8 @@ function Get-ChezmoiSourcePath {
     try {
         $source = (& chezmoi source-path 2>$null | Out-String).Trim()
         return $source
-    } catch {
+    }
+    catch {
         return ""
     }
 }
@@ -137,7 +140,8 @@ function Get-ChezmoiRemoteOrigin {
     try {
         $origin = (& chezmoi git -- remote get-url origin 2>$null | Out-String).Trim()
         return $origin
-    } catch {
+    }
+    catch {
         return ""
     }
 }
@@ -149,7 +153,8 @@ function Test-ChezmoiHasManagedFiles {
     try {
         $managed = (& chezmoi managed 2>$null | Out-String).Trim()
         return -not [string]::IsNullOrWhiteSpace($managed)
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -162,7 +167,8 @@ function Get-ExpectedPowerShellProfilePath {
             if (-not [string]::IsNullOrWhiteSpace($profilePath)) {
                 return $profilePath
             }
-        } catch {
+        }
+        catch {
             # Fall back to MyDocuments below.
         }
     }
@@ -207,7 +213,8 @@ function Sync-PowerShellProfileToExpectedPath {
     $managedResolved = (Resolve-Path $managedProfilePath).Path
     try {
         $expectedResolved = (Resolve-Path $expectedProfilePath -ErrorAction Stop).Path
-    } catch {
+    }
+    catch {
         $expectedResolved = $expectedProfilePath
     }
 
@@ -257,7 +264,8 @@ function Set-TomlSection {
     $trimmed = $Content.TrimEnd("`r", "`n")
     if ([string]::IsNullOrWhiteSpace($trimmed)) {
         $updated = $replacement
-    } else {
+    }
+    else {
         $updated = "$trimmed`n`n$replacement"
     }
 
@@ -304,14 +312,15 @@ function Update-LocalChezmoiEditorConfig {
 
 function Initialize-LocalChezmoiConfig {
     # ~/.config/chezmoi/chezmoi.toml is machine-local state and is never managed by source-state.
-    $chezmoiConfigDir  = Join-Path $env:USERPROFILE ".config\chezmoi"
+    $chezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
     $chezmoiConfigPath = Join-Path $chezmoiConfigDir "chezmoi.toml"
 
     if (Test-Path $chezmoiConfigPath) {
         $existing = Get-Content $chezmoiConfigPath -Raw -ErrorAction SilentlyContinue
         if ($existing -match "Your Name|your@email.com") {
             Write-Warn "Local chezmoi config still has placeholder identity values: $chezmoiConfigPath"
-        } else {
+        }
+        else {
             Write-OK "Local chezmoi config already present"
         }
         Update-LocalChezmoiEditorConfig -ConfigPath $chezmoiConfigPath
@@ -320,7 +329,7 @@ function Initialize-LocalChezmoiConfig {
 
     Write-Host "  No local chezmoi config found. Enter machine-specific identity values." -ForegroundColor Gray
 
-    $defaultName  = (git config --global user.name 2>$null | Out-String).Trim()
+    $defaultName = (git config --global user.name 2>$null | Out-String).Trim()
     $defaultEmail = (git config --global user.email 2>$null | Out-String).Trim()
 
     do {
@@ -400,14 +409,17 @@ function InitializeOrApplyChezmoi {
             Write-Warn "Current origin: $currentOrigin"
             Write-Warn "Desired origin: $DesiredSource"
             Write-Warn "Keeping existing source and applying current state."
-        } elseif (-not $currentOrigin) {
+        }
+        elseif (-not $currentOrigin) {
             Write-Warn "Could not determine current chezmoi origin; keeping existing source and applying current state."
         }
-    } else {
+    }
+    else {
         $desiredPath = (Resolve-Path $DesiredSource -ErrorAction Stop).Path
         try {
             $currentPath = (Resolve-Path $currentSource -ErrorAction Stop).Path
-        } catch {
+        }
+        catch {
             $currentPath = $currentSource
         }
 
@@ -435,7 +447,8 @@ Write-Step "Configuring Execution Policy"
 try {
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction Stop
     Write-OK "Execution policy set to RemoteSigned"
-} catch {
+}
+catch {
     Write-Warn "Could not set CurrentUser execution policy (likely overridden by Process/Group Policy). Continuing."
     Write-Host "  Effective policy: $(Get-ExecutionPolicy)" -ForegroundColor DarkGray
 }
@@ -445,7 +458,8 @@ Write-Step "Checking NuGet Provider"
 if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)) {
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
     Write-OK "NuGet provider installed"
-} else {
+}
+else {
     Write-OK "NuGet provider already present"
 }
 
@@ -456,7 +470,8 @@ if (-not (Test-CommandExists "scoop")) {
     Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
     Update-PathEnvironment
     Write-OK "Scoop installed"
-} else {
+}
+else {
     Write-OK "Scoop already installed"
 }
 
@@ -469,11 +484,13 @@ foreach ($bucket in $buckets) {
     if ($existing -notmatch $bucketName) {
         if ($bucket.PSObject.Properties.Name -contains "url" -and $bucket.url) {
             scoop bucket add $bucketName $bucket.url
-        } else {
+        }
+        else {
             scoop bucket add $bucketName
         }
         Write-OK "Added bucket: $bucketName"
-    } else {
+    }
+    else {
         Write-OK "Bucket already added: $bucketName"
     }
 }
@@ -497,7 +514,8 @@ if (-not (Test-CommandExists "pwsh")) {
     winget install --id $pwshWingetId --source $pwshWingetSource --accept-source-agreements --accept-package-agreements --silent
     Update-PathEnvironment
     Write-OK "PowerShell 7 installed via winget"
-} else {
+}
+else {
     Write-OK "PowerShell 7 already installed"
 }
 
@@ -512,7 +530,8 @@ if (-not (Test-CommandExists "wt")) {
     winget install --id $wtWingetId --source $wtWingetSource --accept-source-agreements --accept-package-agreements --silent
     Update-PathEnvironment
     Write-OK "Windows Terminal installed via winget"
-} else {
+}
+else {
     Write-OK "Windows Terminal already installed"
 }
 
@@ -537,7 +556,8 @@ if (-not $SkipFonts) {
         if (-not $installed) {
             scoop install $fontName
             Write-OK "$fontName installed"
-        } else {
+        }
+        else {
             Write-OK "$fontName already installed"
         }
     }
@@ -555,7 +575,8 @@ foreach ($mod in $modules) {
     if (-not $existing) {
         Install-Module -Name $mod.name -Scope CurrentUser -Force -AllowClobber -Repository PSGallery
         Write-OK "$($mod.name) installed"
-    } else {
+    }
+    else {
         Write-OK "$($mod.name) already installed (v$($existing.Version))"
     }
 }
@@ -588,7 +609,8 @@ python  = "latest"
 # ruby   = "latest"
 '@ | Set-Content -Path $miseConfig -Encoding UTF8
     Write-OK "mise config created at $miseConfig"
-} else {
+}
+else {
     Write-OK "mise config already exists"
 }
 
@@ -609,23 +631,23 @@ Write-Step "Configuring Dev Drive"
 # ── Drive picker ──────────────────────────────────────────────────────────────
 if (-not $DevDrive) {
     $drives = Get-PSDrive -PSProvider FileSystem |
-        Where-Object { $_.Root -match '^[A-Z]:\\$' } |
-        ForEach-Object {
-            $fs = (Get-Volume -DriveLetter $_.Name -ErrorAction SilentlyContinue).FileSystemType
-            [PSCustomObject]@{
-                Letter = "$($_.Name):"
-                Label  = (Get-Volume -DriveLetter $_.Name -ErrorAction SilentlyContinue).FileSystemLabel
-                FS     = if ($fs) { $fs } else { "?" }
-                FreeGB = [math]::Round($_.Free / 1GB, 1)
-            }
+    Where-Object { $_.Root -match '^[A-Z]:\\$' } |
+    ForEach-Object {
+        $fs = (Get-Volume -DriveLetter $_.Name -ErrorAction SilentlyContinue).FileSystemType
+        [PSCustomObject]@{
+            Letter = "$($_.Name):"
+            Label  = (Get-Volume -DriveLetter $_.Name -ErrorAction SilentlyContinue).FileSystemLabel
+            FS     = if ($fs) { $fs } else { "?" }
+            FreeGB = [math]::Round($_.Free / 1GB, 1)
         }
+    }
 
     Write-Host ""
     Write-Host "  Available drives:" -ForegroundColor Cyan
     Write-Host ""
     for ($i = 0; $i -lt $drives.Count; $i++) {
-        $d    = $drives[$i]
-        $tag  = if ($d.FS -eq "ReFS") { " ← ReFS (recommended)" } else { "" }
+        $d = $drives[$i]
+        $tag = if ($d.FS -eq "ReFS") { " ← ReFS (recommended)" } else { "" }
         $name = if ($d.Label) { " [$($d.Label)]" } else { "" }
         Write-Host ("  [{0}] {1}{2}  {3}  {4} GB free{5}" -f
             ($i + 1), $d.Letter, $name, $d.FS, $d.FreeGB, $tag) -ForegroundColor White
@@ -706,7 +728,8 @@ if (Test-Path $devDrive) {
     Update-PathEnvironment
     Write-OK "Dev Drive paths added to user PATH"
 
-} else {
+}
+else {
     Write-Warn "$devDrive not found — skipping Dev Drive setup. Format your SSD as a Dev Drive and re-run with -DevDrive '$devDrive'."
     Write-Warn "Guide: Settings > System > Storage > Advanced storage settings > Disks & volumes"
 }
@@ -723,13 +746,15 @@ if (-not (Test-CommandExists $dopplerPackage)) {
     if ($existing -notmatch $dopplerBucket) {
         scoop bucket add $dopplerBucket $dopplerBucketUrl
         Write-OK "Added bucket: $dopplerBucket"
-    } else {
+    }
+    else {
         Write-OK "Bucket already added: $dopplerBucket"
     }
 
     scoop install "$dopplerBucket/$dopplerPackage"
     Write-OK "Doppler CLI installed"
-} else {
+}
+else {
     Write-OK "Doppler CLI already installed"
 }
 
@@ -758,7 +783,8 @@ if (Test-CommandExists "mise") {
     Test-MiseRuntimeCommands -RuntimeSpecs $runtimes
 
     Write-OK "All runtimes installed — managed by mise"
-} else {
+}
+else {
     Write-Warn "mise not found — skipping runtime installs. Run 'scoop install mise' then re-run."
 }
 
@@ -775,7 +801,8 @@ Write-Step "Installing VS Code Extensions"
 $extScript = Join-Path $PSScriptRoot "install-vscode-extensions.ps1"
 if ((Test-Path $extScript) -and (Test-CommandExists "code")) {
     & $extScript
-} elseif (-not (Test-CommandExists "code")) {
+}
+elseif (-not (Test-CommandExists "code")) {
     Write-Warn "VS Code 'code' CLI not on PATH yet — restart your shell and run:"
     Write-Warn "  .\scripts\install-vscode-extensions.ps1"
 }

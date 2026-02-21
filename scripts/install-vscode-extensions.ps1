@@ -13,9 +13,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-function Write-Step  { param($m) Write-Host "`n  ► $m" -ForegroundColor Cyan }
-function Write-OK    { param($m) Write-Host "  ✓ $m"   -ForegroundColor Green }
-function Write-Warn  { param($m) Write-Host "  ⚠ $m"   -ForegroundColor Yellow }
+function Write-Step { param($m) Write-Host "`n  ► $m" -ForegroundColor Cyan }
+function Write-OK { param($m) Write-Host "  ✓ $m"   -ForegroundColor Green }
+function Write-Warn { param($m) Write-Host "  ⚠ $m"   -ForegroundColor Yellow }
 
 # ─── Verify code CLI is available ─────────────────────────────────────────────
 
@@ -44,8 +44,8 @@ $installed = code --list-extensions 2>$null | ForEach-Object { $_.ToLower() }
 Write-Step "Installing VS Code Extensions ($($extensions.Count) total)"
 
 $installed_count = 0
-$skipped_count   = 0
-$failed          = @()
+$skipped_count = 0
+$failed = @()
 
 foreach ($ext in $extensions) {
     if (-not $Force -and ($installed -contains $ext.ToLower())) {
@@ -59,7 +59,8 @@ foreach ($ext in $extensions) {
         code --install-extension $ext --force 2>&1 | Out-Null
         Write-OK $ext
         $installed_count++
-    } catch {
+    }
+    catch {
         Write-Warn "Failed to install: $ext"
         $failed += $ext
     }

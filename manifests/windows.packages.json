@@ -84,9 +84,7 @@
       "bucket": "main"
     }
   ],
-  "fonts": [
-    "JetBrainsMono-NF"
-  ],
+  "fonts": ["JetBrainsMono-NF"],
   "powershellModules": [
     {
       "name": "PSReadLine",

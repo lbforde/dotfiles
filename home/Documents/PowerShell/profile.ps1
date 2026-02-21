@@ -4,7 +4,7 @@
 
 # ─── Auto-Update (max once per 7 days, only when online) ─────────────────────
 
-$_stampFile      = "$env:TEMP\ps_profile_update.stamp"
+$_stampFile = "$env:TEMP\ps_profile_update.stamp"
 $_updateInterval = 7   # days — set to -1 to check every launch
 
 # Test connectivity to GitHub (used for both update checks)
@@ -34,13 +34,14 @@ function Update-Profile {
         $updated = @()
         foreach ($mod in $mods) {
             try {
-                $latest  = Find-Module $mod -Repository PSGallery -ErrorAction SilentlyContinue
+                $latest = Find-Module $mod -Repository PSGallery -ErrorAction SilentlyContinue
                 $current = Get-Module -ListAvailable $mod | Sort-Object Version -Descending | Select-Object -First 1
                 if ($latest -and $current -and ($latest.Version -gt $current.Version)) {
                     Update-Module $mod -Scope CurrentUser -Force -ErrorAction SilentlyContinue
                     $updated += $mod
                 }
-            } catch {}
+            }
+            catch {}
         }
         return $updated
     }
@@ -80,7 +81,8 @@ function Update-PowerShell {
             Start-Process pwsh -ArgumentList "-NoProfile -Command winget upgrade Microsoft.PowerShell --accept-source-agreements --accept-package-agreements" -Wait -NoNewWindow
             Write-Host "[profile] PowerShell updated — restart terminal." -ForegroundColor Magenta
         }
-    } catch {
+    }
+    catch {
         # Silently skip — don't interrupt terminal startup on failure
     }
 
@@ -108,10 +110,10 @@ $Host.UI.RawUI.WindowTitle = "PowerShell $($PSVersionTable.PSVersion)$_adminSuff
 # ─── Environment Setup ───────────────────────────────────────────────────────
 
 $env:EDITOR = if (Get-Command code       -ErrorAction SilentlyContinue) { "code --wait" }
-         elseif (Get-Command codium     -ErrorAction SilentlyContinue) { "codium --wait" }
-         elseif (Get-Command notepad++  -ErrorAction SilentlyContinue) { "notepad++" }
-         elseif (Get-Command sublime_text -ErrorAction SilentlyContinue) { "sublime_text" }
-         else { "notepad" }
+elseif (Get-Command codium     -ErrorAction SilentlyContinue) { "codium --wait" }
+elseif (Get-Command notepad++  -ErrorAction SilentlyContinue) { "notepad++" }
+elseif (Get-Command sublime_text -ErrorAction SilentlyContinue) { "sublime_text" }
+else { "notepad" }
 
 function Invoke-Editor {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
@@ -132,10 +134,10 @@ function Invoke-Editor {
 # Keep a neutral editor command that respects $env:EDITOR.
 Set-Alias -Name edit -Value Invoke-Editor -Option AllScope -Force -ErrorAction SilentlyContinue
 
-$env:PAGER    = if (Get-Command bat -ErrorAction SilentlyContinue) { "bat" } else { "more" }
+$env:PAGER = if (Get-Command bat -ErrorAction SilentlyContinue) { "bat" } else { "more" }
 $env:BAT_THEME = "OneHalfDark"   # closest bat theme to One Dark Pro; change with: bat --list-themes
 $env:FZF_DEFAULT_COMMAND = "fd --type f --hidden --follow --exclude .git"
-$env:FZF_DEFAULT_OPTS    = "--height 40% --layout=reverse --border --preview 'bat --color=always --line-range :50 {}'"
+$env:FZF_DEFAULT_OPTS = "--height 40% --layout=reverse --border --preview 'bat --color=always --line-range :50 {}'"
 
 # ─── Dev Drive ───────────────────────────────────────────────────────────────
 # Drive letter is set by bootstrap.ps1 (-DevDrive param) and persisted as DEV_DRIVE.
@@ -145,28 +147,28 @@ $env:FZF_DEFAULT_OPTS    = "--height 40% --layout=reverse --border --preview 'ba
 $_devDrive = if ($env:DEV_DRIVE) { $env:DEV_DRIVE.TrimEnd('\') } else { "Z:" }
 
 # npm / Node
-$env:npm_config_cache    = "$_devDrive\caches\npm"
-$env:npm_config_prefix   = "$_devDrive\tools\npm-global"
+$env:npm_config_cache = "$_devDrive\caches\npm"
+$env:npm_config_prefix = "$_devDrive\tools\npm-global"
 
 # pnpm
-$env:PNPM_HOME           = "$_devDrive\tools\pnpm"
+$env:PNPM_HOME = "$_devDrive\tools\pnpm"
 
 # Rust / Cargo — mise manages the toolchain, CARGO_HOME just controls where crates cache
-$env:CARGO_HOME          = "$_devDrive\tools\cargo"
+$env:CARGO_HOME = "$_devDrive\tools\cargo"
 
 # Go
-$env:GOPATH              = "$_devDrive\go"
-$env:GOMODCACHE          = "$_devDrive\caches\gomod"
+$env:GOPATH = "$_devDrive\go"
+$env:GOMODCACHE = "$_devDrive\caches\gomod"
 
 # Zig cache
 $env:ZIG_GLOBAL_CACHE_DIR = "$_devDrive\caches\zig"
 
 # mise — runtimes and shims on Dev Drive
-$env:MISE_DATA_DIR       = "$_devDrive\tools\mise"
-$env:MISE_CACHE_DIR      = "$_devDrive\caches\mise"
+$env:MISE_DATA_DIR = "$_devDrive\tools\mise"
+$env:MISE_CACHE_DIR = "$_devDrive\caches\mise"
 
 # Projects root
-$env:PROJECTS            = "$_devDrive\projects"
+$env:PROJECTS = "$_devDrive\projects"
 
 # Extend PATH with Dev Drive tool bin dirs
 $_devPaths = @(
@@ -194,7 +196,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
             Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction Stop
             Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction Stop
         }
-    } catch {
+    }
+    catch {
         # Skip prediction settings when the current host cannot render them.
     }
     Set-PSReadLineOption -HistoryNoDuplicates:$true
@@ -274,11 +277,11 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
 
 # ─── Navigation & Directory Aliases ─────────────────────────────────────────
 
-function Set-LocationHome  { Set-Location $env:USERPROFILE }
-function Set-LocationUp    { Set-Location .. }
-function Set-LocationUp2   { Set-Location ../.. }
-function Set-LocationUp3   { Set-Location ../../.. }
-function Set-LocationPrev  { Set-Location - }
+function Set-LocationHome { Set-Location $env:USERPROFILE }
+function Set-LocationUp { Set-Location .. }
+function Set-LocationUp2 { Set-Location ../.. }
+function Set-LocationUp3 { Set-Location ../../.. }
+function Set-LocationPrev { Set-Location - }
 
 Set-Alias -Name "~"   -Value Set-LocationHome
 Set-Alias -Name ".."  -Value Set-LocationUp
@@ -300,11 +303,11 @@ function proj {
 # ─── eza (modern ls replacement) ─────────────────────────────────────────────
 
 if (Get-Command eza -ErrorAction SilentlyContinue) {
-    function Get-ChildItemEza              { eza --icons --group-directories-first @args }
-    function Get-ChildItemEzaLong         { eza --icons --group-directories-first -l --git @args }
-    function Get-ChildItemEzaAll          { eza --icons --group-directories-first -la --git @args }
-    function Get-ChildItemEzaTree         { eza --icons --group-directories-first --tree @args }
-    function Get-ChildItemEzaTree2        { eza --icons --group-directories-first --tree --level=2 @args }
+    function Get-ChildItemEza { eza --icons --group-directories-first @args }
+    function Get-ChildItemEzaLong { eza --icons --group-directories-first -l --git @args }
+    function Get-ChildItemEzaAll { eza --icons --group-directories-first -la --git @args }
+    function Get-ChildItemEzaTree { eza --icons --group-directories-first --tree @args }
+    function Get-ChildItemEzaTree2 { eza --icons --group-directories-first --tree --level=2 @args }
 
     Set-Alias -Name ls    -Value Get-ChildItemEza      -Option AllScope -Force
     Set-Alias -Name ll    -Value Get-ChildItemEzaLong  -Option AllScope -Force
@@ -312,7 +315,8 @@ if (Get-Command eza -ErrorAction SilentlyContinue) {
     Set-Alias -Name lt    -Value Get-ChildItemEzaTree  -Option AllScope -Force
     Set-Alias -Name lt2   -Value Get-ChildItemEzaTree2 -Option AllScope -Force
     Set-Alias -Name l     -Value Get-ChildItemEza      -Option AllScope -Force
-} else {
+}
+else {
     # Fallback to built-in with some Linux-like formatting
     function Get-ChildItemFallback { Get-ChildItem @args }
     Set-Alias -Name ls -Value Get-ChildItemFallback -Option AllScope -Force
@@ -365,18 +369,18 @@ if (Get-Command lazygit -ErrorAction SilentlyContinue) {
 
 # ─── Git Shortcuts (Linux-familiar) ──────────────────────────────────────────
 
-function Invoke-GitStatus  { git status @args }
-function Invoke-GitAdd     { git add @args }
-function Invoke-GitCommit  { git commit -m @args }
-function Invoke-GitPush    { git push @args }
-function Invoke-GitPull    { git pull @args }
-function Invoke-GitLog     { git log --oneline --graph --decorate --all @args }
-function Invoke-GitDiff    { git diff @args }
-function Invoke-GitBranch  { git branch @args }
+function Invoke-GitStatus { git status @args }
+function Invoke-GitAdd { git add @args }
+function Invoke-GitCommit { git commit -m @args }
+function Invoke-GitPush { git push @args }
+function Invoke-GitPull { git pull @args }
+function Invoke-GitLog { git log --oneline --graph --decorate --all @args }
+function Invoke-GitDiff { git diff @args }
+function Invoke-GitBranch { git branch @args }
 function Invoke-GitCheckout { git checkout @args }
-function Invoke-GitSwitch  { git switch @args }
-function Invoke-GitStash   { git stash @args }
-function Invoke-GitClone   { git clone @args }
+function Invoke-GitSwitch { git switch @args }
+function Invoke-GitStash { git stash @args }
+function Invoke-GitClone { git clone @args }
 
 Set-Alias -Name gs   -Value Invoke-GitStatus   -Option AllScope
 Set-Alias -Name ga   -Value Invoke-GitAdd      -Option AllScope
@@ -399,7 +403,8 @@ function touch {
     foreach ($p in $Path) {
         if (Test-Path $p) {
             (Get-Item $p).LastWriteTime = Get-Date
-        } else {
+        }
+        else {
             New-Item -ItemType File -Path $p -Force | Out-Null
         }
     }
@@ -416,13 +421,16 @@ function sudo {
         # Prefer opening in Windows Terminal; fall back to plain pwsh if not found.
         if (Get-Command wt -ErrorAction SilentlyContinue) {
             Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit", "-Command", $argList)
-        } else {
+        }
+        else {
             Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit", "-Command", $argList)
         }
-    } else {
+    }
+    else {
         if (Get-Command wt -ErrorAction SilentlyContinue) {
             Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit")
-        } else {
+        }
+        else {
             Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit")
         }
     }
@@ -438,7 +446,8 @@ function tail {
     param([string]$Path, [int]$Lines = 10, [switch]$Follow)
     if ($Follow) {
         Get-Content $Path -Tail $Lines -Wait
-    } else {
+    }
+    else {
         Get-Content $Path -Tail $Lines
     }
 }
@@ -446,28 +455,28 @@ function tail {
 function wc {
     param([string]$Path, [switch]$l, [switch]$w, [switch]$c)
     $content = Get-Content $Path
-    $lines   = $content.Count
-    $words   = ($content | ForEach-Object { $_ -split '\s+' } | Where-Object { $_ -ne '' }).Count
-    $chars   = ($content | Measure-Object -Character).Characters
-    if ($l)     { return $lines }
-    if ($w)     { return $words }
-    if ($c)     { return $chars }
+    $lines = $content.Count
+    $words = ($content | ForEach-Object { $_ -split '\s+' } | Where-Object { $_ -ne '' }).Count
+    $chars = ($content | Measure-Object -Character).Characters
+    if ($l) { return $lines }
+    if ($w) { return $words }
+    if ($c) { return $chars }
     "$lines`t$words`t$chars`t$Path"
 }
 
 function df {
     Get-PSDrive -PSProvider FileSystem | Select-Object Name,
-        @{N="Used(GB)";  E={[math]::Round($_.Used/1GB,2)}},
-        @{N="Free(GB)";  E={[math]::Round($_.Free/1GB,2)}},
-        @{N="Total(GB)"; E={[math]::Round(($_.Used+$_.Free)/1GB,2)}} |
-        Format-Table -AutoSize
+    @{N = "Used(GB)"; E = { [math]::Round($_.Used / 1GB, 2) } },
+    @{N = "Free(GB)"; E = { [math]::Round($_.Free / 1GB, 2) } },
+    @{N = "Total(GB)"; E = { [math]::Round(($_.Used + $_.Free) / 1GB, 2) } } |
+    Format-Table -AutoSize
 }
 
 function du {
     param([string]$Path = ".")
     Get-ChildItem $Path -Recurse -File -ErrorAction SilentlyContinue |
-        Measure-Object -Property Length -Sum |
-        ForEach-Object { "{0:N2} MB — {1}" -f ($_.Sum / 1MB), (Resolve-Path $Path) }
+    Measure-Object -Property Length -Sum |
+    ForEach-Object { "{0:N2} MB — {1}" -f ($_.Sum / 1MB), (Resolve-Path $Path) }
 }
 
 function ps {
@@ -542,7 +551,8 @@ function ln {
     param([string]$Target, [string]$Link, [switch]$s)
     if ($s) {
         New-Item -ItemType SymbolicLink -Path $Link -Target $Target -Force
-    } else {
+    }
+    else {
         New-Item -ItemType HardLink     -Path $Link -Target $Target -Force
     }
 }
@@ -561,8 +571,8 @@ function pkill {
 
 function netstat {
     Get-NetTCPConnection | Where-Object { $_.State -ne "Closed" } |
-        Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess |
-        Format-Table -AutoSize
+    Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess |
+    Format-Table -AutoSize
 }
 
 function curl {
@@ -574,7 +584,8 @@ function wget {
     param([string]$Url, [string]$OutFile)
     if ($OutFile) {
         Invoke-WebRequest $Url -OutFile $OutFile
-    } else {
+    }
+    else {
         Invoke-WebRequest $Url
     }
 }
@@ -596,7 +607,8 @@ function sed {
     param([string]$Pattern, [string]$Replacement, [string]$Path)
     if ($Path) {
         (Get-Content $Path) -replace $Pattern, $Replacement | Set-Content $Path
-    } else {
+    }
+    else {
         $input | ForEach-Object { $_ -replace $Pattern, $Replacement }
     }
 }
@@ -607,13 +619,14 @@ function awk {
     $match = [regex]::Match($Program, '\{print\s+(.+)\}')
     if ($match.Success) {
         $cols = $match.Groups[1].Value -split ',' | ForEach-Object {
-            [int]($_.Trim() -replace '\$','') - 1
+            [int]($_.Trim() -replace '\$', '') - 1
         }
         $input | ForEach-Object {
             $parts = $_ -split '\s+'
             ($cols | ForEach-Object { $parts[$_] }) -join ' '
         }
-    } else {
+    }
+    else {
         $input
     }
 }
@@ -635,7 +648,8 @@ function less {
     param([string]$Path)
     if (Get-Command bat -ErrorAction SilentlyContinue) {
         bat --paging=always $Path
-    } else {
+    }
+    else {
         Get-Content $Path | more
     }
 }
@@ -643,7 +657,7 @@ function less {
 function more {
     param([string]$Path)
     if ($Path) { Get-Content $Path | Out-Host -Paging }
-    else       { $input | Out-Host -Paging }
+    else { $input | Out-Host -Paging }
 }
 
 # ─── System Utilities ─────────────────────────────────────────────────────────
@@ -652,25 +666,27 @@ function uptime {
     try {
         $bootTime = if ($PSVersionTable.PSVersion.Major -ge 6) {
             Get-Uptime -Since
-        } else {
+        }
+        else {
             $raw = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
             [System.Management.ManagementDateTimeConverter]::ToDateTime($raw)
         }
         $up = (Get-Date) - $bootTime
         Write-Host ("System started: {0}" -f $bootTime.ToString("dddd, MMMM dd, yyyy HH:mm:ss")) -ForegroundColor DarkGray
         Write-Host ("Uptime:         {0}d {1}h {2}m {3}s" -f $up.Days, $up.Hours, $up.Minutes, $up.Seconds) -ForegroundColor Blue
-    } catch {
+    }
+    catch {
         Write-Error "Could not retrieve uptime."
     }
 }
 
-function reboot  { Restart-Computer -Force }
+function reboot { Restart-Computer -Force }
 function poweroff { Stop-Computer -Force }
 
 function sysinfo {
-    $os  = Get-CimInstance Win32_OperatingSystem
+    $os = Get-CimInstance Win32_OperatingSystem
     $cpu = Get-CimInstance Win32_Processor
-    $ram = [math]::Round($os.TotalVisibleMemorySize/1MB, 2)
+    $ram = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
     Write-Host "OS:  $($os.Caption) $($os.OSArchitecture)" -ForegroundColor Cyan
     Write-Host "CPU: $($cpu.Name)" -ForegroundColor Cyan
     Write-Host "RAM: ${ram} GB" -ForegroundColor Cyan
@@ -681,12 +697,12 @@ function sysinfo {
 
 if (Get-Command jq -ErrorAction SilentlyContinue) {
     function jqpretty { $input | jq '.' }
-    function jqkeys   { $input | jq 'keys' }
+    function jqkeys { $input | jq 'keys' }
 }
 
 # ─── Clipboard ────────────────────────────────────────────────────────────────
 
-function pbcopy  { $input | Set-Clipboard }
+function pbcopy { $input | Set-Clipboard }
 function pbpaste { Get-Clipboard }
 
 # ─── Open / xdg-open ─────────────────────────────────────────────────────────
@@ -694,7 +710,7 @@ function pbpaste { Get-Clipboard }
 function open {
     param([string]$Path)
     if ($Path) { Start-Process $Path }
-    else       { explorer.exe . }
+    else { explorer.exe . }
 }
 Set-Alias -Name xdg-open -Value open -Option AllScope
 
@@ -713,16 +729,16 @@ if (Get-Command chezmoi -ErrorAction SilentlyContinue) {
 # ─── mise shortcuts ──────────────────────────────────────────────────────────
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
-    function mr  { mise run @args }
-    function mi  { mise install @args }
-    function mu  { mise use @args }
+    function mr { mise run @args }
+    function mi { mise install @args }
+    function mu { mise use @args }
     function mls { mise list @args }
 }
 
 # ─── pnpm shortcuts ──────────────────────────────────────────────────────────
 
 if (Get-Command pnpm -ErrorAction SilentlyContinue) {
-    function pn  { pnpm @args }
+    function pn { pnpm @args }
     function pni { pnpm install @args }
     function pna { pnpm add @args }
     function pnr { pnpm run @args }
@@ -732,30 +748,30 @@ if (Get-Command pnpm -ErrorAction SilentlyContinue) {
 # ─── bun shortcuts ───────────────────────────────────────────────────────────
 
 if (Get-Command bun -ErrorAction SilentlyContinue) {
-    function bi  { bun install @args }
-    function ba  { bun add @args }
-    function br  { bun run @args }
-    function bx  { bunx @args }        # bunx equivalent
+    function bi { bun install @args }
+    function ba { bun add @args }
+    function br { bun run @args }
+    function bx { bunx @args }        # bunx equivalent
 }
 
 # ─── Doppler shortcuts ────────────────────────────────────────────────────────
 
 if (Get-Command doppler -ErrorAction SilentlyContinue) {
     # Run a command with secrets injected as env vars (most common usage)
-    function drun    { doppler run -- @args }
+    function drun { doppler run -- @args }
 
     # Quick secret access
     function dsecrets { doppler secrets @args }
-    function dget    {
+    function dget {
         param([string]$Secret)
         doppler secrets get $Secret --plain
     }
 
     # Project setup — run once at a repo root to link it to a Doppler project/config
-    function dsetup  { doppler setup @args }
+    function dsetup { doppler setup @args }
 
     # Open the Doppler dashboard in the browser
-    function ddash   { doppler open dashboard }
+    function ddash { doppler open dashboard }
 }
 
 # ─── Useful Functions ─────────────────────────────────────────────────────────
@@ -774,7 +790,7 @@ Set-Alias -Name ep          -Value Invoke-ProfileEdit
 
 # Count lines of code in a directory
 function Measure-CodeLineCount {
-    param([string]$Path = ".", [string[]]$Extensions = @("*.ps1","*.py","*.js","*.ts","*.go","*.rs"))
+    param([string]$Path = ".", [string[]]$Extensions = @("*.ps1", "*.py", "*.js", "*.ts", "*.go", "*.rs"))
     $total = 0
     foreach ($ext in $Extensions) {
         $count = (Get-ChildItem $Path -Recurse -Filter $ext -ErrorAction SilentlyContinue |
@@ -794,7 +810,8 @@ function serve {
     if (Get-Command python -ErrorAction SilentlyContinue) {
         Write-Host "Serving on http://localhost:$Port" -ForegroundColor Cyan
         python -m http.server $Port
-    } else {
+    }
+    else {
         Write-Warning "Python not found — install it with: mise use python@latest"
     }
 }
@@ -803,12 +820,12 @@ function serve {
 function extract {
     param([string]$Path)
     switch -Wildcard ($Path) {
-        "*.zip"    { Expand-Archive $Path . }
+        "*.zip" { Expand-Archive $Path . }
         "*.tar.gz" { tar -xzf $Path }
-        "*.tar.bz2"{ tar -xjf $Path }
+        "*.tar.bz2" { tar -xjf $Path }
         "*.tar.xz" { tar -xJf $Path }
-        "*.7z"     { 7z x $Path }
-        default    { Write-Warning "Unknown archive format: $Path" }
+        "*.7z" { 7z x $Path }
+        default { Write-Warning "Unknown archive format: $Path" }
     }
 }
 
@@ -825,7 +842,8 @@ function trash {
     if ($shellItem) {
         $shellItem.InvokeVerb('delete')
         Write-Host "Moved to Recycle Bin: $fullPath" -ForegroundColor DarkGray
-    } else {
+    }
+    else {
         Write-Error "Could not trash: $fullPath"
     }
 }
@@ -834,7 +852,7 @@ function trash {
 function ff {
     param([string]$Name)
     Get-ChildItem -Recurse -Filter "*$Name*" -ErrorAction SilentlyContinue |
-        ForEach-Object { $_.FullName }
+    ForEach-Object { $_.FullName }
 }
 
 # Quick new file creation
@@ -865,10 +883,10 @@ function flushdns {
 function shasum {
     param(
         [string]$Path,
-        [ValidateSet("1","256","384","512")]
+        [ValidateSet("1", "256", "384", "512")]
         [string]$a = "256"
     )
-    $algo = switch ($a) { "1" {"SHA1"} "384" {"SHA384"} "512" {"SHA512"} default {"SHA256"} }
+    $algo = switch ($a) { "1" { "SHA1" } "384" { "SHA384" } "512" { "SHA512" } default { "SHA256" } }
     $hash = (Get-FileHash $Path -Algorithm $algo).Hash.ToLower()
     "$hash  $Path"
 }
@@ -895,8 +913,8 @@ if (Get-Command winget -ErrorAction SilentlyContinue) {
     Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
         param($wordToComplete, $commandAst, $cursorPosition)
         [Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Utf8Encoding]::new()
-        $word   = $wordToComplete.Replace('"', '""')
-        $ast    = $commandAst.ToString().Replace('"', '""')
+        $word = $wordToComplete.Replace('"', '""')
+        $ast = $commandAst.ToString().Replace('"', '""')
         winget complete --word="$word" --commandline "$ast" --position $cursorPosition | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
@@ -913,14 +931,14 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
     Register-ArgumentCompleter -Native -CommandName mise -ScriptBlock {
         param($wordToComplete, $commandAst, $cursorPosition)
         $subcommands = @(
-            'activate','tool-alias','backends','bin-paths','cache','completion',
-            'config','deactivate','doctor','en','env','exec','fmt','generate',
-            'implode','edit','install','install-into','latest','link','lock',
-            'ls','ls-remote','mcp','outdated','plugins','prepare','prune',
-            'registry','reshim','run','search','self-update','set','settings',
-            'shell','shell-alias','sync','tasks','test-tool','tool','tool-stub',
-            'trust','uninstall','unset','unuse','upgrade','use','version','watch',
-            'where','which','help'
+            'activate', 'tool-alias', 'backends', 'bin-paths', 'cache', 'completion',
+            'config', 'deactivate', 'doctor', 'en', 'env', 'exec', 'fmt', 'generate',
+            'implode', 'edit', 'install', 'install-into', 'latest', 'link', 'lock',
+            'ls', 'ls-remote', 'mcp', 'outdated', 'plugins', 'prepare', 'prune',
+            'registry', 'reshim', 'run', 'search', 'self-update', 'set', 'settings',
+            'shell', 'shell-alias', 'sync', 'tasks', 'test-tool', 'tool', 'tool-stub',
+            'trust', 'uninstall', 'unset', 'unuse', 'upgrade', 'use', 'version', 'watch',
+            'where', 'which', 'help'
         )
         if ($commandAst.CommandElements.Count -le 2) {
             $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
@@ -934,17 +952,18 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
 Register-ArgumentCompleter -Native -CommandName scoop -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $subcommands = @(
-        'install','uninstall','update','status','search','info','list',
-        'bucket','cache','cleanup','reset','depends','export','import',
-        'hold','unhold','prefix','home','cat','which','checkup','help'
+        'install', 'uninstall', 'update', 'status', 'search', 'info', 'list',
+        'bucket', 'cache', 'cleanup', 'reset', 'depends', 'export', 'import',
+        'hold', 'unhold', 'prefix', 'home', 'cat', 'which', 'checkup', 'help'
     )
     $elements = $commandAst.CommandElements
     if ($elements.Count -ge 2 -and $elements[1].Value -eq 'bucket') {
         # scoop bucket <subcommand>
-        @('add','remove','list','known','update') | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        @('add', 'remove', 'list', 'known', 'update') | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
-    } elseif ($elements.Count -le 2) {
+    }
+    elseif ($elements.Count -le 2) {
         # Completing the top-level subcommand
         $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
@@ -956,11 +975,11 @@ Register-ArgumentCompleter -Native -CommandName scoop -ScriptBlock {
 Register-ArgumentCompleter -Native -CommandName chezmoi -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $subcommands = @(
-        'add','apply','archive','cat','cd','chattr','completion','data',
-        'diff','doctor','dump','edit','edit-config','execute-template',
-        'forget','git','help','import','init','manage','managed','merge',
-        'merge-all','purge','re-add','remove','secret','source-path',
-        'state','status','unmanage','unmanaged','update','upgrade','verify'
+        'add', 'apply', 'archive', 'cat', 'cd', 'chattr', 'completion', 'data',
+        'diff', 'doctor', 'dump', 'edit', 'edit-config', 'execute-template',
+        'forget', 'git', 'help', 'import', 'init', 'manage', 'managed', 'merge',
+        'merge-all', 'purge', 're-add', 'remove', 'secret', 'source-path',
+        'state', 'status', 'unmanage', 'unmanaged', 'update', 'upgrade', 'verify'
     )
     if ($commandAst.CommandElements.Count -le 2) {
         $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
@@ -974,8 +993,8 @@ if (Get-Command doppler -ErrorAction SilentlyContinue) {
     Register-ArgumentCompleter -Native -CommandName doppler -ScriptBlock {
         param($wordToComplete, $commandAst, $cursorPosition)
         $subcommands = @(
-            'completion','configure','environments','groups','import',
-            'login','logout','open','projects','run','secrets','setup',
+            'completion', 'configure', 'environments', 'groups', 'import',
+            'login', 'logout', 'open', 'projects', 'run', 'secrets', 'setup',
             'update'
         )
         if ($commandAst.CommandElements.Count -le 2) {
@@ -1145,8 +1164,8 @@ Write-Host "  Type $($PSStyle.Foreground.Green)Show-Help$($PSStyle.Reset) for a 
 function Show-Greeting {
     $hour = (Get-Date).Hour
     $greeting = if ($hour -lt 12) { "Good morning" }
-                elseif ($hour -lt 17) { "Good afternoon" }
-                else { "Good evening" }
+    elseif ($hour -lt 17) { "Good afternoon" }
+    else { "Good evening" }
 
     Write-Host "$greeting, $env:USERNAME" -ForegroundColor Magenta
     Write-Host " pwsh $($PSVersionTable.PSVersion)  $(Get-Date -Format 'ddd dd MMM yyyy')" -ForegroundColor DarkGray
