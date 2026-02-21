@@ -159,6 +159,117 @@ function Test-ChezmoiHasManagedFiles {
     }
 }
 
+function Get-ChezmoiSourceRootPath {
+    param([string]$SourcePath)
+
+    if ([string]::IsNullOrWhiteSpace($SourcePath)) { return "" }
+
+    try {
+        $resolvedSourcePath = (Resolve-Path $SourcePath -ErrorAction Stop).Path
+    }
+    catch {
+        $resolvedSourcePath = $SourcePath
+    }
+
+    $sourceParent = Split-Path $resolvedSourcePath -Parent
+    if (-not [string]::IsNullOrWhiteSpace($sourceParent)) {
+        $parentRootMarker = Join-Path $sourceParent ".chezmoiroot"
+        if (Test-Path $parentRootMarker) {
+            $rootDirName = (Get-Content $parentRootMarker -Raw -ErrorAction SilentlyContinue).Trim()
+            if (-not [string]::IsNullOrWhiteSpace($rootDirName)) {
+                $sourceLeaf = Split-Path $resolvedSourcePath -Leaf
+                if ($sourceLeaf -eq $rootDirName) {
+                    try {
+                        return (Resolve-Path $sourceParent -ErrorAction Stop).Path
+                    }
+                    catch {
+                        return $sourceParent
+                    }
+                }
+            }
+        }
+    }
+
+    return $resolvedSourcePath
+}
+
+function Get-DefaultChezmoiSourceRoot {
+    $defaultRoot = Join-Path $env:USERPROFILE ".local\share\chezmoi"
+    try {
+        return (Resolve-Path $defaultRoot -ErrorAction Stop).Path
+    }
+    catch {
+        return $defaultRoot
+    }
+}
+
+function Backup-ChezmoiSourceRoot {
+    param([Parameter(Mandatory = $true)][string]$SourceRoot)
+
+    if (-not (Test-Path $SourceRoot)) {
+        Write-Warn "Chezmoi source backup skipped; source root not found: $SourceRoot"
+        return ""
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = "$SourceRoot.backup-$timestamp"
+    Copy-Item -Path $SourceRoot -Destination $backupPath -Recurse -Force
+    Write-OK "Backed up current chezmoi source to $backupPath"
+    return $backupPath
+}
+
+function Ensure-LocalChezmoiSourceDir {
+    param([Parameter(Mandatory = $true)][string]$SourceDir)
+
+    $chezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
+    $chezmoiConfigPath = Join-Path $chezmoiConfigDir "chezmoi.toml"
+
+    if (-not (Test-Path $chezmoiConfigPath)) {
+        throw "Local chezmoi config not found at $chezmoiConfigPath"
+    }
+
+    $content = Get-Content $chezmoiConfigPath -Raw -ErrorAction Stop
+    $escapedSource = $SourceDir.Replace("'", "''")
+    $line = "sourceDir = '$escapedSource'"
+    $changed = $false
+    $updated = $content
+
+    $sectionPattern = "(?ms)^\[chezmoi\][\s\S]*?(?=^\[|\z)"
+    if ([regex]::IsMatch($updated, $sectionPattern)) {
+        $match = [regex]::Match($updated, $sectionPattern)
+        $section = $match.Value
+        if ($section -match "(?m)^\s*sourceDir\s*=") {
+            $newSection = [regex]::Replace($section, "(?m)^\s*sourceDir\s*=.*$", "    $line")
+        }
+        else {
+            $trimmedSection = $section.TrimEnd("`r", "`n")
+            $newSection = "$trimmedSection`n    $line`n"
+        }
+
+        if ($newSection -ne $section) {
+            $updated = $updated.Remove($match.Index, $section.Length).Insert($match.Index, $newSection)
+            $changed = $true
+        }
+    }
+    else {
+        $trimmed = $updated.TrimEnd("`r", "`n")
+        $append = "[chezmoi]`n    $line`n"
+        $updated = if ([string]::IsNullOrWhiteSpace($trimmed)) { $append } else { "$trimmed`n`n$append" }
+        $changed = $true
+    }
+
+    if ($changed) {
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backupPath = "$chezmoiConfigPath.$timestamp.bak"
+        Copy-Item -Path $chezmoiConfigPath -Destination $backupPath -Force
+        $updated | Set-Content -Path $chezmoiConfigPath -Encoding UTF8
+        Write-OK "Set local chezmoi sourceDir to $SourceDir (backup: $backupPath)"
+    }
+    else {
+        Write-OK "Local chezmoi sourceDir already set to $SourceDir"
+    }
+}
+
 function Get-ExpectedPowerShellProfilePath {
     # Resolve the real PowerShell user profile target, including known-folder redirection.
     if (Test-CommandExists "pwsh") {
@@ -391,6 +502,49 @@ function InitializeOrApplyChezmoi {
         return
     }
 
+    $desiredIsRemote = $DesiredSource -match '^(https?|ssh)://|^git@'
+
+    if (-not $desiredIsRemote) {
+        $desiredPath = (Resolve-Path $DesiredSource -ErrorAction Stop).Path
+
+        $currentSource = Get-ChezmoiSourcePath
+        $currentSourceRoot = Get-ChezmoiSourceRootPath -SourcePath $currentSource
+        $defaultSourceRoot = Get-DefaultChezmoiSourceRoot
+        $hasManagedFiles = Test-ChezmoiHasManagedFiles
+
+        Write-Host "  i Chezmoi source mode: direct-path" -ForegroundColor DarkGray
+        Write-Host "  i Desired source root: $desiredPath" -ForegroundColor DarkGray
+
+        if ($hasManagedFiles -and $currentSourceRoot -and ($currentSourceRoot -ne $desiredPath) -and ($currentSourceRoot -eq $defaultSourceRoot)) {
+            Backup-ChezmoiSourceRoot -SourceRoot $currentSourceRoot | Out-Null
+        }
+        elseif ($hasManagedFiles -and $currentSourceRoot -and ($currentSourceRoot -ne $desiredPath) -and ($currentSourceRoot -ne $defaultSourceRoot)) {
+            Write-Warn "Chezmoi source is already direct-path from a different local path."
+            Write-Warn "Current source root: $currentSourceRoot"
+            Write-Warn "Desired source root: $desiredPath"
+            Write-Warn "Keeping existing source and applying current state."
+            chezmoi apply
+            Write-OK "Chezmoi apply complete"
+            $finalSourcePath = Get-ChezmoiSourcePath
+            Write-Host "  i Final chezmoi source-path: $finalSourcePath" -ForegroundColor DarkGray
+            return
+        }
+
+        Ensure-LocalChezmoiSourceDir -SourceDir $desiredPath
+
+        try {
+            chezmoi apply
+            $finalSourcePath = Get-ChezmoiSourcePath
+            Write-OK "Chezmoi apply complete"
+            Write-Host "  i Final chezmoi source-path: $finalSourcePath" -ForegroundColor DarkGray
+        }
+        catch {
+            throw "Chezmoi apply failed after switching sourceDir to '$desiredPath'. Restore from backup or rerun with -ChezmoiRepo. Error: $($_.Exception.Message)"
+        }
+
+        return
+    }
+
     $currentSource = Get-ChezmoiSourcePath
     $hasManagedFiles = Test-ChezmoiHasManagedFiles
 
@@ -401,7 +555,6 @@ function InitializeOrApplyChezmoi {
         return
     }
 
-    $desiredIsRemote = $DesiredSource -match '^(https?|ssh)://|^git@'
     if ($desiredIsRemote) {
         $currentOrigin = Get-ChezmoiRemoteOrigin
         if ($currentOrigin -and ($currentOrigin -ne $DesiredSource)) {
@@ -414,23 +567,6 @@ function InitializeOrApplyChezmoi {
             Write-Warn "Could not determine current chezmoi origin; keeping existing source and applying current state."
         }
     }
-    else {
-        $desiredPath = (Resolve-Path $DesiredSource -ErrorAction Stop).Path
-        try {
-            $currentPath = (Resolve-Path $currentSource -ErrorAction Stop).Path
-        }
-        catch {
-            $currentPath = $currentSource
-        }
-
-        if ($currentPath -ne $desiredPath) {
-            Write-Warn "Chezmoi source is already initialised from a different local path."
-            Write-Warn "Current source: $currentPath"
-            Write-Warn "Desired source: $desiredPath"
-            Write-Warn "Keeping existing source and applying current state."
-        }
-    }
-
     chezmoi apply
     Write-OK "Chezmoi apply complete"
 }

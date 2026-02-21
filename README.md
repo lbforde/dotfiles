@@ -68,6 +68,8 @@ Optional:
 First run behavior:
 - Prompts for git name/email if local `~/.config/chezmoi/chezmoi.toml` is missing.
 - Creates local `~/.config/chezmoi/chezmoi.toml` once (machine-local, untracked by source-state).
+- Sets local `sourceDir` to the checked-out repo root so Chezmoi uses this repo directly.
+- If legacy source-state exists at `~/.local/share/chezmoi`, bootstrap creates a timestamped backup before switching.
 - Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
 
 ### Linux (Ubuntu / Arch / WSL2)
@@ -250,8 +252,9 @@ Keybindings (balanced port):
 Bootstrap behavior:
 
 - `-ChezmoiRepo` provided: init/apply from that source.
-- Not provided: init/apply from current checked-out repo.
-- Already initialized with different source: warn, keep existing source, run `chezmoi apply`.
+- Not provided: enforce direct repo-path mode from current checked-out repo (`scripts/..`).
+- Legacy `~/.local/share/chezmoi` source: backup then switch to direct repo-path mode.
+- Already direct-path with a different local source: warn, keep existing source, run `chezmoi apply`.
 - Existing local `~/.config/chezmoi/chezmoi.toml`: editor sections are migrated to VS Code defaults and backup is created.
 
 Daily workflow:
@@ -262,6 +265,13 @@ czma          # chezmoi apply
 czms          # chezmoi status
 czmu          # chezmoi update
 czmadd <path> # chezmoi add
+```
+
+Verification:
+
+```powershell
+chezmoi source-path
+chezmoi git -- remote get-url origin
 ```
 
 Git identity data:
