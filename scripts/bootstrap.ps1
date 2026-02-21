@@ -897,10 +897,19 @@ if (Test-Path $devDrive) {
         "$devDrive\caches\zig",
         "$devDrive\caches\mise"
     )
+    $createdDirCount = 0
     foreach ($dir in $devDirs) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        if (-not (Test-Path $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            $createdDirCount++
+        }
     }
-    Write-OK "Dev Drive directory structure created"
+    if ($createdDirCount -gt 0) {
+        Write-OK "Created $createdDirCount Dev Drive directories"
+    }
+    else {
+        Write-OK "Dev Drive directories already configured"
+    }
 
     # Persist Dev Drive environment variables for the user
     $devEnvVars = @{
@@ -916,19 +925,28 @@ if (Test-Path $devDrive) {
         "MISE_CACHE_DIR"       = "$devDrive\caches\mise"
         "PROJECTS"             = "$devDrive\projects"
     }
+    $updatedUserEnvCount = 0
+    $updatedSessionEnvCount = 0
     foreach ($kv in $devEnvVars.GetEnumerator()) {
         $currentUserValue = [System.Environment]::GetEnvironmentVariable($kv.Key, "User")
         if ($currentUserValue -ne $kv.Value) {
             [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "User")
+            $updatedUserEnvCount++
         }
 
         # Mirror to current session so later install steps see updated values immediately.
         $currentSessionValue = [System.Environment]::GetEnvironmentVariable($kv.Key, "Process")
         if ($currentSessionValue -ne $kv.Value) {
             Set-Item -Path "Env:$($kv.Key)" -Value $kv.Value
+            $updatedSessionEnvCount++
         }
     }
-    Write-OK "Dev Drive environment variables set (User scope)"
+    if ($updatedUserEnvCount -gt 0 -or $updatedSessionEnvCount -gt 0) {
+        Write-OK "Updated Dev Drive environment variables (user: $updatedUserEnvCount, session: $updatedSessionEnvCount)"
+    }
+    else {
+        Write-OK "Dev Drive environment variables already configured"
+    }
 
     # Add Dev Drive bin dirs to user PATH
     $devPaths = @(
@@ -972,11 +990,18 @@ if (Test-Path $devDrive) {
 
     $finalPathEntries = @($missingDevPaths) + @($dedupedExisting)
     $newPath = ($finalPathEntries -join ";")
+    $pathChanged = $false
     if ($newPath -ne $currentPath) {
         [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+        $pathChanged = $true
     }
     Update-PathEnvironment
-    Write-OK "Dev Drive paths added to user PATH"
+    if ($pathChanged) {
+        Write-OK "Updated user PATH with Dev Drive entries"
+    }
+    else {
+        Write-OK "Dev Drive PATH entries already configured"
+    }
 
 }
 else {
