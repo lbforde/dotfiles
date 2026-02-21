@@ -229,31 +229,22 @@ function Ensure-LocalChezmoiSourceDir {
     }
 
     $content = Get-Content $chezmoiConfigPath -Raw -ErrorAction Stop
-    $escapedSource = $SourceDir.Replace("'", "''")
-    $line = "sourceDir = '$escapedSource'"
+    $normalizedSource = $SourceDir -replace "\\", "/"
+    $escapedSource = $normalizedSource.Replace('"', '\"')
+    $line = "sourceDir = `"$escapedSource`""
     $changed = $false
     $updated = $content
 
-    $sectionPattern = "(?ms)^\[chezmoi\][\s\S]*?(?=^\[|\z)"
-    if ([regex]::IsMatch($updated, $sectionPattern)) {
-        $match = [regex]::Match($updated, $sectionPattern)
-        $section = $match.Value
-        if ($section -match "(?m)^\s*sourceDir\s*=") {
-            $newSection = [regex]::Replace($section, "(?m)^\s*sourceDir\s*=.*$", "    $line")
-        }
-        else {
-            $trimmedSection = $section.TrimEnd("`r", "`n")
-            $newSection = "$trimmedSection`n    $line`n"
-        }
-
-        if ($newSection -ne $section) {
-            $updated = $updated.Remove($match.Index, $section.Length).Insert($match.Index, $newSection)
+    if ($updated -match "(?m)^sourceDir\s*=") {
+        $replaced = [regex]::Replace($updated, "(?m)^sourceDir\s*=.*$", $line)
+        if ($replaced -ne $updated) {
+            $updated = $replaced
             $changed = $true
         }
     }
     else {
         $trimmed = $updated.TrimEnd("`r", "`n")
-        $append = "[chezmoi]`n    $line`n"
+        $append = "$line`n"
         $updated = if ([string]::IsNullOrWhiteSpace($trimmed)) { $append } else { "$trimmed`n`n$append" }
         $changed = $true
     }
