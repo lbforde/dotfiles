@@ -10,6 +10,7 @@
 # Usage:
 #   ./scripts/bootstrap-wsl.sh
 #   ./scripts/bootstrap-wsl.sh --dry-run
+#   ./scripts/bootstrap-wsl.sh --skip-packages
 #   ./scripts/bootstrap-wsl.sh --skip-runtimes
 #   ./scripts/bootstrap-wsl.sh --manifest manifests/linux.ubuntu.packages.json
 
@@ -22,6 +23,10 @@ SKIP_PACKAGES=0
 SKIP_RUNTIMES=0
 MANIFEST_OVERRIDE=""
 SHELL_CHANGE_PENDING=0
+BOOTSTRAP_ARCH=""
+BOOTSTRAP_APT_ARCH=""
+UBUNTU_CODENAME=""
+APT_REPOS_CHANGED=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -104,6 +109,7 @@ refresh_session_path() {
   local -a candidate_paths=(
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
+    "$HOME/go/bin"
     "$HOME/.npm-global/bin"
   )
 
@@ -186,6 +192,103 @@ get_login_shell() {
   fi
 
   printf "%s\n" "${passwd_entry##*:}"
+}
+
+normalize_release_arch() {
+  local raw_arch="${1:-}"
+  case "$raw_arch" in
+    x86_64|amd64)
+      printf "x86_64\n"
+      ;;
+    aarch64|arm64)
+      printf "aarch64\n"
+      ;;
+    *)
+      err "Unsupported architecture '$raw_arch'."
+      err "Supported architectures: x86_64, aarch64."
+      exit 1
+      ;;
+  esac
+}
+
+detect_bootstrap_arch() {
+  local uname_arch
+  uname_arch="$(uname -m 2>/dev/null || true)"
+  if [[ -z "$uname_arch" ]]; then
+    err "Unable to determine architecture from uname -m."
+    exit 1
+  fi
+
+  normalize_release_arch "$uname_arch"
+}
+
+detect_apt_architecture() {
+  if command -v dpkg >/dev/null 2>&1; then
+    dpkg --print-architecture
+    return
+  fi
+
+  # Fallback used only when dpkg is not yet available in PATH.
+  case "$BOOTSTRAP_ARCH" in
+    x86_64) printf "amd64\n" ;;
+    aarch64) printf "arm64\n" ;;
+    *) printf "amd64\n" ;;
+  esac
+}
+
+detect_ubuntu_codename() {
+  if [[ ! -f /etc/os-release ]]; then
+    err "/etc/os-release not found; cannot determine Ubuntu codename."
+    exit 1
+  fi
+
+  local version_codename=""
+  local ubuntu_codename=""
+
+  # shellcheck disable=SC1091
+  source /etc/os-release
+  version_codename="${VERSION_CODENAME:-}"
+  ubuntu_codename="${UBUNTU_CODENAME:-}"
+
+  if [[ -n "$version_codename" ]]; then
+    printf "%s\n" "$version_codename"
+    return
+  fi
+
+  if [[ -n "$ubuntu_codename" ]]; then
+    printf "%s\n" "$ubuntu_codename"
+    return
+  fi
+
+  err "Could not determine Ubuntu codename from /etc/os-release."
+  exit 1
+}
+
+render_source_line() {
+  local source_line="$1"
+
+  source_line="${source_line//\$\{APT_ARCH\}/$BOOTSTRAP_APT_ARCH}"
+  source_line="${source_line//\$\{UBUNTU_CODENAME\}/$UBUNTU_CODENAME}"
+  printf "%s\n" "$source_line"
+}
+
+csv_contains_value() {
+  local csv="$1"
+  local needle="$2"
+  local item
+
+  if [[ -z "$csv" ]]; then
+    return 1
+  fi
+
+  IFS=',' read -r -a items <<< "$csv"
+  for item in "${items[@]}"; do
+    if [[ "${item,,}" == "${needle,,}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 get_mise_runtime_command() {
@@ -275,7 +378,12 @@ ensure_jq_installed() {
   step "Installing jq (bootstrap dependency)"
   require_cmd sudo
   require_cmd apt-get
-  run_cmd sudo apt-get install -y jq
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    warn "Dry-run mode still installs jq because manifest parsing requires it."
+    sudo apt-get update
+  fi
+  sudo apt-get install -y jq
+  ok "jq installed."
 }
 
 load_array_from_command() {
@@ -329,11 +437,19 @@ manifest_get_repo_lines() {
       else
         .
       end
+    | (.codenameAllowList // []) as $codename_allow_list
+    | if ($codename_allow_list | type) != "array" then
+        error("Repo entries in \($key) require codenameAllowList to be an array when provided.")
+      elif ($codename_allow_list | all(.[]; type == "string")) | not then
+        error("Repo entries in \($key) require codenameAllowList values to be strings.")
+      else
+        .
+      end
     | [.name, .keyUrl, .keyringPath, .sourceLine, .listPath] as $fields
     | if any($fields[]; . == null or (tostring | gsub("^\\s+|\\s+$"; "") == "")) then
         error("Repo entries in \($key) require name, keyUrl, keyringPath, sourceLine, and listPath.")
       else
-        ($fields | map(tostring) | @tsv)
+        (($fields + [($codename_allow_list | join(","))]) | map(tostring) | @tsv)
       end
   ' "$manifest_path"
 }
@@ -353,11 +469,17 @@ manifest_get_script_lines() {
       else
         .
       end
+    | .phase = ((.phase // "pre-runtime") | tostring | ascii_downcase)
+    | if (.phase | test("^(pre-runtime|post-runtime)$")) | not then
+        error("Script install entries in \($key) require phase to be pre-runtime or post-runtime.")
+      else
+        .
+      end
     | [.name, .checkCommand, .installCommand] as $fields
     | if any($fields[]; . == null or (tostring | gsub("^\\s+|\\s+$"; "") == "")) then
         error("Script install entries in \($key) require name, checkCommand, and installCommand.")
       else
-        ($fields | map(tostring) | @tsv)
+        (($fields + [.phase]) | map(tostring) | @tsv)
       end
   ' "$manifest_path"
 }
@@ -482,15 +604,22 @@ configure_apt_repositories() {
 
   local line
   for line in "${repo_lines[@]}"; do
-    IFS=$'\t' read -r repo_name key_url keyring_path source_line list_path <<< "$line"
+    IFS=$'\t' read -r repo_name key_url keyring_path source_line list_path codename_allow_list <<< "$line"
+    local rendered_source_line
+    rendered_source_line="$(render_source_line "$source_line")"
     local keyring_exists=0
     local list_has_source=0
+
+    if [[ -n "$codename_allow_list" ]] && ! csv_contains_value "$codename_allow_list" "$UBUNTU_CODENAME"; then
+      warn "Skipping apt repo '$repo_name' for unsupported codename '$UBUNTU_CODENAME' (allowed: $codename_allow_list)."
+      continue
+    fi
 
     if [[ -f "$keyring_path" ]]; then
       keyring_exists=1
     fi
 
-    if [[ -f "$list_path" ]] && grep -Fqx "$source_line" "$list_path" 2>/dev/null; then
+    if [[ -f "$list_path" ]] && grep -Fqx "$rendered_source_line" "$list_path" 2>/dev/null; then
       list_has_source=1
     fi
 
@@ -498,6 +627,7 @@ configure_apt_repositories() {
       ok "Apt repo already configured: $repo_name"
       continue
     fi
+    APT_REPOS_CHANGED=1
 
     if [[ "$DRY_RUN" -eq 1 ]]; then
       printf "  [dry-run] Configure apt repo '%s'\n" "$repo_name"
@@ -507,7 +637,7 @@ configure_apt_repositories() {
         printf "  [dry-run] keyring already present: %s\n" "$keyring_path"
       fi
       if [[ "$list_has_source" -eq 0 ]]; then
-        printf "  [dry-run] printf '%%s\n' \"%s\" | sudo tee %s\n" "$source_line" "$list_path"
+        printf "  [dry-run] printf '%%s\n' \"%s\" | sudo tee %s\n" "$rendered_source_line" "$list_path"
       else
         printf "  [dry-run] source line already present in: %s\n" "$list_path"
       fi
@@ -521,7 +651,7 @@ configure_apt_repositories() {
 
     if [[ "$list_has_source" -eq 0 ]]; then
       sudo install -m 0755 -d "$(dirname "$list_path")"
-      printf "%s\n" "$source_line" | sudo tee "$list_path" >/dev/null
+      printf "%s\n" "$rendered_source_line" | sudo tee "$list_path" >/dev/null
     fi
 
     ok "Configured apt repo: $repo_name"
@@ -529,15 +659,22 @@ configure_apt_repositories() {
 }
 
 run_script_installs() {
+  local target_phase="$1"
+  shift
   local -a script_lines=("$@")
   if [[ ${#script_lines[@]} -eq 0 ]]; then
     ok "No script installs configured."
     return
   fi
 
+  local matched_phase=0
   local line
   for line in "${script_lines[@]}"; do
-    IFS=$'\t' read -r install_name check_cmd install_cmd <<< "$line"
+    IFS=$'\t' read -r install_name check_cmd install_cmd install_phase <<< "$line"
+    if [[ "$install_phase" != "$target_phase" ]]; then
+      continue
+    fi
+    matched_phase=1
 
     if bash -lc "$check_cmd" >/dev/null 2>&1; then
       ok "Already installed: $install_name"
@@ -549,9 +686,16 @@ run_script_installs() {
       continue
     fi
 
-    bash -lc "$install_cmd"
+    if ! bash -lc "$install_cmd"; then
+      err "Failed script install: $install_name"
+      exit 1
+    fi
     ok "Installed via script: $install_name"
   done
+
+  if [[ "$matched_phase" -eq 0 ]]; then
+    ok "No script installs configured for phase '$target_phase'."
+  fi
 }
 
 ensure_zsh_default_shell() {
@@ -612,6 +756,12 @@ ensure_zsh_default_shell() {
 
 step "Pre-flight checks"
 require_wsl_environment
+BOOTSTRAP_ARCH="$(detect_bootstrap_arch)"
+BOOTSTRAP_APT_ARCH="$(detect_apt_architecture)"
+UBUNTU_CODENAME="$(detect_ubuntu_codename)"
+export BOOTSTRAP_ARCH BOOTSTRAP_APT_ARCH UBUNTU_CODENAME
+ok "Release architecture: $BOOTSTRAP_ARCH (apt: $BOOTSTRAP_APT_ARCH)"
+ok "Ubuntu codename: $UBUNTU_CODENAME"
 if ! command -v jq >/dev/null 2>&1 || [[ "$SKIP_PACKAGES" -eq 0 ]]; then
   step "Refreshing apt package index"
   require_cmd sudo
@@ -659,6 +809,10 @@ if [[ "$SKIP_PACKAGES" -eq 0 ]]; then
       require_cmd gpg
       step "Configuring apt repositories"
       configure_apt_repositories "${APT_REPOS[@]}"
+      if [[ "$APT_REPOS_CHANGED" -eq 1 ]]; then
+        step "Refreshing apt package index (post-repo changes)"
+        run_cmd sudo apt-get update
+      fi
       step "Installing system packages"
       install_with_apt "${SYSTEM_PACKAGES[@]}"
       if [[ ${#OPTIONAL_PACKAGES[@]} -gt 0 ]]; then
@@ -693,8 +847,8 @@ else
   warn "Skipping package installation (--skip-packages)."
 fi
 
-step "Script installs"
-run_script_installs "${SCRIPT_INSTALLS[@]}"
+step "Script installs (pre-runtime)"
+run_script_installs "pre-runtime" "${SCRIPT_INSTALLS[@]}"
 refresh_session_path
 
 step "Runtime install"
@@ -723,6 +877,14 @@ else
   warn "Skipping runtime installation (--skip-runtimes)."
 fi
 
+step "Script installs (post-runtime)"
+if [[ "$SKIP_RUNTIMES" -eq 1 ]]; then
+  warn "Skipping post-runtime script installs because runtimes were skipped (--skip-runtimes)."
+else
+  run_script_installs "post-runtime" "${SCRIPT_INSTALLS[@]}"
+  refresh_session_path
+fi
+
 step "Workspace setup"
 ensure_projects_directory
 
@@ -746,4 +908,12 @@ printf "       doppler --version\n"
 printf "       mise --version\n"
 printf "       starship --version\n"
 printf "       opencode --version\n"
+printf "       zoxide --version\n"
+printf "       yazi --version\n"
+printf "       ya --version\n"
+printf "       eza --version\n"
+printf "       lazygit --version\n"
+printf "       croc --version\n"
+printf "       grex --version\n"
+printf "       cmake --version\n"
 printf "       gopass version\n"

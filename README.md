@@ -90,14 +90,27 @@ Useful options:
 ```
 
 WSL bootstrap behavior:
-- Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs`, `Runtime install`, `Shell config`, `Done`).
+- Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs (pre-runtime)`, `Runtime install`, `Script installs (post-runtime)`, `Workspace setup`, `Shell config`, `Done`).
 - Configures apt repositories idempotently (reports `already configured` when keyring and source line are already present).
+- Supports apt source placeholders in manifest source lines (`${APT_ARCH}`, `${UBUNTU_CODENAME}`) and codename-gated repos.
+- Installs `jq` as a hard bootstrap dependency when missing, including during `--dry-run` (manifest parsing requires it).
 - Installs apt packages in missing-only mode on reruns (reports `already installed` and only installs missing packages).
+- Enforces fail-fast parity installs: mandatory script installs stop bootstrap on failure.
 - Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
-- Refreshes session PATH after script installs so newly installed user-local tools are available in the same run.
+- Refreshes session PATH after pre-runtime and post-runtime script installs so newly installed user-local tools are available in the same run.
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
 - Creates a default projects directory at `$HOME/projects` (or `$PROJECTS` when set).
 - Prints next-step guidance at completion, including re-login guidance when default shell changes.
+- Keeps VS Code extension installation automation Windows-only (`scripts/install-vscode-extensions.ps1`).
+
+WSL parity tool install methods:
+- `zoxide`: official install script (`scriptInstalls`, pre-runtime)
+- `yazi`: GitHub release artifact install (`scriptInstalls`, pre-runtime)
+- `eza`: official Debian/Ubuntu repo + apt package
+- `lazygit`: upstream release `.deb` install (`scriptInstalls`, pre-runtime)
+- `croc`: official `getcroc` installer script (`scriptInstalls`, pre-runtime)
+- `grex`: Cargo install (`scriptInstalls`, post-runtime)
+- `cmake`: apt package (with optional Kitware apt repo when codename is supported)
 
 Post-bootstrap verification:
 
@@ -108,6 +121,14 @@ doppler --version
 mise --version
 starship --version
 opencode --version
+zoxide --version
+yazi --version
+ya --version
+eza --version
+lazygit --version
+croc --version
+grex --version
+cmake --version
 gopass version
 ```
 
@@ -175,9 +196,9 @@ Bootstrap reads install inventories from:
   - Global `mise` runtime list (`mise.runtimes`)
   - VS Code extension install list (`vscode.recommendations`)
 - `manifests/linux.ubuntu.packages.json`
-  - apt repositories (`aptRepositories`)
+  - apt repositories (`aptRepositories`) including third-party sources where required by upstream install methods
   - required apt packages (`systemPackages`)
-  - script-based installers (`scriptInstalls`)
+  - phase-aware script-based installers (`scriptInstalls`)
   - `mise` runtime inventory (`miseRuntimes`)
 - `manifests/linux.arch.packages.json`
   - reserved for non-WSL Linux workflows; not used by `bootstrap-wsl.sh`
@@ -194,6 +215,7 @@ Linux manifest schema:
 - `aptRepositories`: apt repository/key configuration objects
 - `systemPackages`: distro packages
 - `scriptInstalls`: install script objects (`name`, `checkCommand`, `installCommand`)
+- `scriptInstalls.phase`: optional install phase (`pre-runtime` or `post-runtime`, default `pre-runtime`)
 - `miseRuntimes`: runtime identifiers (e.g. `node@lts`)
 
 WSL bootstrap constraints:

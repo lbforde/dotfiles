@@ -1,12 +1,12 @@
 {
   "packageManager": "apt",
-  "notes": "Used by scripts/bootstrap-wsl.sh. Ubuntu/WSL2 manifest with apt repos, apt packages, script installs, and mise runtimes.",
+  "notes": "Used by scripts/bootstrap-wsl.sh. Ubuntu/WSL2 manifest with apt repos, apt packages, phase-aware script installs, and mise runtimes.",
   "aptRepositories": [
     {
       "name": "github-cli",
       "keyUrl": "https://cli.github.com/packages/githubcli-archive-keyring.gpg",
       "keyringPath": "/etc/apt/keyrings/githubcli-archive-keyring.gpg",
-      "sourceLine": "deb [arch=amd64 signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main",
+      "sourceLine": "deb [arch=${APT_ARCH} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main",
       "listPath": "/etc/apt/sources.list.d/github-cli.list"
     },
     {
@@ -15,6 +15,28 @@
       "keyringPath": "/etc/apt/keyrings/doppler-archive-keyring.gpg",
       "sourceLine": "deb [signed-by=/etc/apt/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main",
       "listPath": "/etc/apt/sources.list.d/doppler-cli.list"
+    },
+    {
+      "name": "eza",
+      "keyUrl": "https://raw.githubusercontent.com/eza-community/eza/main/deb.asc",
+      "keyringPath": "/etc/apt/keyrings/eza-archive-keyring.gpg",
+      "sourceLine": "deb [arch=${APT_ARCH} signed-by=/etc/apt/keyrings/eza-archive-keyring.gpg] http://deb.gierens.de stable main",
+      "listPath": "/etc/apt/sources.list.d/eza.list"
+    },
+    {
+      "name": "kitware-cmake",
+      "keyUrl": "https://apt.kitware.com/keys/kitware-archive-latest.asc",
+      "keyringPath": "/etc/apt/keyrings/kitware-archive-keyring.gpg",
+      "sourceLine": "deb [signed-by=/etc/apt/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ ${UBUNTU_CODENAME} main",
+      "listPath": "/etc/apt/sources.list.d/kitware.list",
+      "codenameAllowList": [
+        "focal",
+        "jammy",
+        "noble",
+        "oracular",
+        "plucky",
+        "questing"
+      ]
     }
   ],
   "systemPackages": [
@@ -27,6 +49,7 @@
     "lsb-release",
     "build-essential",
     "pkg-config",
+    "cmake",
     "jq",
     "unzip",
     "zip",
@@ -38,6 +61,7 @@
     "pinentry-curses",
     "gh",
     "doppler",
+    "eza",
     "latexmk",
     "chktex",
     "texlive-full"
@@ -47,17 +71,50 @@
     {
       "name": "mise",
       "checkCommand": "command -v mise",
-      "installCommand": "curl https://mise.run | sh"
+      "installCommand": "curl https://mise.run | sh",
+      "phase": "pre-runtime"
     },
     {
       "name": "starship",
       "checkCommand": "command -v starship",
-      "installCommand": "curl -sS https://starship.rs/install.sh | sh -s -- -y"
+      "installCommand": "curl -sS https://starship.rs/install.sh | sh -s -- -y",
+      "phase": "pre-runtime"
     },
     {
       "name": "opencode",
       "checkCommand": "command -v opencode",
-      "installCommand": "curl -fsSL https://opencode.ai/install | bash"
+      "installCommand": "curl -fsSL https://opencode.ai/install | bash",
+      "phase": "pre-runtime"
+    },
+    {
+      "name": "zoxide",
+      "checkCommand": "command -v zoxide",
+      "installCommand": "curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh",
+      "phase": "pre-runtime"
+    },
+    {
+      "name": "yazi",
+      "checkCommand": "command -v yazi >/dev/null 2>&1 && command -v ya >/dev/null 2>&1",
+      "installCommand": "set -euo pipefail; arch=\"${BOOTSTRAP_ARCH:?}\"; asset_url=\"\"; for libc_target in gnu musl; do candidate=\"https://github.com/sxyazi/yazi/releases/latest/download/yazi-${arch}-unknown-linux-${libc_target}.zip\"; if curl -fsI \"$candidate\" >/dev/null 2>&1; then asset_url=\"$candidate\"; break; fi; done; if [ -z \"$asset_url\" ]; then echo \"Unable to resolve a yazi release artifact for arch ${arch}.\" >&2; exit 1; fi; tmp_dir=\"$(mktemp -d)\"; trap 'rm -rf \"$tmp_dir\"' EXIT; curl -fsSL -o \"$tmp_dir/yazi.zip\" \"$asset_url\"; unzip -q \"$tmp_dir/yazi.zip\" -d \"$tmp_dir\"; extracted_dir=\"$(find \"$tmp_dir\" -mindepth 1 -maxdepth 1 -type d | head -n 1)\"; if [ -z \"$extracted_dir\" ]; then echo \"Failed to find extracted yazi directory.\" >&2; exit 1; fi; install -m 0755 -D \"$extracted_dir/yazi\" \"$HOME/.local/bin/yazi\"; install -m 0755 -D \"$extracted_dir/ya\" \"$HOME/.local/bin/ya\"",
+      "phase": "pre-runtime"
+    },
+    {
+      "name": "lazygit",
+      "checkCommand": "command -v lazygit",
+      "installCommand": "set -euo pipefail; arch=\"${BOOTSTRAP_ARCH:?}\"; case \"$arch\" in x86_64) lazygit_arch='x86_64' ;; aarch64) lazygit_arch='arm64' ;; *) echo \"Unsupported lazygit architecture: $arch\" >&2; exit 1 ;; esac; api_json=\"$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest)\"; tag=\"$(printf '%s' \"$api_json\" | jq -r '.tag_name')\"; version=\"${tag#v}\"; package_url=\"https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${lazygit_arch}.deb\"; tmp_deb=\"$(mktemp --suffix=.deb)\"; trap 'rm -f \"$tmp_deb\"' EXIT; curl -fsSL -o \"$tmp_deb\" \"$package_url\"; sudo dpkg -i \"$tmp_deb\"; sudo apt-get install -f -y",
+      "phase": "pre-runtime"
+    },
+    {
+      "name": "croc",
+      "checkCommand": "command -v croc",
+      "installCommand": "curl -fsSL https://getcroc.schollz.com | bash",
+      "phase": "pre-runtime"
+    },
+    {
+      "name": "grex",
+      "checkCommand": "command -v grex",
+      "installCommand": "cargo install --locked grex",
+      "phase": "post-runtime"
     }
   ],
   "miseRuntimes": [
