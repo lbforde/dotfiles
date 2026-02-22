@@ -114,6 +114,7 @@ elseif (Get-Command codium     -ErrorAction SilentlyContinue) { "codium --wait" 
 elseif (Get-Command notepad++  -ErrorAction SilentlyContinue) { "notepad++" }
 elseif (Get-Command sublime_text -ErrorAction SilentlyContinue) { "sublime_text" }
 else { "notepad" }
+$env:VISUAL = $env:EDITOR
 
 function Invoke-Editor {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)

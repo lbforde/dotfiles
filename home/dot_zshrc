@@ -1,11 +1,47 @@
 #!/usr/bin/env zsh
 
-export EDITOR="code --wait"
+if command -v code >/dev/null 2>&1; then
+  export EDITOR="code --wait"
+elif command -v codium >/dev/null 2>&1; then
+  export EDITOR="codium --wait"
+elif command -v nvim >/dev/null 2>&1; then
+  export EDITOR="nvim"
+else
+  export EDITOR="vim"
+fi
+
 export VISUAL="$EDITOR"
-export PAGER="less"
+
+if command -v batcat >/dev/null 2>&1; then
+  export PAGER="batcat --paging=always"
+  export BAT_THEME="OneHalfDark"
+elif command -v bat >/dev/null 2>&1; then
+  export PAGER="bat --paging=always"
+  export BAT_THEME="OneHalfDark"
+else
+  export PAGER="less"
+fi
+
+if command -v fd >/dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+elif command -v fdfind >/dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND="fdfind --type f --hidden --follow --exclude .git"
+fi
+
+if command -v batcat >/dev/null 2>&1; then
+  export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'batcat --color=always --line-range :50 {}'"
+elif command -v bat >/dev/null 2>&1; then
+  export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'bat --color=always --line-range :50 {}'"
+else
+  export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'head -n 50 {}'"
+fi
 
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
 fi
 
 if command -v mise >/dev/null 2>&1; then
@@ -13,8 +49,12 @@ if command -v mise >/dev/null 2>&1; then
 fi
 
 if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --group-directories-first'
-  alias ll='eza -la --group-directories-first'
+  alias ls='eza --icons --group-directories-first'
+  alias l='eza --icons --group-directories-first'
+  alias ll='eza --icons --group-directories-first -l --git'
+  alias la='eza --icons --group-directories-first -la --git'
+  alias lt='eza --icons --group-directories-first --tree'
+  alias lt2='eza --icons --group-directories-first --tree --level=2'
 fi
 
 if command -v batcat >/dev/null 2>&1; then
@@ -23,8 +63,76 @@ elif command -v bat >/dev/null 2>&1; then
   alias cat='bat --paging=never'
 fi
 
+if command -v rg >/dev/null 2>&1; then
+  alias grep='rg'
+fi
+
 if command -v fd >/dev/null 2>&1; then
   alias find='fd'
 elif command -v fdfind >/dev/null 2>&1; then
   alias find='fdfind'
+fi
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+mkcd() {
+  mkdir -p -- "$1" && cd -- "$1"
+}
+
+proj() {
+  if [ -n "$PROJECTS" ] && [ -d "$PROJECTS" ]; then
+    cd -- "$PROJECTS" || return
+  else
+    cd -- "$HOME/projects" || return
+  fi
+}
+
+edit() {
+  local -a editor_cmd
+  editor_cmd=(${(z)EDITOR})
+  "${editor_cmd[@]}" "$@"
+}
+
+reload() {
+  source "${ZDOTDIR:-$HOME}/.zshrc"
+}
+
+editprofile() {
+  edit "${ZDOTDIR:-$HOME}/.zshrc"
+}
+
+alias ep='editprofile'
+
+alias gs='git status'
+alias ga='git add'
+alias gcommit='git commit -m'
+alias gpush='git push'
+alias gpl='git pull'
+alias glog='git log --oneline --graph --decorate --all'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+alias gsw='git switch'
+alias gst='git stash'
+alias gcl='git clone'
+
+if command -v lazygit >/dev/null 2>&1; then
+  alias lg='lazygit'
+fi
+
+if command -v yazi >/dev/null 2>&1; then
+  y() {
+    local tmp cwd
+    tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+    yazi "$@" --cwd-file="$tmp"
+    if [ -f "$tmp" ]; then
+      cwd="$(cat "$tmp")"
+      if [ -n "$cwd" ] && [ -d "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        cd -- "$cwd" || return
+      fi
+      rm -f "$tmp"
+    fi
+  }
 fi
