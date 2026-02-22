@@ -86,16 +86,22 @@ Useful options:
 ```bash
 ./scripts/bootstrap-wsl.sh --dry-run
 ./scripts/bootstrap-wsl.sh --skip-runtimes
+./scripts/bootstrap-wsl.sh --skip-chezmoi
+./scripts/bootstrap-wsl.sh --chezmoi-source /path/to/dotfiles-or-git-url
 ./scripts/bootstrap-wsl.sh --manifest manifests/linux.ubuntu.packages.json
 ```
 
 WSL bootstrap behavior:
-- Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs (pre-runtime)`, `Runtime install`, `Script installs (post-runtime)`, `Workspace setup`, `Shell config`, `Done`).
+- Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs (pre-runtime)`, `Chezmoi apply`, `Runtime install`, `Script installs (post-runtime)`, `Workspace setup`, `Shell config`, `Done`).
 - Configures apt repositories idempotently (reports `already configured` when keyring and source line are already present).
 - Supports apt source placeholders in manifest source lines (`${APT_ARCH}`, `${UBUNTU_CODENAME}`) and codename-gated repos.
 - Installs `jq` as a hard bootstrap dependency when missing, including during `--dry-run` (manifest parsing requires it).
 - Installs apt packages in missing-only mode on reruns (reports `already installed` and only installs missing packages).
 - Enforces fail-fast parity installs: mandatory script installs stop bootstrap on failure.
+- Applies chezmoi in direct-path mode by default (source root is this checked-out repo), matching Windows bootstrap behavior.
+- Creates local `~/.config/chezmoi/chezmoi.toml` when missing, using global git identity values (or interactive prompts when needed).
+- If legacy `~/.local/share/chezmoi` source-state exists, creates a timestamped backup before switching sourceDir.
+- If an existing different direct-path source is already configured, warns and keeps the current source while applying.
 - Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
 - Refreshes session PATH after pre-runtime and post-runtime script installs so newly installed user-local tools are available in the same run.
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
@@ -105,6 +111,7 @@ WSL bootstrap behavior:
 
 WSL parity tool install methods:
 - `zoxide`: official install script (`scriptInstalls`, pre-runtime)
+- `chezmoi`: official installer script (`scriptInstalls`, pre-runtime)
 - `yazi`: GitHub release artifact install (`scriptInstalls`, pre-runtime)
 - `eza`: official Debian/Ubuntu repo + apt package
 - `lazygit`: upstream release `.deb` install (`scriptInstalls`, pre-runtime)
@@ -118,6 +125,7 @@ Post-bootstrap verification:
 zsh --version
 gh --version
 doppler --version
+chezmoi --version
 mise --version
 starship --version
 opencode --version

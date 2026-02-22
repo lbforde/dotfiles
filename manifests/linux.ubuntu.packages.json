@@ -87,6 +87,12 @@
       "phase": "pre-runtime"
     },
     {
+      "name": "chezmoi",
+      "checkCommand": "command -v chezmoi",
+      "installCommand": "sh -c \"$(curl -fsLS get.chezmoi.io)\" -- -b \"$HOME/.local/bin\"",
+      "phase": "pre-runtime"
+    },
+    {
       "name": "zoxide",
       "checkCommand": "command -v zoxide",
       "installCommand": "curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh",

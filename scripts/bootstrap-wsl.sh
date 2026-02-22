@@ -21,7 +21,9 @@ set -euo pipefail
 DRY_RUN=0
 SKIP_PACKAGES=0
 SKIP_RUNTIMES=0
+SKIP_CHEZMOI=0
 MANIFEST_OVERRIDE=""
+CHEZMOI_SOURCE_OVERRIDE=""
 SHELL_CHANGE_PENDING=0
 BOOTSTRAP_ARCH=""
 BOOTSTRAP_APT_ARCH=""
@@ -42,6 +44,18 @@ while [[ $# -gt 0 ]]; do
       SKIP_RUNTIMES=1
       shift
       ;;
+    --skip-chezmoi)
+      SKIP_CHEZMOI=1
+      shift
+      ;;
+    --chezmoi-source)
+      if [[ $# -lt 2 ]]; then
+        echo "ERROR: --chezmoi-source requires a path or repo argument."
+        exit 1
+      fi
+      CHEZMOI_SOURCE_OVERRIDE="$2"
+      shift 2
+      ;;
     --manifest)
       if [[ $# -lt 2 ]]; then
         echo "ERROR: --manifest requires a path argument."
@@ -56,8 +70,10 @@ Usage: ./scripts/bootstrap-wsl.sh [options]
 
 Options:
   --manifest <path>   Use a specific manifest file.
+  --chezmoi-source    Override chezmoi source path/repo for apply.
   --skip-packages     Skip package manager installs.
   --skip-runtimes     Skip mise runtime installs.
+  --skip-chezmoi      Skip chezmoi config + apply.
   --dry-run           Print planned actions without executing them.
   -h, --help          Show this help text.
 EOF
@@ -698,6 +714,331 @@ run_script_installs() {
   fi
 }
 
+prompt_with_default() {
+  local prompt_text="$1"
+  local default_value="${2:-}"
+  local input_value=""
+
+  if [[ -n "$default_value" ]]; then
+    read -r -p "  ${prompt_text} [${default_value}]: " input_value
+    input_value="${input_value:-$default_value}"
+  else
+    read -r -p "  ${prompt_text}: " input_value
+  fi
+
+  printf "%s\n" "$input_value"
+}
+
+toml_escape() {
+  local raw_value="$1"
+  raw_value="${raw_value//\\/\\\\}"
+  raw_value="${raw_value//\"/\\\"}"
+  printf "%s\n" "$raw_value"
+}
+
+get_chezmoi_source_path() {
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    printf "\n"
+    return
+  fi
+
+  chezmoi source-path 2>/dev/null || true
+}
+
+get_chezmoi_remote_origin() {
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    printf "\n"
+    return
+  fi
+
+  chezmoi git -- remote get-url origin 2>/dev/null || true
+}
+
+test_chezmoi_has_managed_files() {
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local managed_output
+  managed_output="$(chezmoi managed 2>/dev/null || true)"
+  [[ -n "${managed_output//[[:space:]]/}" ]]
+}
+
+resolve_path_or_keep() {
+  local input_path="$1"
+  if [[ -z "$input_path" ]]; then
+    printf "\n"
+    return
+  fi
+
+  if command -v readlink >/dev/null 2>&1; then
+    local resolved_path
+    resolved_path="$(readlink -f "$input_path" 2>/dev/null || true)"
+    if [[ -n "$resolved_path" ]]; then
+      printf "%s\n" "$resolved_path"
+      return
+    fi
+  fi
+
+  printf "%s\n" "$input_path"
+}
+
+get_chezmoi_source_root_path() {
+  local source_path="$1"
+  if [[ -z "$source_path" ]]; then
+    printf "\n"
+    return
+  fi
+
+  local resolved_source
+  resolved_source="$(resolve_path_or_keep "$source_path")"
+  local source_parent
+  source_parent="$(dirname "$resolved_source")"
+  local root_marker="$source_parent/.chezmoiroot"
+
+  if [[ -f "$root_marker" ]]; then
+    local root_dir_name
+    root_dir_name="$(tr -d '\r\n' < "$root_marker")"
+    local source_leaf
+    source_leaf="$(basename "$resolved_source")"
+    if [[ -n "$root_dir_name" && "$source_leaf" == "$root_dir_name" ]]; then
+      resolve_path_or_keep "$source_parent"
+      return
+    fi
+  fi
+
+  printf "%s\n" "$resolved_source"
+}
+
+get_default_chezmoi_source_root() {
+  resolve_path_or_keep "$HOME/.local/share/chezmoi"
+}
+
+backup_chezmoi_source_root() {
+  local source_root="$1"
+  if [[ ! -e "$source_root" ]]; then
+    warn "Chezmoi source backup skipped; source root not found: $source_root"
+    return
+  fi
+
+  local timestamp backup_path
+  timestamp="$(date +%Y%m%d-%H%M%S)"
+  backup_path="${source_root}.backup-${timestamp}"
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf "  [dry-run] cp -a %s %s\n" "$source_root" "$backup_path"
+    return
+  fi
+
+  cp -a "$source_root" "$backup_path"
+  ok "Backed up current chezmoi source to $backup_path"
+}
+
+initialize_local_chezmoi_config() {
+  local config_dir="$HOME/.config/chezmoi"
+  local config_path="$config_dir/chezmoi.toml"
+
+  if [[ -f "$config_path" ]]; then
+    if grep -Eq 'Your Name|your@email\.com' "$config_path"; then
+      warn "Local chezmoi config still has placeholder identity values: $config_path"
+    else
+      ok "Local chezmoi config already present"
+    fi
+    return
+  fi
+
+  local default_name default_email user_name user_email
+  default_name="$(git config --global user.name 2>/dev/null || true)"
+  default_email="$(git config --global user.email 2>/dev/null || true)"
+  user_name="$default_name"
+  user_email="$default_email"
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf "  [dry-run] create local chezmoi config at %s\n" "$config_path"
+    return
+  fi
+
+  if [[ -z "$user_name" || -z "$user_email" ]]; then
+    if [[ -t 0 ]]; then
+      if [[ -z "$user_name" ]]; then
+        user_name="$(prompt_with_default "Git user.name" "$default_name")"
+      fi
+      if [[ -z "$user_email" ]]; then
+        user_email="$(prompt_with_default "Git user.email" "$default_email")"
+      fi
+    fi
+  fi
+
+  if [[ -z "$user_name" || -z "$user_email" ]]; then
+    err "Git identity is required for local chezmoi config."
+    err "Set git config values first (git config --global user.name / user.email) or re-run interactively."
+    exit 1
+  fi
+
+  mkdir -p "$config_dir"
+  user_name="$(toml_escape "$user_name")"
+  user_email="$(toml_escape "$user_email")"
+
+  cat >"$config_path" <<EOF
+# Local Chezmoi runtime config (machine-specific)
+[data]
+    name  = "$user_name"
+    email = "$user_email"
+
+[git]
+    autoCommit = false
+    autoPush   = false
+
+[template]
+    # Valid options are default/invalid, zero, or error.
+    options = ["missingkey=default"]
+EOF
+
+  ok "Created local chezmoi config at $config_path"
+}
+
+set_local_chezmoi_source_dir() {
+  local source_dir="$1"
+  local config_path="$HOME/.config/chezmoi/chezmoi.toml"
+
+  if [[ ! -f "$config_path" ]]; then
+    err "Local chezmoi config not found at $config_path"
+    exit 1
+  fi
+
+  local normalized_source
+  normalized_source="$(resolve_path_or_keep "$source_dir")"
+  local source_line
+  source_line="sourceDir = \"${normalized_source}\""
+
+  if grep -Fqx "$source_line" "$config_path" 2>/dev/null; then
+    ok "Local chezmoi sourceDir already set to $normalized_source"
+    return
+  fi
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf "  [dry-run] set local chezmoi sourceDir to %s in %s\n" "$normalized_source" "$config_path"
+    return
+  fi
+
+  local tmp_config
+  tmp_config="$(mktemp)"
+  {
+    printf "%s\n\n" "$source_line"
+    grep -Ev '^[[:space:]]*sourceDir[[:space:]]*=' "$config_path" || true
+  } >"$tmp_config"
+
+  if cmp -s "$tmp_config" "$config_path"; then
+    rm -f "$tmp_config"
+    ok "Local chezmoi sourceDir already set to $normalized_source"
+    return
+  fi
+
+  local timestamp backup_path
+  timestamp="$(date +%Y%m%d-%H%M%S)"
+  backup_path="${config_path}.${timestamp}.bak"
+  cp "$config_path" "$backup_path"
+  mv "$tmp_config" "$config_path"
+  ok "Set local chezmoi sourceDir to $normalized_source (backup: $backup_path)"
+}
+
+resolve_desired_chezmoi_source() {
+  if [[ -n "$CHEZMOI_SOURCE_OVERRIDE" ]]; then
+    printf "%s\n" "$CHEZMOI_SOURCE_OVERRIDE"
+    return
+  fi
+
+  printf "%s\n" "$REPO_ROOT"
+}
+
+invoke_chezmoi_apply() {
+  local desired_source="$1"
+
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    warn "chezmoi is not available on PATH - skipping dotfile apply."
+    return
+  fi
+
+  local desired_is_remote=0
+  if [[ "$desired_source" =~ ^(https?|ssh):// ]] || [[ "$desired_source" =~ ^git@ ]]; then
+    desired_is_remote=1
+  fi
+
+  if [[ "$desired_is_remote" -eq 0 ]]; then
+    local desired_path
+    desired_path="$(resolve_path_or_keep "$desired_source")"
+    local current_source current_source_root default_source_root
+    current_source="$(get_chezmoi_source_path)"
+    current_source_root="$(get_chezmoi_source_root_path "$current_source")"
+    default_source_root="$(get_default_chezmoi_source_root)"
+
+    printf "  [info] Chezmoi source mode: direct-path\n"
+    printf "  [info] Desired source root: %s\n" "$desired_path"
+
+    if test_chezmoi_has_managed_files && [[ -n "$current_source_root" && "$current_source_root" != "$desired_path" && "$current_source_root" == "$default_source_root" ]]; then
+      backup_chezmoi_source_root "$current_source_root"
+    elif test_chezmoi_has_managed_files && [[ -n "$current_source_root" && "$current_source_root" != "$desired_path" && "$current_source_root" != "$default_source_root" ]]; then
+      warn "Chezmoi source is already direct-path from a different local path."
+      warn "Current source root: $current_source_root"
+      warn "Desired source root: $desired_path"
+      warn "Keeping existing source and applying current state."
+      run_cmd chezmoi apply
+      if [[ "$DRY_RUN" -eq 0 ]]; then
+        ok "Chezmoi apply complete"
+      fi
+      return
+    fi
+
+    set_local_chezmoi_source_dir "$desired_path"
+    run_cmd chezmoi apply
+    if [[ "$DRY_RUN" -eq 0 ]]; then
+      local final_source
+      final_source="$(get_chezmoi_source_path)"
+      ok "Chezmoi apply complete"
+      printf "  [info] Final chezmoi source-path: %s\n" "$final_source"
+    fi
+    return
+  fi
+
+  local current_source
+  current_source="$(get_chezmoi_source_path)"
+  if [[ -z "$current_source" ]] || ! test_chezmoi_has_managed_files; then
+    run_cmd chezmoi init --apply "$desired_source"
+    if [[ "$DRY_RUN" -eq 0 ]]; then
+      ok "Chezmoi initialised and applied from $desired_source"
+    fi
+    return
+  fi
+
+  local current_origin
+  current_origin="$(get_chezmoi_remote_origin)"
+  if [[ -n "$current_origin" && "$current_origin" != "$desired_source" ]]; then
+    warn "Chezmoi source is already initialised from a different origin."
+    warn "Current origin: $current_origin"
+    warn "Desired origin: $desired_source"
+    warn "Keeping existing source and applying current state."
+  elif [[ -z "$current_origin" ]]; then
+    warn "Could not determine current chezmoi origin; keeping existing source and applying current state."
+  fi
+
+  run_cmd chezmoi apply
+  if [[ "$DRY_RUN" -eq 0 ]]; then
+    ok "Chezmoi apply complete"
+  fi
+}
+
+configure_chezmoi() {
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    warn "chezmoi is not available on PATH - skipping dotfile apply."
+    return
+  fi
+
+  initialize_local_chezmoi_config
+  local desired_source
+  desired_source="$(resolve_desired_chezmoi_source)"
+  invoke_chezmoi_apply "$desired_source"
+}
+
 ensure_zsh_default_shell() {
   if ! command -v zsh >/dev/null 2>&1; then
     warn "zsh not found; cannot set default shell."
@@ -851,6 +1192,13 @@ step "Script installs (pre-runtime)"
 run_script_installs "pre-runtime" "${SCRIPT_INSTALLS[@]}"
 refresh_session_path
 
+step "Chezmoi apply"
+if [[ "$SKIP_CHEZMOI" -eq 1 ]]; then
+  warn "Skipping chezmoi config/apply (--skip-chezmoi)."
+else
+  configure_chezmoi
+fi
+
 step "Runtime install"
 if [[ "$SKIP_RUNTIMES" -eq 0 ]]; then
   if [[ ${#MISE_RUNTIMES[@]} -eq 0 ]]; then
@@ -905,6 +1253,7 @@ printf "  3. Verify toolchain versions:\n"
 printf "       zsh --version\n"
 printf "       gh --version\n"
 printf "       doppler --version\n"
+printf "       chezmoi --version\n"
 printf "       mise --version\n"
 printf "       starship --version\n"
 printf "       opencode --version\n"
