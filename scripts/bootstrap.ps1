@@ -827,6 +827,7 @@ bun     = "latest"
 pnpm    = "latest"
 zig     = "latest"
 python  = "latest"
+java    = "temurin-21"
 
 # Add more runtimes here as needed, e.g.:
 # python = "3.12"

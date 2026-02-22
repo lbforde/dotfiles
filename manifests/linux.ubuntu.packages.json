@@ -37,7 +37,10 @@
     "gopass",
     "pinentry-curses",
     "gh",
-    "doppler"
+    "doppler",
+    "latexmk",
+    "chktex",
+    "texlive-full"
   ],
   "optionalPackages": [],
   "scriptInstalls": [
@@ -64,6 +67,7 @@
     "bun@latest",
     "pnpm@latest",
     "zig@latest",
-    "python@latest"
+    "python@latest",
+    "java@temurin-21"
   ]
 }

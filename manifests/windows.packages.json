@@ -82,6 +82,10 @@
     {
       "name": "cmake",
       "bucket": "main"
+    },
+    {
+      "name": "miktex",
+      "bucket": "main"
     }
   ],
   "fonts": ["JetBrainsMono-NF"],
@@ -126,7 +130,8 @@
       "bun@latest",
       "pnpm@latest",
       "zig@latest",
-      "python@latest"
+      "python@latest",
+      "java@temurin-21"
     ]
   },
   "vscode": {
@@ -141,7 +146,7 @@
       "WallabyJs.console-ninja",
       "dbaeumer.vscode-eslint",
       "james-yu.latex-workshop",
-      "valentjn.vscode-ltex",
+      "ltex-plus.vscode-ltex-plus",
       "ms-python.python",
       "charliermarsh.ruff",
       "njpwerner.autodocstring",

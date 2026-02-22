@@ -15,8 +15,9 @@ Reproducible dotfiles + tooling bootstrap using Chezmoi and manifest-driven inst
 7. [PowerShell Profile Reference](#powershell-profile-reference)
 8. [Windows Terminal Keybindings](#windows-terminal-keybindings)
 9. [Chezmoi Dotfile Management](#chezmoi-dotfile-management)
-10. [Tool Reference](#tool-reference)
-11. [Customisation](#customisation)
+10. [Document Authoring Workflow](#document-authoring-workflow)
+11. [Tool Reference](#tool-reference)
+12. [Customisation](#customisation)
 
 ---
 
@@ -108,6 +109,56 @@ starship --version
 opencode --version
 gopass version
 ```
+
+---
+
+## Document Authoring Workflow
+
+This repo provisions a cross-platform document authoring workflow in VS Code for Markdown/LaTeX editing and PDF generation:
+
+- Windows native LaTeX build stack:
+  - TeX distro: `MiKTeX` (Scoop package `miktex`)
+  - Build tools: `latexmk`, `xelatex`, `bibtex`, `chktex`
+- WSL2 LaTeX build stack:
+  - TeX distro: `texlive-full` (apt package)
+  - Build tools: `latexmk`, `xelatex`, `bibtex`, `chktex`
+- Grammar tooling:
+  - VS Code extension: `ltex-plus.vscode-ltex-plus`
+  - Java runtime for CLI/tooling: managed by `mise` (`java@temurin-21`)
+  - LTEX+ uses default Java behavior (no forced `ltex.java.path`).
+
+Verification commands:
+
+Windows (`pwsh`):
+
+```powershell
+code --list-extensions --show-versions | rg -i "latex-workshop|ltex"
+latexmk -v
+xelatex --version
+bibtex --version
+chktex --version
+mise which java
+java -version
+```
+
+WSL (`bash`):
+
+```bash
+code --list-extensions --show-versions | rg -i "latex-workshop|ltex"
+latexmk -v
+xelatex --version
+bibtex --version
+chktex --version
+mise which java
+java -version
+```
+
+Expected extensions:
+- `james-yu.latex-workshop`
+- `ltex-plus.vscode-ltex-plus`
+
+Legacy extension migration:
+- `scripts/install-vscode-extensions.ps1` removes `valentjn.vscode-ltex` when present, then installs recommendations from `manifests/windows.packages.json`.
 
 ---
 
@@ -333,6 +384,7 @@ Git identity data:
 - Extensions installed via:
   - `manifests/windows.packages.json` (`vscode.recommendations`)
   - `.\scripts\install-vscode-extensions.ps1`
+  - Installer auto-removes legacy `valentjn.vscode-ltex` and installs `ltex-plus.vscode-ltex-plus`.
 - Formatter policy:
   - Format on save is enabled with language-specific formatters (for example: Ruff for Python, Prettier for web/text formats, and language-native formatter extensions for Go/Rust/PowerShell/C/C++).
   - Save-time safe fixes are explicitly enabled for ESLint and Ruff.
@@ -354,6 +406,8 @@ Git identity data:
   - `mise which go`
   - `where.exe go`
   - `go version`
+  - `mise which java`
+  - `java -version`
 
 Repair existing machine (if runtime commands are missing):
 

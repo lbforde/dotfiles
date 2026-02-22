@@ -38,6 +38,19 @@ $extensions = (Get-Content $extensionsFile -Raw | ConvertFrom-Json).vscode.recom
 # ─── Get currently installed extensions ───────────────────────────────────────
 
 $installed = code --list-extensions 2>$null | ForEach-Object { $_.ToLower() }
+$legacyLtexExtension = "valentjn.vscode-ltex"
+
+if ($installed -contains $legacyLtexExtension) {
+    Write-Step "Migrating legacy LTeX extension"
+    try {
+        code --uninstall-extension $legacyLtexExtension --force 2>&1 | Out-Null
+        Write-OK "Removed legacy extension: $legacyLtexExtension"
+        $installed = code --list-extensions 2>$null | ForEach-Object { $_.ToLower() }
+    }
+    catch {
+        Write-Warn "Failed to uninstall legacy extension: $legacyLtexExtension"
+    }
+}
 
 # ─── Install ──────────────────────────────────────────────────────────────────
 
