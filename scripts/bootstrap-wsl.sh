@@ -129,6 +129,48 @@ refresh_session_path() {
   fi
 }
 
+normalize_shell_path() {
+  local shell_path="$1"
+  if [[ -z "$shell_path" ]]; then
+    printf "\n"
+    return
+  fi
+
+  if command -v readlink >/dev/null 2>&1; then
+    local resolved_path
+    resolved_path="$(readlink -f "$shell_path" 2>/dev/null || true)"
+    if [[ -n "$resolved_path" ]]; then
+      printf "%s\n" "$resolved_path"
+      return
+    fi
+  fi
+
+  printf "%s\n" "$shell_path"
+}
+
+get_login_shell() {
+  local user_name="${1:-${USER:-}}"
+  if [[ -z "$user_name" ]] && command -v id >/dev/null 2>&1; then
+    user_name="$(id -un 2>/dev/null || true)"
+  fi
+
+  local passwd_entry=""
+  if [[ -n "$user_name" ]] && command -v getent >/dev/null 2>&1; then
+    passwd_entry="$(getent passwd "$user_name" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$passwd_entry" ]] && [[ -n "$user_name" ]]; then
+    passwd_entry="$(awk -F: -v user="$user_name" '$1 == user { print; exit }' /etc/passwd 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$passwd_entry" ]]; then
+    printf "%s\n" "${SHELL:-}"
+    return
+  fi
+
+  printf "%s\n" "${passwd_entry##*:}"
+}
+
 get_mise_runtime_command() {
   local runtime_spec="$1"
   local runtime_name
@@ -374,6 +416,13 @@ require_wsl_environment() {
 
 # --- Package manager install routines ---------------------------------------
 
+is_apt_package_installed() {
+  local package_name="$1"
+  local package_status
+  package_status="$(dpkg-query -W -f='${Status}' "$package_name" 2>/dev/null || true)"
+  [[ "$package_status" == "install ok installed" ]]
+}
+
 install_with_apt() {
   local -a packages=("$@")
   if [[ ${#packages[@]} -eq 0 ]]; then
@@ -381,7 +430,28 @@ install_with_apt() {
     return
   fi
 
-  run_cmd sudo apt-get install -y "${packages[@]}"
+  local -a missing_packages=()
+  local package_name
+  for package_name in "${packages[@]}"; do
+    if is_apt_package_installed "$package_name"; then
+      ok "System package already installed: $package_name"
+      continue
+    fi
+
+    missing_packages+=("$package_name")
+  done
+
+  if [[ ${#missing_packages[@]} -eq 0 ]]; then
+    ok "All system packages already installed."
+    return
+  fi
+
+  run_cmd sudo apt-get install -y "${missing_packages[@]}"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    ok "Dry-run: would install ${#missing_packages[@]} missing system packages."
+  else
+    ok "Installed ${#missing_packages[@]} missing system packages."
+  fi
 }
 
 configure_apt_repositories() {
@@ -475,29 +545,50 @@ ensure_zsh_default_shell() {
 
   local zsh_path
   zsh_path="$(command -v zsh)"
-  local current_shell
-  current_shell="${SHELL:-}"
+  local user_name
+  user_name="${USER:-$(id -un 2>/dev/null || true)}"
+  if [[ -z "$user_name" ]]; then
+    warn "Could not determine current user; cannot set default shell."
+    return
+  fi
+  local login_shell
+  login_shell="$(get_login_shell "$user_name")"
+  local normalized_zsh_path
+  normalized_zsh_path="$(normalize_shell_path "$zsh_path")"
+  local normalized_login_shell
+  normalized_login_shell="$(normalize_shell_path "$login_shell")"
 
-  if [[ "$current_shell" == "$zsh_path" ]]; then
-    ok "Default shell already set to zsh."
+  if [[ -n "$normalized_login_shell" && "$normalized_login_shell" == "$normalized_zsh_path" ]]; then
+    ok "Default shell already set to zsh (login shell: $login_shell)."
     return
   fi
 
   if ! command -v chsh >/dev/null 2>&1; then
-    warn "chsh not found. Set shell manually: chsh -s $zsh_path \"$USER\""
+    warn "chsh not found. Set shell manually: chsh -s $zsh_path \"$user_name\""
     return
   fi
 
   step "Configuring default shell"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf "  [dry-run] chsh -s %s %s\n" "$zsh_path" "$USER"
+    printf "  [dry-run] chsh -s %s %s\n" "$zsh_path" "$user_name"
     warn "Dry-run mode: default shell was not changed."
     return
   fi
 
-  chsh -s "$zsh_path" "$USER"
-  SHELL_CHANGE_PENDING=1
-  warn "Log out and back in for default shell change to take effect."
+  chsh -s "$zsh_path" "$user_name"
+
+  local updated_login_shell
+  updated_login_shell="$(get_login_shell "$user_name")"
+  local normalized_updated_login_shell
+  normalized_updated_login_shell="$(normalize_shell_path "$updated_login_shell")"
+
+  if [[ -n "$normalized_updated_login_shell" && "$normalized_updated_login_shell" == "$normalized_zsh_path" ]]; then
+    SHELL_CHANGE_PENDING=1
+    warn "Log out and back in for default shell change to take effect."
+    return
+  fi
+
+  warn "chsh completed but login shell still reports '$updated_login_shell'. Verify /etc/passwd and retry."
 }
 
 # --- Main -------------------------------------------------------------------
@@ -546,6 +637,7 @@ if [[ "$SKIP_PACKAGES" -eq 0 ]]; then
     apt)
       require_cmd sudo
       require_cmd apt-get
+      require_cmd dpkg-query
       require_cmd curl
       require_cmd gpg
       step "Configuring apt repositories"
@@ -555,6 +647,11 @@ if [[ "$SKIP_PACKAGES" -eq 0 ]]; then
       if [[ ${#OPTIONAL_PACKAGES[@]} -gt 0 ]]; then
         step "Installing optional packages"
         for package_name in "${OPTIONAL_PACKAGES[@]}"; do
+          if is_apt_package_installed "$package_name"; then
+            ok "Optional package already installed: $package_name"
+            continue
+          fi
+
           if [[ "$DRY_RUN" -eq 1 ]]; then
             printf "  [dry-run] sudo apt-get install -y %s\n" "$package_name"
             continue

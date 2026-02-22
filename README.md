@@ -91,6 +91,8 @@ Useful options:
 WSL bootstrap behavior:
 - Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs`, `Runtime install`, `Shell config`, `Done`).
 - Configures apt repositories idempotently (reports `already configured` when keyring and source line are already present).
+- Installs apt packages in missing-only mode on reruns (reports `already installed` and only installs missing packages).
+- Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
 - Refreshes session PATH after script installs so newly installed user-local tools are available in the same run.
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
 - Prints next-step guidance at completion, including re-login guidance when default shell changes.
