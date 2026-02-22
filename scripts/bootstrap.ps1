@@ -666,7 +666,6 @@ function Invoke-ChezmoiApply {
 
 # Keep package/runtime inventories in JSON so this script stays logic-focused.
 $windowsPackages = Get-ManifestJson "manifests\windows.packages.json"
-$windowsRuntimes = Get-ManifestJson "manifests\windows.runtimes.json"
 
 # ─── Execution Policy ────────────────────────────────────────────────────────
 
@@ -1069,8 +1068,8 @@ if (Test-CommandExists "mise") {
     # All core tools managed by mise — no external installers needed.
     # Rust and Bun are first-class core tools (https://mise.jdx.dev/core-tools.html).
     # pnpm is installed as a mise tool; corepack can activate it per-project via hooks.
-    # Runtime inventory is stored in manifests/windows.runtimes.json.
-    $runtimes = @($windowsRuntimes.miseRuntimes)
+    # Runtime inventory is stored in manifests/windows.packages.json.
+    $runtimes = @($windowsPackages.mise.runtimes)
     foreach ($runtime in $runtimes) {
         Install-MiseRuntime -RuntimeSpec $runtime
     }

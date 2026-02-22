@@ -118,10 +118,8 @@ Bootstrap reads install inventories from:
   - PowerShell modules
   - Winget packages (PowerShell + Windows Terminal)
   - Doppler bucket/package
-- `manifests/windows.runtimes.json`
-  - Global `mise` runtime list
-- `manifests/windows.vscode-extensions.json`
-  - VS Code extension install list
+  - Global `mise` runtime list (`mise.runtimes`)
+  - VS Code extension install list (`vscode.recommendations`)
 - `manifests/linux.ubuntu.packages.json`
   - apt repositories (`aptRepositories`)
   - required apt packages (`systemPackages`)
@@ -200,8 +198,6 @@ dotfiles/
 |       `-- chezmoi.toml.example
 |-- manifests/
 |   |-- windows.packages.json
-|   |-- windows.runtimes.json
-|   |-- windows.vscode-extensions.json
 |   |-- linux.ubuntu.packages.json
 |   `-- linux.arch.packages.json
 |-- scripts/
@@ -333,7 +329,7 @@ Git identity data:
 - Migration note:
   - Legacy `%APPDATA%\Code\User\settings.json` may remain on disk but is no longer managed by this repo for Scoop VS Code installs.
 - Extensions installed via:
-  - `manifests/windows.vscode-extensions.json`
+  - `manifests/windows.packages.json` (`vscode.recommendations`)
   - `.\scripts\install-vscode-extensions.ps1`
 - Formatter policy:
   - Format on save is enabled with language-specific formatters (for example: Ruff for Python, Prettier for web/text formats, and language-native formatter extensions for Go/Rust/PowerShell/C/C++).
@@ -349,7 +345,7 @@ Git identity data:
 ### Runtimes
 
 - Managed by `mise`.
-- Global runtime list from `manifests/windows.runtimes.json`.
+- Global runtime list from `manifests/windows.packages.json` (`mise.runtimes`).
 - Bootstrap checks each configured runtime and installs only missing ones.
 - Bootstrap keeps the `mise` shims path on user PATH (deduped) and refreshes shims after runtime checks.
 - Quick verification:
@@ -427,8 +423,6 @@ Main files to edit:
 - `home/scoop/persist/vscode/data/user-data/User/settings.json`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 - `manifests/windows.packages.json`
-- `manifests/windows.runtimes.json`
-- `manifests/windows.vscode-extensions.json`
 
 After updates:
 

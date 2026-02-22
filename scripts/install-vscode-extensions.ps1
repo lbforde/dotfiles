@@ -1,5 +1,5 @@
 # install-vscode-extensions.ps1
-# Installs all VS Code extensions defined in manifests/windows.vscode-extensions.json.
+# Installs all VS Code extensions defined in manifests/windows.packages.json.
 # Run manually after VS Code is installed, or called automatically by bootstrap.ps1.
 #
 # Usage:
@@ -27,13 +27,13 @@ if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
 
 # ─── Load extension list from manifest ────────────────────────────────────────
 
-$extensionsFile = Join-Path $PSScriptRoot "..\manifests\windows.vscode-extensions.json"
+$extensionsFile = Join-Path $PSScriptRoot "..\manifests\windows.packages.json"
 if (-not (Test-Path $extensionsFile)) {
     Write-Warn "VS Code extensions manifest not found at: $extensionsFile"
     exit 1
 }
 
-$extensions = (Get-Content $extensionsFile -Raw | ConvertFrom-Json).recommendations
+$extensions = (Get-Content $extensionsFile -Raw | ConvertFrom-Json).vscode.recommendations
 
 # ─── Get currently installed extensions ───────────────────────────────────────
 

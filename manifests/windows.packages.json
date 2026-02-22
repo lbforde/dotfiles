@@ -117,5 +117,45 @@
       "id": "Microsoft.PowerShell",
       "source": "winget"
     }
-  ]
+  ],
+  "mise": {
+    "runtimes": [
+      "node@lts",
+      "rust@stable",
+      "go@latest",
+      "bun@latest",
+      "pnpm@latest",
+      "zig@latest",
+      "python@latest"
+    ]
+  },
+  "vscode": {
+    "recommendations": [
+      "zhuangtongfa.Material-theme",
+      "usernamehw.errorlens",
+      "eamodio.gitlens",
+      "esbenp.prettier-vscode",
+      "Gruntfuggly.todo-tree",
+      "yoavbls.pretty-ts-errors",
+      "pflannery.vscode-versionlens",
+      "WallabyJs.console-ninja",
+      "dbaeumer.vscode-eslint",
+      "james-yu.latex-workshop",
+      "valentjn.vscode-ltex",
+      "ms-python.python",
+      "charliermarsh.ruff",
+      "njpwerner.autodocstring",
+      "rust-lang.rust-analyzer",
+      "vadimcn.vscode-lldb",
+      "fill-labs.dependi",
+      "tamasfe.even-better-toml",
+      "golang.go",
+      "sumneko.lua",
+      "ziglang.vscode-zig",
+      "llvm-vs-code-extensions.vscode-clangd",
+      "ms-vscode.cmake-tools",
+      "redhat.vscode-yaml",
+      "ms-vscode.powershell"
+    ]
+  }
 }
