@@ -93,16 +93,152 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # --- Logging helpers ---------------------------------------------------------
 
-step() { printf "\n=== %s ===\n" "$1"; }
-ok()   { printf "  [ok] %s\n" "$1"; }
-warn() { printf "  [warn] %s\n" "$1"; }
-err()  { printf "  [error] %s\n" "$1" >&2; }
+UI_COLOR_ENABLED=0
+UI_ICON_ENABLED=1
+UI_SPINNER_ENABLED=0
+UI_SPINNER_INTERVAL="${BOOTSTRAP_SPINNER_INTERVAL:-0.1}"
+UI_SPINNER_STYLE="${BOOTSTRAP_SPINNER_STYLE:-1}"
+UI_SPINNER_INDEX=0
+UI_SPINNER_FRAMES=()
+
+CLR_RESET=""
+CLR_STEP=""
+CLR_OK=""
+CLR_WARN=""
+CLR_ERR=""
+CLR_SPIN=""
+CLR_DIM=""
+CLR_INFO=""
+
+ICON_STEP="◆"
+ICON_OK="✓"
+ICON_WARN="⚠"
+ICON_ERR="✗"
+ICON_INFO="i"
+
+set_spinner_frames() {
+  local style="${1:-4}"
+  case "$style" in
+    1) UI_SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏") ;;
+    2) UI_SPINNER_FRAMES=("◐" "◓" "◑" "◒") ;;
+    3) UI_SPINNER_FRAMES=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷") ;;
+    4) UI_SPINNER_FRAMES=("◰" "◳" "◲" "◱") ;;
+    5) UI_SPINNER_FRAMES=("◜" "◠" "◝" "◞" "◡" "◟") ;;
+    *) UI_SPINNER_FRAMES=("-" "\\" "|" "/") ;;
+  esac
+}
+
+init_ui() {
+  if [[ "${NO_COLOR:-}" != "" ]]; then
+    UI_COLOR_ENABLED=0
+  elif [[ -t 1 ]]; then
+    UI_COLOR_ENABLED=1
+  fi
+
+  if [[ "${BOOTSTRAP_ASCII_ONLY:-0}" -eq 1 ]]; then
+    UI_ICON_ENABLED=0
+    UI_SPINNER_STYLE=0
+  fi
+
+  if [[ "$UI_COLOR_ENABLED" -eq 1 ]]; then
+    CLR_RESET=$'\033[0m'
+    CLR_STEP=$'\033[36m'
+    CLR_OK=$'\033[32m'
+    CLR_WARN=$'\033[33m'
+    CLR_ERR=$'\033[31m'
+    CLR_SPIN=$'\033[90m'
+    CLR_DIM=$'\033[90m'
+    CLR_INFO=$'\033[90m'
+  fi
+
+  if [[ "$UI_ICON_ENABLED" -eq 0 ]]; then
+    ICON_STEP=">"
+    ICON_OK="+"
+    ICON_WARN="!"
+    ICON_ERR="x"
+    ICON_INFO="i"
+  fi
+
+  set_spinner_frames "$UI_SPINNER_STYLE"
+
+  if [[ -t 1 && "${BOOTSTRAP_SPINNER:-1}" -eq 1 ]]; then
+    UI_SPINNER_ENABLED=1
+  fi
+}
+
+step() { printf "\n%s━━━ %s ━━━%s\n" "$CLR_STEP" "$1" "$CLR_RESET"; }
+ok()   { printf "  %s%s%s %s\n" "$CLR_OK" "$ICON_OK" "$CLR_RESET" "$1"; }
+warn() { printf "  %s%s%s %s\n" "$CLR_WARN" "$ICON_WARN" "$CLR_RESET" "$1"; }
+err()  { printf "  %s%s%s %s\n" "$CLR_ERR" "$ICON_ERR" "$CLR_RESET" "$1" >&2; }
+info() { printf "  %s%s%s %s\n" "$CLR_INFO" "$ICON_INFO" "$CLR_RESET" "$1"; }
+
+next_spinner_frame() {
+  local frame_count="${#UI_SPINNER_FRAMES[@]}"
+  if [[ "$frame_count" -eq 0 ]]; then
+    printf "."
+    return
+  fi
+
+  local frame="${UI_SPINNER_FRAMES[$UI_SPINNER_INDEX]}"
+  UI_SPINNER_INDEX=$(( (UI_SPINNER_INDEX + 1) % frame_count ))
+  printf "%s" "$frame"
+}
+
+should_spin_command() {
+  local command_name="${1:-}"
+  case "$command_name" in
+    sudo|apt-get|dpkg|chsh|chezmoi)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+run_cmd_with_spinner() {
+  local cmd_display="$*"
+  local output_file pid status frame
+
+  output_file="$(mktemp)"
+  "$@" >"$output_file" 2>&1 &
+  pid=$!
+
+  while kill -0 "$pid" 2>/dev/null; do
+    frame="$(next_spinner_frame)"
+    printf "\r\033[K  %s%s%s %s%s%s" "$CLR_SPIN" "$frame" "$CLR_RESET" "$CLR_DIM" "$cmd_display" "$CLR_RESET"
+    sleep "$UI_SPINNER_INTERVAL"
+  done
+
+  if wait "$pid"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  if [[ "$status" -eq 0 ]]; then
+    printf "\r\033[K"
+  else
+    printf "\r\033[K" >&2
+    err "Command failed: $cmd_display"
+    if [[ -s "$output_file" ]]; then
+      cat "$output_file" >&2
+    fi
+  fi
+
+  rm -f "$output_file"
+  return "$status"
+}
 
 run_cmd() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf "  [dry-run] %s\n" "$*"
+    printf "  %s[dry-run]%s %s\n" "$CLR_DIM" "$CLR_RESET" "$*"
   else
-    "$@"
+    if [[ "$UI_SPINNER_ENABLED" -eq 1 ]] && should_spin_command "${1:-}"; then
+      run_cmd_with_spinner "$@"
+    else
+      "$@"
+    fi
   fi
 }
 
@@ -955,7 +1091,7 @@ invoke_chezmoi_apply() {
   local desired_source="$1"
 
   if ! command -v chezmoi >/dev/null 2>&1; then
-    warn "chezmoi is not available on PATH - skipping dotfile apply."
+    warn "chezmoi is not available on PATH; skipping dotfile apply."
     return
   fi
 
@@ -972,8 +1108,8 @@ invoke_chezmoi_apply() {
     current_source_root="$(get_chezmoi_source_root_path "$current_source")"
     default_source_root="$(get_default_chezmoi_source_root)"
 
-    printf "  [info] Chezmoi source mode: direct-path\n"
-    printf "  [info] Desired source root: %s\n" "$desired_path"
+    info "Chezmoi source mode: direct-path"
+    info "Desired source root: $desired_path"
 
     if test_chezmoi_has_managed_files && [[ -n "$current_source_root" && "$current_source_root" != "$desired_path" && "$current_source_root" == "$default_source_root" ]]; then
       backup_chezmoi_source_root "$current_source_root"
@@ -995,7 +1131,7 @@ invoke_chezmoi_apply() {
       local final_source
       final_source="$(get_chezmoi_source_path)"
       ok "Chezmoi apply complete"
-      printf "  [info] Final chezmoi source-path: %s\n" "$final_source"
+      info "Final chezmoi source-path: $final_source"
     fi
     return
   fi
@@ -1029,7 +1165,7 @@ invoke_chezmoi_apply() {
 
 configure_chezmoi() {
   if ! command -v chezmoi >/dev/null 2>&1; then
-    warn "chezmoi is not available on PATH - skipping dotfile apply."
+    warn "chezmoi is not available on PATH; skipping dotfile apply."
     return
   fi
 
@@ -1095,6 +1231,7 @@ ensure_zsh_default_shell() {
 
 # --- Main -------------------------------------------------------------------
 
+init_ui
 step "Pre-flight checks"
 require_wsl_environment
 BOOTSTRAP_ARCH="$(detect_bootstrap_arch)"
