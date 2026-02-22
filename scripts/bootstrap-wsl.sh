@@ -114,7 +114,7 @@ ICON_STEP="◆"
 ICON_OK="✓"
 ICON_WARN="⚠"
 ICON_ERR="✗"
-ICON_INFO="i"
+ICON_INFO="●"
 
 set_spinner_frames() {
   local style="${1:-4}"
@@ -156,7 +156,7 @@ init_ui() {
     ICON_OK="+"
     ICON_WARN="!"
     ICON_ERR="x"
-    ICON_INFO="i"
+    ICON_INFO="o"
   fi
 
   set_spinner_frames "$UI_SPINNER_STYLE"
@@ -167,10 +167,10 @@ init_ui() {
 }
 
 step() { printf "\n%s━━━ %s ━━━%s\n" "$CLR_STEP" "$1" "$CLR_RESET"; }
-ok()   { printf "  %s%s%s %s\n" "$CLR_OK" "$ICON_OK" "$CLR_RESET" "$1"; }
-warn() { printf "  %s%s%s %s\n" "$CLR_WARN" "$ICON_WARN" "$CLR_RESET" "$1"; }
-err()  { printf "  %s%s%s %s\n" "$CLR_ERR" "$ICON_ERR" "$CLR_RESET" "$1" >&2; }
-info() { printf "  %s%s%s %s\n" "$CLR_INFO" "$ICON_INFO" "$CLR_RESET" "$1"; }
+ok()   { printf "  %s%s %s%s\n" "$CLR_OK" "$ICON_OK" "$1" "$CLR_RESET"; }
+warn() { printf "  %s%s %s%s\n" "$CLR_WARN" "$ICON_WARN" "$1" "$CLR_RESET"; }
+err()  { printf "  %s%s %s%s\n" "$CLR_ERR" "$ICON_ERR" "$1" "$CLR_RESET" >&2; }
+info() { printf "  %s%s %s%s\n" "$CLR_INFO" "$ICON_INFO" "$1" "$CLR_RESET"; }
 
 next_spinner_frame() {
   local frame_count="${#UI_SPINNER_FRAMES[@]}"
@@ -474,7 +474,7 @@ ensure_mise_runtime_installed() {
   local runtime_spec="$1"
 
   if test_mise_runtime_installed "$runtime_spec"; then
-    ok "$runtime_spec already installed"
+    info "$runtime_spec already installed"
     return
   fi
 
@@ -725,7 +725,7 @@ install_with_apt() {
   local package_name
   for package_name in "${packages[@]}"; do
     if is_apt_package_installed "$package_name"; then
-      ok "System package already installed: $package_name"
+      info "System package already installed: $package_name"
       continue
     fi
 
@@ -739,7 +739,7 @@ install_with_apt() {
 
   run_cmd sudo apt-get install -y "${missing_packages[@]}"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    ok "Dry-run: would install ${#missing_packages[@]} missing system packages."
+    info "Dry-run: would install ${#missing_packages[@]} missing system packages."
   else
     ok "Installed ${#missing_packages[@]} missing system packages."
   fi
@@ -829,7 +829,7 @@ run_script_installs() {
     matched_phase=1
 
     if bash -lc "$check_cmd" >/dev/null 2>&1; then
-      ok "Already installed: $install_name"
+      info "Already installed: $install_name"
       continue
     fi
 
@@ -1238,8 +1238,8 @@ BOOTSTRAP_ARCH="$(detect_bootstrap_arch)"
 BOOTSTRAP_APT_ARCH="$(detect_apt_architecture)"
 UBUNTU_CODENAME="$(detect_ubuntu_codename)"
 export BOOTSTRAP_ARCH BOOTSTRAP_APT_ARCH UBUNTU_CODENAME
-ok "Release architecture: $BOOTSTRAP_ARCH (apt: $BOOTSTRAP_APT_ARCH)"
-ok "Ubuntu codename: $UBUNTU_CODENAME"
+info "Release architecture: $BOOTSTRAP_ARCH (apt: $BOOTSTRAP_APT_ARCH)"
+info "Ubuntu codename: $UBUNTU_CODENAME"
 if ! command -v jq >/dev/null 2>&1 || [[ "$SKIP_PACKAGES" -eq 0 ]]; then
   step "Refreshing apt package index"
   require_cmd sudo
@@ -1297,7 +1297,7 @@ if [[ "$SKIP_PACKAGES" -eq 0 ]]; then
         step "Installing optional packages"
         for package_name in "${OPTIONAL_PACKAGES[@]}"; do
           if is_apt_package_installed "$package_name"; then
-            ok "Optional package already installed: $package_name"
+            info "Optional package already installed: $package_name"
             continue
           fi
 
@@ -1312,7 +1312,7 @@ if [[ "$SKIP_PACKAGES" -eq 0 ]]; then
           fi
         done
       else
-        ok "No optional packages listed in manifest."
+        info "No optional packages listed in manifest."
       fi
       ;;
     *)
