@@ -47,7 +47,7 @@ function Update-PathEnvironment {
     Write-Host "  ⟳ PATH refreshed" -ForegroundColor DarkGray
 }
 
-function Normalize-PathEntry {
+function ConvertTo-NormalizedPathEntry {
     param([string]$PathEntry)
 
     if ([string]::IsNullOrWhiteSpace($PathEntry)) { return "" }
@@ -105,7 +105,7 @@ function Test-MiseRuntimeInstalled {
     }
 }
 
-function Ensure-MiseRuntimeInstalled {
+function Install-MiseRuntime {
     param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
 
     if (Test-MiseRuntimeInstalled -RuntimeSpec $RuntimeSpec) {
@@ -295,7 +295,7 @@ function Backup-ChezmoiSourceRoot {
     return $backupPath
 }
 
-function Ensure-LocalChezmoiSourceDir {
+function Set-LocalChezmoiSourceDir {
     param([Parameter(Mandatory = $true)][string]$SourceDir)
 
     $chezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
@@ -585,7 +585,7 @@ function Resolve-DesiredChezmoiSource {
     return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 
-function InitializeOrApplyChezmoi {
+function Invoke-ChezmoiApply {
     param([Parameter(Mandatory = $true)][string]$DesiredSource)
 
     if (-not (Test-CommandExists "chezmoi")) {
@@ -621,7 +621,7 @@ function InitializeOrApplyChezmoi {
             return
         }
 
-        Ensure-LocalChezmoiSourceDir -SourceDir $desiredPath
+        Set-LocalChezmoiSourceDir -SourceDir $desiredPath
 
         try {
             chezmoi apply
@@ -846,7 +846,7 @@ if (-not $SkipChezmoi) {
     Write-Step "Configuring Chezmoi"
     Initialize-LocalChezmoiConfig
     $desiredChezmoiSource = Resolve-DesiredChezmoiSource
-    InitializeOrApplyChezmoi -DesiredSource $desiredChezmoiSource
+    Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
     Sync-PowerShellProfileToExpectedPath
 }
 
@@ -995,7 +995,7 @@ if (Test-Path $devDrive) {
     $seen = @{}
     $dedupedExisting = New-Object System.Collections.Generic.List[string]
     foreach ($entry in $existingEntries) {
-        $normalized = Normalize-PathEntry -PathEntry $entry
+        $normalized = ConvertTo-NormalizedPathEntry -PathEntry $entry
         if ([string]::IsNullOrWhiteSpace($normalized)) { continue }
 
         $key = $normalized.ToLowerInvariant()
@@ -1007,7 +1007,7 @@ if (Test-Path $devDrive) {
 
     $missingDevPaths = New-Object System.Collections.Generic.List[string]
     foreach ($devPath in $devPaths) {
-        $normalizedDevPath = Normalize-PathEntry -PathEntry $devPath
+        $normalizedDevPath = ConvertTo-NormalizedPathEntry -PathEntry $devPath
         if ([string]::IsNullOrWhiteSpace($normalizedDevPath)) { continue }
 
         $key = $normalizedDevPath.ToLowerInvariant()
@@ -1072,7 +1072,7 @@ if (Test-CommandExists "mise") {
     # Runtime inventory is stored in manifests/windows.runtimes.json.
     $runtimes = @($windowsRuntimes.miseRuntimes)
     foreach ($runtime in $runtimes) {
-        Ensure-MiseRuntimeInstalled -RuntimeSpec $runtime
+        Install-MiseRuntime -RuntimeSpec $runtime
     }
 
     # Ensure all runtime entrypoints (e.g. go.exe) are materialized under the shims directory.
