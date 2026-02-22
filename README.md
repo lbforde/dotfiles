@@ -96,6 +96,7 @@ WSL bootstrap behavior:
 - Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
 - Refreshes session PATH after script installs so newly installed user-local tools are available in the same run.
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
+- Creates a default projects directory at `$HOME/projects` (or `$PROJECTS` when set).
 - Prints next-step guidance at completion, including re-login guidance when default shell changes.
 
 Post-bootstrap verification:

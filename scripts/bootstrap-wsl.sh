@@ -129,6 +129,23 @@ refresh_session_path() {
   fi
 }
 
+ensure_projects_directory() {
+  local projects_dir="${PROJECTS:-$HOME/projects}"
+
+  if [[ -d "$projects_dir" ]]; then
+    ok "Projects directory already exists: $projects_dir"
+    return
+  fi
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf "  [dry-run] mkdir -p %s\n" "$projects_dir"
+    return
+  fi
+
+  mkdir -p "$projects_dir"
+  ok "Projects directory ready: $projects_dir"
+}
+
 normalize_shell_path() {
   local shell_path="$1"
   if [[ -z "$shell_path" ]]; then
@@ -705,6 +722,9 @@ if [[ "$SKIP_RUNTIMES" -eq 0 ]]; then
 else
   warn "Skipping runtime installation (--skip-runtimes)."
 fi
+
+step "Workspace setup"
+ensure_projects_directory
 
 step "Shell config"
 ensure_zsh_default_shell
