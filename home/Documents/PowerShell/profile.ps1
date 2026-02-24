@@ -263,12 +263,6 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression (&starship init powershell)
 }
 
-# ─── Zoxide (smarter cd) ─────────────────────────────────────────────────────
-
-if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (zoxide init powershell --hook prompt | Out-String) })
-}
-
 # ─── Mise (runtime version manager) ──────────────────────────────────────────
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
@@ -1174,5 +1168,11 @@ function Show-Greeting {
 
 Show-Greeting
 
+# ─── Zoxide (smarter cd) ─────────────────────────────────────────────────────
+
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
 # ─── End of Profile ──────────────────────────────────────────────────────────
+
 
