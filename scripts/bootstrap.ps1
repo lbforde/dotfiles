@@ -27,17 +27,17 @@ function Write-Step {
 
 function Write-OK {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.Green)✓$($PSStyle.Reset) $Message" -InformationAction Continue
+    Write-Information "  $($PSStyle.Foreground.Green)✓ $Message$($PSStyle.Reset)" -InformationAction Continue
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Warning "$($PSStyle.Foreground.Yellow)⚠$($PSStyle.Reset) $Message"
+    Write-Warning "$($PSStyle.Foreground.Yellow)⚠ $Message$($PSStyle.Reset)"
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.DarkGray)◌$($PSStyle.Reset) $Message" -InformationAction Continue
+    Write-Information "  $($PSStyle.Foreground.DarkGray)🛈 $Message$($PSStyle.Reset)" -InformationAction Continue
 }
 
 function Test-CommandAvailable {
@@ -53,7 +53,7 @@ function Set-PathEnvironment {
     if ($PSCmdlet.ShouldProcess("PATH environment", "Refresh from machine and user registry values")) {
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
         [System.Environment]::GetEnvironmentVariable("Path", "User")
-        Write-Info "PATH refreshed"
+        Write-Info "⟳ PATH refreshed"
     }
 }
 
