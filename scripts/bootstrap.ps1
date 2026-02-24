@@ -383,9 +383,9 @@ function Get-ExpectedPowerShellProfilePath {
     return (Join-Path $documentsDir "PowerShell\profile.ps1")
 }
 
-function Sync-PowerShellProfileToExpectedPath {
+function Sync-PowerShellProfileBridge {
     # Chezmoi manages home/Documents/PowerShell/profile.ps1, but Windows can redirect Documents.
-    # Mirror the managed profile into the actual PowerShell profile location when they differ.
+    # Create a tiny bridge profile in the redirected location that dot-sources the managed profile.
     $sourceCandidates = @(
         (Join-Path $env:USERPROFILE "Documents\PowerShell\profile.ps1"),
         (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "home\Documents\PowerShell\profile.ps1")
@@ -402,13 +402,13 @@ function Sync-PowerShellProfileToExpectedPath {
         foreach ($candidate in $sourceCandidates | Select-Object -Unique) {
             Write-Warn "  $candidate"
         }
-        Write-Warn "Skipping redirected profile sync."
+        Write-Warn "Skipping redirected profile bridge setup."
         return
     }
 
     $expectedProfilePath = Get-ExpectedPowerShellProfilePath
     if ([string]::IsNullOrWhiteSpace($expectedProfilePath)) {
-        Write-Warn "Could not resolve PowerShell profile target path; skipping redirected profile sync."
+        Write-Warn "Could not resolve PowerShell profile target path; skipping redirected profile bridge setup."
         return
     }
 
@@ -430,16 +430,45 @@ function Sync-PowerShellProfileToExpectedPath {
         New-Item -ItemType Directory -Path $expectedDir -Force | Out-Null
     }
 
-    $managedHash = (Get-FileHash $managedProfilePath -Algorithm SHA256).Hash
-    $expectedHash = if (Test-Path $expectedProfilePath) { (Get-FileHash $expectedProfilePath -Algorithm SHA256).Hash } else { "" }
+    $bridgeMarker = "# Managed by bootstrap.ps1. Do not edit directly."
+    $managedLiteralPath = $managedResolved.Replace("'", "''")
+    $bridgeContent = @"
+$bridgeMarker
+# This bridge keeps redirected Documents profile paths in sync with chezmoi-managed content.
+`$managedProfilePath = '$managedLiteralPath'
+if (Test-Path -LiteralPath `$managedProfilePath) {
+    . `$managedProfilePath
+}
+else {
+    Write-Warning "Managed PowerShell profile not found at `$managedProfilePath"
+}
+"@
+    $bridgeHash = (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($bridgeContent))) -Algorithm SHA256).Hash
 
-    if ($managedHash -eq $expectedHash) {
-        Write-OK "PowerShell profile already synced to redirected path: $expectedProfilePath"
+    $expectedContent = if (Test-Path $expectedProfilePath) { Get-Content $expectedProfilePath -Raw -ErrorAction SilentlyContinue } else { "" }
+    $expectedHash = if ($expectedContent) {
+        (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($expectedContent))) -Algorithm SHA256).Hash
+    }
+    else {
+        ""
+    }
+
+    if ($bridgeHash -eq $expectedHash) {
+        Write-OK "PowerShell profile bridge already configured: $expectedProfilePath"
         return
     }
 
-    Copy-Item -Path $managedProfilePath -Destination $expectedProfilePath -Force
-    Write-OK "Synced PowerShell profile to redirected path: $expectedProfilePath"
+    $hasExpectedProfile = Test-Path $expectedProfilePath
+    $isBootstrapManagedProfile = $hasExpectedProfile -and $expectedContent.Contains($bridgeMarker)
+    if ($hasExpectedProfile -and (-not $isBootstrapManagedProfile)) {
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backupPath = "$expectedProfilePath.$timestamp.bak"
+        Copy-Item -Path $expectedProfilePath -Destination $backupPath -Force
+        Write-OK "Backed up existing redirected PowerShell profile to $backupPath"
+    }
+
+    Set-Content -Path $expectedProfilePath -Value $bridgeContent -Encoding UTF8
+    Write-OK "Configured PowerShell profile bridge at redirected path: $expectedProfilePath"
 }
 
 function Set-TomlSection {
@@ -847,7 +876,7 @@ if (-not $SkipChezmoi) {
     Initialize-LocalChezmoiConfig
     $desiredChezmoiSource = Resolve-DesiredChezmoiSource
     Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
-    Sync-PowerShellProfileToExpectedPath
+    Sync-PowerShellProfileBridge
 }
 
 # ─── Dev Drive Setup (Z:\) ───────────────────────────────────────────────────
