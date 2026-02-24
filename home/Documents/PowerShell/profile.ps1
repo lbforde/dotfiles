@@ -266,7 +266,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 # ─── Zoxide (smarter cd) ─────────────────────────────────────────────────────
 
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (zoxide init powershell --hook pwd | Out-String) })
+    Invoke-Expression (& { (zoxide init powershell --hook prompt | Out-String) })
 }
 
 # ─── Mise (runtime version manager) ──────────────────────────────────────────
