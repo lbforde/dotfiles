@@ -22,17 +22,22 @@ $ErrorActionPreference = "Stop"
 
 function Write-Step {
     param([string]$Message)
-    Write-Information "`n━━━ $Message ━━━" -InformationAction Continue
+    Write-Information "`n$($PSStyle.Foreground.Cyan)━━━ $Message ━━━$($PSStyle.Reset)" -InformationAction Continue
 }
 
 function Write-OK {
     param([string]$Message)
-    Write-Information "  ✓ $Message" -InformationAction Continue
+    Write-Information "  $($PSStyle.Foreground.Green)✓$($PSStyle.Reset) $Message" -InformationAction Continue
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Warning "⚠ $Message"
+    Write-Warning "$($PSStyle.Foreground.Yellow)⚠$($PSStyle.Reset) $Message"
+}
+
+function Write-Info {
+    param([string]$Message)
+    Write-Information "  $($PSStyle.Foreground.DarkGray)◌$($PSStyle.Reset) $Message" -InformationAction Continue
 }
 
 function Test-CommandAvailable {
@@ -48,7 +53,7 @@ function Set-PathEnvironment {
     if ($PSCmdlet.ShouldProcess("PATH environment", "Refresh from machine and user registry values")) {
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
         [System.Environment]::GetEnvironmentVariable("Path", "User")
-        Write-Information "  ⟳ PATH refreshed" -InformationAction Continue
+        Write-Info "PATH refreshed"
     }
 }
 
@@ -78,7 +83,7 @@ function Install-ScoopApp {
     $packageRef = if ($Bucket -and $Bucket -ne "main") { "$Bucket/$App" } else { $App }
 
     if (-not (scoop info $packageRef 2>&1 | Select-String "Installed")) {
-        Write-Information "  Installing $packageRef..." -InformationAction Continue
+        Write-Info "Installing $packageRef..."
         scoop install $packageRef
         Write-OK "$App installed"
     }
@@ -118,7 +123,7 @@ function Install-MiseRuntime {
         return
     }
 
-    Write-Information "  Installing $RuntimeSpec..." -InformationAction Continue
+    Write-Info "Installing $RuntimeSpec..."
     $output = (& mise use --global $RuntimeSpec 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install $RuntimeSpec via mise. Output: $output"
@@ -570,7 +575,7 @@ function Initialize-LocalChezmoiConfig {
         return
     }
 
-    Write-Information "  i No local chezmoi config found. Enter machine-specific identity values." -InformationAction Continue
+    Write-Info "No local chezmoi config found. Enter machine-specific identity values."
 
     $defaultName = (git config --global user.name 2>$null | Out-String).Trim()
     $defaultEmail = (git config --global user.email 2>$null | Out-String).Trim()
@@ -644,8 +649,8 @@ function Invoke-ChezmoiApply {
         $defaultSourceRoot = Get-DefaultChezmoiSourceRoot
         $hasManagedFiles = Test-ChezmoiManagedFilePresent
 
-        Write-Information "  i Chezmoi source mode: direct-path" -InformationAction Continue
-        Write-Information "  i Desired source root: $desiredPath" -InformationAction Continue
+        Write-Info "Chezmoi source mode: direct-path"
+        Write-Info "Desired source root: $desiredPath"
 
         if ($hasManagedFiles -and $currentSourceRoot -and ($currentSourceRoot -ne $desiredPath) -and ($currentSourceRoot -eq $defaultSourceRoot)) {
             Backup-ChezmoiSourceRoot -SourceRoot $currentSourceRoot | Out-Null
@@ -658,7 +663,7 @@ function Invoke-ChezmoiApply {
             chezmoi apply
             Write-OK "Chezmoi apply complete"
             $finalSourcePath = Get-ChezmoiSourcePath
-            Write-Information "  i Final chezmoi source-path: $finalSourcePath" -InformationAction Continue
+            Write-Info "Final chezmoi source-path: $finalSourcePath"
             return
         }
 
@@ -668,7 +673,7 @@ function Invoke-ChezmoiApply {
             chezmoi apply
             $finalSourcePath = Get-ChezmoiSourcePath
             Write-OK "Chezmoi apply complete"
-            Write-Information "  i Final chezmoi source-path: $finalSourcePath" -InformationAction Continue
+            Write-Info "Final chezmoi source-path: $finalSourcePath"
         }
         catch {
             throw "Chezmoi apply failed after switching sourceDir to '$desiredPath'. Restore from backup or rerun with -ChezmoiRepo. Error: $($_.Exception.Message)"
@@ -717,7 +722,7 @@ try {
 }
 catch {
     Write-Warn "Could not set CurrentUser execution policy (likely overridden by Process/Group Policy). Continuing."
-    Write-Information "  i Effective policy: $(Get-ExecutionPolicy)" -InformationAction Continue
+    Write-Info "Effective policy: $(Get-ExecutionPolicy)"
 }
 
 # NuGet is required for Install-Module to work without prompting on a fresh machine
@@ -933,7 +938,7 @@ if (-not $DevDrive) {
     }
 
     Write-Information "" -InformationAction Continue
-    Write-Information "  Available drives:" -InformationAction Continue
+    Write-Information "  $($PSStyle.Foreground.Cyan)Available drives:$($PSStyle.Reset)" -InformationAction Continue
     Write-Information "" -InformationAction Continue
     for ($i = 0; $i -lt $drives.Count; $i++) {
         $d = $drives[$i]
@@ -1158,9 +1163,9 @@ elseif (-not (Test-CommandAvailable "code")) {
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
-Write-Information "`n============================================================" -InformationAction Continue
-Write-Information "  ✓  Dev environment setup complete!" -InformationAction Continue
-Write-Information "============================================================" -InformationAction Continue
+Write-Information "`n$($PSStyle.Foreground.Green)============================================================$($PSStyle.Reset)" -InformationAction Continue
+Write-Information "  $($PSStyle.Foreground.Green)✓  Dev environment setup complete!$($PSStyle.Reset)" -InformationAction Continue
+Write-Information "$($PSStyle.Foreground.Green)============================================================$($PSStyle.Reset)" -InformationAction Continue
 Write-Information @"
 
 Next steps:
