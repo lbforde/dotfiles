@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Windows Developer Environment Bootstrap Script
@@ -22,29 +22,34 @@ $ErrorActionPreference = "Stop"
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "`n━━━ $Message ━━━" -ForegroundColor Cyan
+    Write-Information "`n━━━ $Message ━━━" -InformationAction Continue
 }
 
 function Write-OK {
     param([string]$Message)
-    Write-Host "  ✓ $Message" -ForegroundColor Green
+    Write-Information "  ✓ $Message" -InformationAction Continue
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Host "  ⚠ $Message" -ForegroundColor Yellow
+    Write-Warning "⚠ $Message"
 }
 
-function Test-CommandExists {
+function Test-CommandAvailable {
     param([string]$Command)
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
-function Update-PathEnvironment {
+function Set-PathEnvironment {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+
     # Reload PATH from the registry so tools installed earlier in this session are immediately usable
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-    [System.Environment]::GetEnvironmentVariable("Path", "User")
-    Write-Host "  ⟳ PATH refreshed" -ForegroundColor DarkGray
+    if ($PSCmdlet.ShouldProcess("PATH environment", "Refresh from machine and user registry values")) {
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+        Write-Information "  ⟳ PATH refreshed" -InformationAction Continue
+    }
 }
 
 function ConvertTo-NormalizedPathEntry {
@@ -73,7 +78,7 @@ function Install-ScoopApp {
     $packageRef = if ($Bucket -and $Bucket -ne "main") { "$Bucket/$App" } else { $App }
 
     if (-not (scoop info $packageRef 2>&1 | Select-String "Installed")) {
-        Write-Host "  Installing $packageRef..." -ForegroundColor Gray
+        Write-Information "  Installing $packageRef..." -InformationAction Continue
         scoop install $packageRef
         Write-OK "$App installed"
     }
@@ -113,7 +118,7 @@ function Install-MiseRuntime {
         return
     }
 
-    Write-Host "  Installing $RuntimeSpec..." -ForegroundColor Gray
+    Write-Information "  Installing $RuntimeSpec..." -InformationAction Continue
     $output = (& mise use --global $RuntimeSpec 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install $RuntimeSpec via mise. Output: $output"
@@ -122,13 +127,13 @@ function Install-MiseRuntime {
     Write-OK "$RuntimeSpec installed"
 }
 
-function Test-MiseRuntimeCommands {
+function Test-MiseRuntimeCommandAvailability {
     param([Parameter(Mandatory = $true)][string[]]$RuntimeSpecs)
 
     $missing = @()
     foreach ($runtime in $RuntimeSpecs) {
         $command = Get-MiseRuntimeCommand -RuntimeSpec $runtime
-        if (-not (Test-CommandExists $command)) {
+        if (-not (Test-CommandAvailable $command)) {
             $resolvedPath = ""
             try {
                 $resolvedPath = (& mise which $command 2>$null | Out-String).Trim()
@@ -158,7 +163,7 @@ function Test-MiseRuntimeCommands {
 
 function Get-ChezmoiSourcePath {
     # Returns empty string when chezmoi has not been initialised yet.
-    if (-not (Test-CommandExists "chezmoi")) { return "" }
+    if (-not (Test-CommandAvailable "chezmoi")) { return "" }
 
     try {
         $source = (& chezmoi source-path 2>$null | Out-String).Trim()
@@ -171,7 +176,7 @@ function Get-ChezmoiSourcePath {
 
 function Get-ChezmoiRemoteOrigin {
     # Returns origin URL from chezmoi source repo when available.
-    if (-not (Test-CommandExists "chezmoi")) { return "" }
+    if (-not (Test-CommandAvailable "chezmoi")) { return "" }
 
     try {
         $origin = (& chezmoi git -- remote get-url origin 2>$null | Out-String).Trim()
@@ -182,9 +187,9 @@ function Get-ChezmoiRemoteOrigin {
     }
 }
 
-function Test-ChezmoiHasManagedFiles {
+function Test-ChezmoiManagedFilePresent {
     # Returns true when chezmoi currently has at least one managed target.
-    if (-not (Test-CommandExists "chezmoi")) { return $false }
+    if (-not (Test-CommandAvailable "chezmoi")) { return $false }
 
     try {
         $managed = (& chezmoi managed 2>$null | Out-String).Trim()
@@ -195,10 +200,10 @@ function Test-ChezmoiHasManagedFiles {
     }
 }
 
-function Test-ScoopBucketExists {
+function Test-ScoopBucketPresent {
     param([Parameter(Mandatory = $true)][string]$BucketName)
 
-    if (-not (Test-CommandExists "scoop")) { return $false }
+    if (-not (Test-CommandAvailable "scoop")) { return $false }
 
     try {
         $bucketLines = scoop bucket list 2>$null
@@ -296,6 +301,7 @@ function Backup-ChezmoiSourceRoot {
 }
 
 function Set-LocalChezmoiSourceDir {
+    [CmdletBinding(SupportsShouldProcess)]
     param([Parameter(Mandatory = $true)][string]$SourceDir)
 
     $chezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
@@ -350,11 +356,13 @@ function Set-LocalChezmoiSourceDir {
     }
 
     if ($changed) {
-        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-        $backupPath = "$chezmoiConfigPath.$timestamp.bak"
-        Copy-Item -Path $chezmoiConfigPath -Destination $backupPath -Force
-        $updated | Set-Content -Path $chezmoiConfigPath -Encoding UTF8
-        Write-OK "Set local chezmoi sourceDir to $SourceDir (backup: $backupPath)"
+        if ($PSCmdlet.ShouldProcess($chezmoiConfigPath, "Set chezmoi sourceDir to $SourceDir")) {
+            $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+            $backupPath = "$chezmoiConfigPath.$timestamp.bak"
+            Copy-Item -Path $chezmoiConfigPath -Destination $backupPath -Force
+            $updated | Set-Content -Path $chezmoiConfigPath -Encoding UTF8
+            Write-OK "Set local chezmoi sourceDir to $SourceDir (backup: $backupPath)"
+        }
     }
     else {
         Write-OK "Local chezmoi sourceDir already set to $SourceDir"
@@ -363,7 +371,7 @@ function Set-LocalChezmoiSourceDir {
 
 function Get-ExpectedPowerShellProfilePath {
     # Resolve the real PowerShell user profile target, including known-folder redirection.
-    if (Test-CommandExists "pwsh") {
+    if (Test-CommandAvailable "pwsh") {
         try {
             $profilePath = (& pwsh -NoProfile -Command '$PROFILE.CurrentUserAllHosts' 2>$null | Out-String).Trim()
             if (-not [string]::IsNullOrWhiteSpace($profilePath)) {
@@ -371,7 +379,7 @@ function Get-ExpectedPowerShellProfilePath {
             }
         }
         catch {
-            # Fall back to MyDocuments below.
+            Write-Verbose "Falling back to MyDocuments because pwsh profile lookup failed: $($_.Exception.Message)"
         }
     }
 
@@ -471,7 +479,8 @@ else {
     Write-OK "Configured PowerShell profile bridge at redirected path: $expectedProfilePath"
 }
 
-function Set-TomlSection {
+function Update-TomlSectionContent {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory = $true)][string]$Content,
         [Parameter(Mandatory = $true)][string]$Section,
@@ -505,6 +514,7 @@ function Set-TomlSection {
 }
 
 function Update-LocalChezmoiEditorConfig {
+    [CmdletBinding(SupportsShouldProcess)]
     param([Parameter(Mandatory = $true)][string]$ConfigPath)
 
     if (-not (Test-Path $ConfigPath)) { return }
@@ -516,15 +526,15 @@ function Update-LocalChezmoiEditorConfig {
     }
 
     $changed = $false
-    $content = Set-TomlSection -Content $content -Section "edit" -Lines @(
+    $content = Update-TomlSectionContent -Content $content -Section "edit" -Lines @(
         'command = "code"',
         'args    = ["--wait"]'
     ) -Changed ([ref]$changed)
-    $content = Set-TomlSection -Content $content -Section "merge" -Lines @(
+    $content = Update-TomlSectionContent -Content $content -Section "merge" -Lines @(
         'command = "code"',
         'args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]'
     ) -Changed ([ref]$changed)
-    $content = Set-TomlSection -Content $content -Section "diff" -Lines @(
+    $content = Update-TomlSectionContent -Content $content -Section "diff" -Lines @(
         'command = "code"',
         'args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Target }}"]'
     ) -Changed ([ref]$changed)
@@ -534,11 +544,13 @@ function Update-LocalChezmoiEditorConfig {
         return
     }
 
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $backupPath = "$ConfigPath.$timestamp.bak"
-    Copy-Item -Path $ConfigPath -Destination $backupPath -Force
-    $content | Set-Content -Path $ConfigPath -Encoding UTF8
-    Write-OK "Migrated local chezmoi editor settings to VS Code (backup: $backupPath)"
+    if ($PSCmdlet.ShouldProcess($ConfigPath, "Update chezmoi editor settings to VS Code")) {
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backupPath = "$ConfigPath.$timestamp.bak"
+        Copy-Item -Path $ConfigPath -Destination $backupPath -Force
+        $content | Set-Content -Path $ConfigPath -Encoding UTF8
+        Write-OK "Migrated local chezmoi editor settings to VS Code (backup: $backupPath)"
+    }
 }
 
 function Initialize-LocalChezmoiConfig {
@@ -558,7 +570,7 @@ function Initialize-LocalChezmoiConfig {
         return
     }
 
-    Write-Host "  No local chezmoi config found. Enter machine-specific identity values." -ForegroundColor Gray
+    Write-Information "  i No local chezmoi config found. Enter machine-specific identity values." -InformationAction Continue
 
     $defaultName = (git config --global user.name 2>$null | Out-String).Trim()
     $defaultEmail = (git config --global user.email 2>$null | Out-String).Trim()
@@ -617,7 +629,7 @@ function Resolve-DesiredChezmoiSource {
 function Invoke-ChezmoiApply {
     param([Parameter(Mandatory = $true)][string]$DesiredSource)
 
-    if (-not (Test-CommandExists "chezmoi")) {
+    if (-not (Test-CommandAvailable "chezmoi")) {
         Write-Warn "chezmoi is not available on PATH — skipping dotfile apply."
         return
     }
@@ -630,10 +642,10 @@ function Invoke-ChezmoiApply {
         $currentSource = Get-ChezmoiSourcePath
         $currentSourceRoot = Get-ChezmoiSourceRootPath -SourcePath $currentSource
         $defaultSourceRoot = Get-DefaultChezmoiSourceRoot
-        $hasManagedFiles = Test-ChezmoiHasManagedFiles
+        $hasManagedFiles = Test-ChezmoiManagedFilePresent
 
-        Write-Host "  i Chezmoi source mode: direct-path" -ForegroundColor DarkGray
-        Write-Host "  i Desired source root: $desiredPath" -ForegroundColor DarkGray
+        Write-Information "  i Chezmoi source mode: direct-path" -InformationAction Continue
+        Write-Information "  i Desired source root: $desiredPath" -InformationAction Continue
 
         if ($hasManagedFiles -and $currentSourceRoot -and ($currentSourceRoot -ne $desiredPath) -and ($currentSourceRoot -eq $defaultSourceRoot)) {
             Backup-ChezmoiSourceRoot -SourceRoot $currentSourceRoot | Out-Null
@@ -646,7 +658,7 @@ function Invoke-ChezmoiApply {
             chezmoi apply
             Write-OK "Chezmoi apply complete"
             $finalSourcePath = Get-ChezmoiSourcePath
-            Write-Host "  i Final chezmoi source-path: $finalSourcePath" -ForegroundColor DarkGray
+            Write-Information "  i Final chezmoi source-path: $finalSourcePath" -InformationAction Continue
             return
         }
 
@@ -656,7 +668,7 @@ function Invoke-ChezmoiApply {
             chezmoi apply
             $finalSourcePath = Get-ChezmoiSourcePath
             Write-OK "Chezmoi apply complete"
-            Write-Host "  i Final chezmoi source-path: $finalSourcePath" -ForegroundColor DarkGray
+            Write-Information "  i Final chezmoi source-path: $finalSourcePath" -InformationAction Continue
         }
         catch {
             throw "Chezmoi apply failed after switching sourceDir to '$desiredPath'. Restore from backup or rerun with -ChezmoiRepo. Error: $($_.Exception.Message)"
@@ -666,7 +678,7 @@ function Invoke-ChezmoiApply {
     }
 
     $currentSource = Get-ChezmoiSourcePath
-    $hasManagedFiles = Test-ChezmoiHasManagedFiles
+    $hasManagedFiles = Test-ChezmoiManagedFilePresent
 
     # Treat "source exists but manages nothing" as effectively uninitialised.
     if ((-not $currentSource) -or (-not $hasManagedFiles)) {
@@ -705,7 +717,7 @@ try {
 }
 catch {
     Write-Warn "Could not set CurrentUser execution policy (likely overridden by Process/Group Policy). Continuing."
-    Write-Host "  Effective policy: $(Get-ExecutionPolicy)" -ForegroundColor DarkGray
+    Write-Information "  i Effective policy: $(Get-ExecutionPolicy)" -InformationAction Continue
 }
 
 # NuGet is required for Install-Module to work without prompting on a fresh machine
@@ -721,9 +733,16 @@ else {
 # ─── Scoop ───────────────────────────────────────────────────────────────────
 
 Write-Step "Installing Scoop"
-if (-not (Test-CommandExists "scoop")) {
-    Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-    Update-PathEnvironment
+if (-not (Test-CommandAvailable "scoop")) {
+    $scoopInstallerPath = Join-Path $env:TEMP "install-scoop.ps1"
+    Invoke-WebRequest -Uri "https://get.scoop.sh" -OutFile $scoopInstallerPath -ErrorAction Stop
+    try {
+        & pwsh -NoProfile -ExecutionPolicy Bypass -File $scoopInstallerPath
+    }
+    finally {
+        Remove-Item -Path $scoopInstallerPath -Force -ErrorAction SilentlyContinue
+    }
+    Set-PathEnvironment
     Write-OK "Scoop installed"
 }
 else {
@@ -735,7 +754,7 @@ Write-Step "Configuring Scoop Buckets"
 $buckets = @($windowsPackages.scoopBuckets)
 foreach ($bucket in $buckets) {
     $bucketName = $bucket.name
-    if (-not (Test-ScoopBucketExists -BucketName $bucketName)) {
+    if (-not (Test-ScoopBucketPresent -BucketName $bucketName)) {
         if ($bucket.PSObject.Properties.Name -contains "url" -and $bucket.url) {
             scoop bucket add $bucketName $bucket.url
         }
@@ -759,14 +778,14 @@ git config --system core.longpaths true 2>$null
 # ─── PowerShell 7 ────────────────────────────────────────────────────────────
 
 Write-Step "Installing PowerShell 7"
-if (-not (Test-CommandExists "pwsh")) {
+if (-not (Test-CommandAvailable "pwsh")) {
     # Winget IDs are manifest-driven so package choices stay in one place.
     $pwshWinget = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Microsoft.PowerShell" } | Select-Object -First 1
     $pwshWingetId = if ($pwshWinget) { $pwshWinget.id } else { "Microsoft.PowerShell" }
     $pwshWingetSource = if ($pwshWinget -and $pwshWinget.source) { $pwshWinget.source } else { "winget" }
 
     winget install --id $pwshWingetId --source $pwshWingetSource --accept-source-agreements --accept-package-agreements --silent
-    Update-PathEnvironment
+    Set-PathEnvironment
     Write-OK "PowerShell 7 installed via winget"
 }
 else {
@@ -776,13 +795,13 @@ else {
 # ─── Windows Terminal ─────────────────────────────────────────────────────────
 
 Write-Step "Installing Windows Terminal"
-if (-not (Test-CommandExists "wt")) {
+if (-not (Test-CommandAvailable "wt")) {
     $wtWinget = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Microsoft.WindowsTerminal" } | Select-Object -First 1
     $wtWingetId = if ($wtWinget) { $wtWinget.id } else { "Microsoft.WindowsTerminal" }
     $wtWingetSource = if ($wtWinget -and $wtWinget.source) { $wtWinget.source } else { "winget" }
 
     winget install --id $wtWingetId --source $wtWingetSource --accept-source-agreements --accept-package-agreements --silent
-    Update-PathEnvironment
+    Set-PathEnvironment
     Write-OK "Windows Terminal installed via winget"
 }
 else {
@@ -821,7 +840,7 @@ if (-not $SkipFonts) {
 
 Write-Step "Installing PowerShell Modules"
 # Refresh PATH so fzf, git, and other just-installed tools are visible to modules that check for them
-Update-PathEnvironment
+Set-PathEnvironment
 $modules = @($windowsPackages.powershellModules)
 
 foreach ($mod in $modules) {
@@ -913,17 +932,17 @@ if (-not $DevDrive) {
         }
     }
 
-    Write-Host ""
-    Write-Host "  Available drives:" -ForegroundColor Cyan
-    Write-Host ""
+    Write-Information "" -InformationAction Continue
+    Write-Information "  Available drives:" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
     for ($i = 0; $i -lt $drives.Count; $i++) {
         $d = $drives[$i]
         $tag = if ($d.FS -eq "ReFS") { " ← ReFS (recommended)" } else { "" }
         $name = if ($d.Label) { " [$($d.Label)]" } else { "" }
-        Write-Host ("  [{0}] {1}{2}  {3}  {4} GB free{5}" -f
-            ($i + 1), $d.Letter, $name, $d.FS, $d.FreeGB, $tag) -ForegroundColor White
+        Write-Information ("  [{0}] {1}{2}  {3}  {4} GB free{5}" -f
+            ($i + 1), $d.Letter, $name, $d.FS, $d.FreeGB, $tag) -InformationAction Continue
     }
-    Write-Host ""
+    Write-Information "" -InformationAction Continue
 
     do {
         $raw = Read-Host "  Select drive number (default: 1)"
@@ -934,7 +953,7 @@ if (-not $DevDrive) {
     } while (-not $valid)
 
     $DevDrive = $drives[$idx - 1].Letter
-    Write-Host ""
+    Write-Information "" -InformationAction Continue
     Write-OK "Dev Drive set to $DevDrive"
 }
 
@@ -1053,7 +1072,7 @@ if (Test-Path $devDrive) {
         [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
         $pathChanged = $true
     }
-    Update-PathEnvironment
+    Set-PathEnvironment
     if ($pathChanged) {
         Write-OK "Updated user PATH with Dev Drive entries"
     }
@@ -1074,8 +1093,8 @@ $dopplerBucket = $windowsPackages.doppler.bucketName
 $dopplerBucketUrl = $windowsPackages.doppler.bucketUrl
 $dopplerPackage = $windowsPackages.doppler.packageName
 
-if (-not (Test-CommandExists $dopplerPackage)) {
-    if (-not (Test-ScoopBucketExists -BucketName $dopplerBucket)) {
+if (-not (Test-CommandAvailable $dopplerPackage)) {
+    if (-not (Test-ScoopBucketPresent -BucketName $dopplerBucket)) {
         scoop bucket add $dopplerBucket $dopplerBucketUrl
         Write-OK "Added bucket: $dopplerBucket"
     }
@@ -1094,7 +1113,7 @@ else {
 
 Write-Step "Installing Languages & Runtimes via mise"
 
-if (Test-CommandExists "mise") {
+if (Test-CommandAvailable "mise") {
     # All core tools managed by mise — no external installers needed.
     # Rust and Bun are first-class core tools (https://mise.jdx.dev/core-tools.html).
     # pnpm is installed as a mise tool; corepack can activate it per-project via hooks.
@@ -1109,8 +1128,8 @@ if (Test-CommandExists "mise") {
     Write-OK "mise shims refreshed"
 
     # Reload PATH from registry and fail fast if any configured runtime command is unresolved.
-    Update-PathEnvironment
-    Test-MiseRuntimeCommands -RuntimeSpecs $runtimes
+    Set-PathEnvironment
+    Test-MiseRuntimeCommandAvailability -RuntimeSpecs $runtimes
 
     Write-OK "All runtimes installed — managed by mise"
 }
@@ -1129,20 +1148,20 @@ if ($SkipChezmoi) {
 
 Write-Step "Installing VS Code Extensions"
 $extScript = Join-Path $PSScriptRoot "install-vscode-extensions.ps1"
-if ((Test-Path $extScript) -and (Test-CommandExists "code")) {
+if ((Test-Path $extScript) -and (Test-CommandAvailable "code")) {
     & $extScript
 }
-elseif (-not (Test-CommandExists "code")) {
+elseif (-not (Test-CommandAvailable "code")) {
     Write-Warn "VS Code 'code' CLI not on PATH yet — restart your shell and run:"
     Write-Warn "  .\scripts\install-vscode-extensions.ps1"
 }
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
-Write-Host "`n============================================================" -ForegroundColor Green
-Write-Host "  ✓  Dev environment setup complete!" -ForegroundColor Green
-Write-Host "============================================================" -ForegroundColor Green
-Write-Host @"
+Write-Information "`n============================================================" -InformationAction Continue
+Write-Information "  ✓  Dev environment setup complete!" -InformationAction Continue
+Write-Information "============================================================" -InformationAction Continue
+Write-Information @"
 
 Next steps:
   1. Open Windows Terminal (dotfiles are deployed by chezmoi apply)
@@ -1155,4 +1174,6 @@ Next steps:
   6. Configure gopass:
        gopass setup
 
-"@ -ForegroundColor White
+"@ -InformationAction Continue
+
+
