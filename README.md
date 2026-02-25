@@ -103,6 +103,7 @@ WSL bootstrap behavior:
 - If legacy `~/.local/share/chezmoi` source-state exists, creates a timestamped backup before switching sourceDir.
 - If an existing different direct-path source is already configured, warns and keeps the current source while applying.
 - Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
+- Installs `zinit` idempotently at `${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git` during shell configuration.
 - Refreshes session PATH after pre-runtime and post-runtime script installs so newly installed user-local tools are available in the same run.
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
 - Creates a default projects directory at `$HOME/projects` (or `$PROJECTS` when set).
@@ -110,6 +111,8 @@ WSL bootstrap behavior:
 - Keeps VS Code extension installation automation Windows-only (`scripts/install-vscode-extensions.ps1`).
 
 WSL parity tool install methods:
+- `zinit`: upstream git clone during `Shell config` phase
+- `starship`: managed in `home/dot_zshrc` via Zinit (`gh-r` command release), not `scriptInstalls`
 - `zoxide`: official install script (`scriptInstalls`, pre-runtime)
 - `chezmoi`: official installer script (`scriptInstalls`, pre-runtime)
 - `yazi`: GitHub release artifact install (`scriptInstalls`, pre-runtime)
@@ -123,11 +126,12 @@ Post-bootstrap verification:
 
 ```bash
 zsh --version
+zsh -ic 'zi --version'
+zsh -ic 'starship --version'
 gh --version
 doppler --version
 chezmoi --version
 mise --version
-starship --version
 opencode --version
 zoxide --version
 yazi --version
@@ -208,6 +212,7 @@ Bootstrap reads install inventories from:
   - required apt packages (`systemPackages`)
   - phase-aware script-based installers (`scriptInstalls`)
   - `mise` runtime inventory (`miseRuntimes`)
+  - shell plugin/prompt runtime setup is handled in `home/dot_zshrc` via Zinit
 - `manifests/linux.arch.packages.json`
   - reserved for non-WSL Linux workflows; not used by `bootstrap-wsl.sh`
 

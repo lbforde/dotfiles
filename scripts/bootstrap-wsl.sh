@@ -1229,6 +1229,35 @@ ensure_zsh_default_shell() {
   warn "chsh completed but login shell still reports '$updated_login_shell'. Verify /etc/passwd and retry."
 }
 
+ensure_zinit_installed() {
+  local zinit_home="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+  local zinit_parent
+  zinit_parent="$(dirname "$zinit_home")"
+
+  if [[ -d "$zinit_home/.git" ]]; then
+    ok "Zinit already installed: $zinit_home"
+    return
+  fi
+
+  if [[ -e "$zinit_home" ]]; then
+    warn "Zinit path exists but is not a git clone: $zinit_home"
+    warn "Remove it and rerun bootstrap to reinstall Zinit."
+    return
+  fi
+
+  step "Installing Zinit"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf "  [dry-run] mkdir -p %s\n" "$zinit_parent"
+    printf "  [dry-run] git clone %s %s\n" "https://github.com/zdharma-continuum/zinit.git" "$zinit_home"
+    return
+  fi
+
+  require_cmd git
+  mkdir -p "$zinit_parent"
+  run_cmd git clone "https://github.com/zdharma-continuum/zinit.git" "$zinit_home"
+  ok "Installed Zinit: $zinit_home"
+}
+
 # --- Main -------------------------------------------------------------------
 
 init_ui
@@ -1375,6 +1404,7 @@ ensure_projects_directory
 
 step "Shell config"
 ensure_zsh_default_shell
+ensure_zinit_installed
 
 step "Done"
 ok "WSL bootstrap completed."
@@ -1388,11 +1418,12 @@ else
 fi
 printf "  3. Verify toolchain versions:\n"
 printf "       zsh --version\n"
+printf "       zsh -ic 'zi --version'\n"
 printf "       gh --version\n"
 printf "       doppler --version\n"
 printf "       chezmoi --version\n"
 printf "       mise --version\n"
-printf "       starship --version\n"
+printf "       zsh -ic 'starship --version'\n"
 printf "       opencode --version\n"
 printf "       zoxide --version\n"
 printf "       yazi --version\n"

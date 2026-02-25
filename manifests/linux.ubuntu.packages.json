@@ -75,12 +75,6 @@
       "phase": "pre-runtime"
     },
     {
-      "name": "starship",
-      "checkCommand": "command -v starship",
-      "installCommand": "curl -sS https://starship.rs/install.sh | sh -s -- -y",
-      "phase": "pre-runtime"
-    },
-    {
       "name": "opencode",
       "checkCommand": "command -v opencode",
       "installCommand": "curl -fsSL https://opencode.ai/install | bash",

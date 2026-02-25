@@ -36,8 +36,43 @@ else
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'head -n 50 {}'"
 fi
 
-if command -v starship >/dev/null 2>&1; then
-  eval "$(starship init zsh)"
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+if [[ ! -f "${ZINIT_HOME}/zinit.zsh" ]] && command -v git >/dev/null 2>&1; then
+  mkdir -p -- "${ZINIT_HOME:h}"
+  git clone "https://github.com/zdharma-continuum/zinit.git" "$ZINIT_HOME"
+fi
+
+if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
+  source "${ZINIT_HOME}/zinit.zsh"
+
+  zinit ice as"command" from"gh-r" atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" atpull"%atclone" src"init.zsh"
+  zinit light starship/starship
+
+  zinit light zsh-users/zsh-completions
+
+  zstyle ':completion:*:descriptions' format '[%d]'
+  zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+  zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+  zstyle ':completion:*' menu no
+
+  autoload -Uz compinit && compinit
+
+  zinit light Aloxaf/fzf-tab
+  zstyle ':fzf-tab:*' fzf-flags --height=60% --layout=reverse --border --ansi
+  zstyle ':fzf-tab:*' fzf-pad 4
+  zstyle ':fzf-tab:*' switch-group ',' '.'
+  zstyle ':fzf-tab:*' continuous-trigger '/'
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'if (( $+commands[eza] )); then eza -1 --color=always $realpath; else ls --color=always -1 $realpath; fi'
+  zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'if (( $+commands[eza] )); then eza -1 --color=always $realpath; else ls --color=always -1 $realpath; fi'
+  zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' fzf-preview 'echo ${(P)word}'
+
+  zinit cdreplay -q
+
+  zinit ice wait"1" lucid
+  zinit light zsh-users/zsh-autosuggestions
+
+  zinit ice wait"2" lucid
+  zinit light zdharma-continuum/fast-syntax-highlighting
 fi
 
 if command -v zoxide >/dev/null 2>&1; then
