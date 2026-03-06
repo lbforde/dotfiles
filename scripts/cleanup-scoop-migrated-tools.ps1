@@ -23,9 +23,43 @@ function Write-Info {
     Write-Information "  $($PSStyle.Foreground.DarkGray)🛈 $Message$($PSStyle.Reset)" -InformationAction Continue
 }
 
+function Get-ScoopCommandPath {
+    $scoopCommand = Get-Command scoop.cmd -ErrorAction SilentlyContinue
+    if ($null -ne $scoopCommand) {
+        return $scoopCommand.Source
+    }
+
+    $scoopShim = Get-Command scoop -ErrorAction SilentlyContinue
+    if ($null -ne $scoopShim) {
+        $shimDirectory = Split-Path -Path $scoopShim.Source -Parent
+        $scoopCmdPath = Join-Path $shimDirectory "scoop.cmd"
+        if (Test-Path -LiteralPath $scoopCmdPath) {
+            return $scoopCmdPath
+        }
+    }
+
+    throw "Unable to locate scoop.cmd on PATH."
+}
+
+function Invoke-ScoopCommand {
+    param([Parameter(Mandatory = $true)][string[]]$Arguments)
+
+    & $script:ScoopCommandPath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        $commandText = ($Arguments -join " ")
+        throw "Scoop command failed: scoop $commandText"
+    }
+}
+
+function Get-ScoopCommandOutput {
+    param([Parameter(Mandatory = $true)][string[]]$Arguments)
+
+    return (& $script:ScoopCommandPath @Arguments)
+}
+
 function Get-ScoopInstalledPackages {
     $packages = @{}
-    foreach ($entry in (scoop list)) {
+    foreach ($entry in (Get-ScoopCommandOutput -Arguments @("list"))) {
         if ($null -eq $entry) { continue }
 
         if ($entry -is [string]) {
@@ -47,25 +81,50 @@ function Get-ScoopInstalledPackages {
     return $packages
 }
 
-function Test-ScoopBucketUnused {
-    param([Parameter(Mandatory = $true)][string]$BucketName)
-
-    foreach ($entry in (scoop list)) {
+function Get-ScoopInstalledPackageSources {
+    $packages = @{}
+    foreach ($entry in (Get-ScoopCommandOutput -Arguments @("list"))) {
         if ($null -eq $entry) { continue }
 
-        $source = ""
         if ($entry -is [string]) {
             $trimmed = $entry.Trim()
             if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed -like "Installed apps:*") { continue }
             if ($trimmed -match "^(Name|----)\b") { continue }
             $parts = $trimmed -split "\s+"
-            if ($parts.Count -ge 3) {
-                $source = $parts[2]
+            if ($parts.Count -gt 0) {
+                $source = if ($parts.Count -ge 3) { [string]$parts[2] } else { "" }
+                $packages[[string]$parts[0]] = $source
             }
+            continue
         }
-        elseif ($entry.PSObject.Properties.Name -contains "Source") {
-            $source = [string]$entry.Source
+
+        if ($entry.PSObject.Properties.Name -contains "Name") {
+            $source = if ($entry.PSObject.Properties.Name -contains "Source") { [string]$entry.Source } else { "" }
+            $packages[[string]$entry.Name] = $source
         }
+    }
+
+    return $packages
+}
+
+function Test-ScoopBucketUnused {
+    param(
+        [Parameter(Mandatory = $true)][string]$BucketName,
+        [Parameter(Mandatory = $true)][hashtable]$InstalledPackageSources,
+        [string[]]$ExcludedPackages = @()
+    )
+
+    $excludedLookup = @{}
+    foreach ($packageName in $ExcludedPackages) {
+        $excludedLookup[[string]$packageName] = $true
+    }
+
+    foreach ($packageName in $InstalledPackageSources.Keys) {
+        if ($excludedLookup.ContainsKey([string]$packageName)) {
+            continue
+        }
+
+        $source = [string]$InstalledPackageSources[$packageName]
 
         if ($source -eq $BucketName) {
             return $false
@@ -77,7 +136,7 @@ function Test-ScoopBucketUnused {
 
 function Test-MiseToolReady {
     param(
-        [Parameter(Mandatory = $true)][string]$ToolName,
+        [Parameter(Mandatory = $true)][object]$ToolName,
         [Parameter(Mandatory = $true)][string]$CommandName
     )
 
@@ -87,7 +146,14 @@ function Test-MiseToolReady {
     }
 
     $current = $currentRaw | ConvertFrom-Json
-    $toolProperty = $current.PSObject.Properties[$ToolName]
+    $toolProperty = $null
+    foreach ($candidateName in @($ToolName)) {
+        $toolProperty = $current.PSObject.Properties[[string]$candidateName]
+        if ($null -ne $toolProperty) {
+            break
+        }
+    }
+
     if ($null -eq $toolProperty) {
         return $false
     }
@@ -109,7 +175,7 @@ function Test-ScoopBucketPresent {
     param([Parameter(Mandatory = $true)][string]$BucketName)
 
     try {
-        $bucketLines = scoop bucket list 2>$null
+        $bucketLines = Get-ScoopCommandOutput -Arguments @("bucket", "list")
     }
     catch {
         return $false
@@ -144,6 +210,8 @@ if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
     throw "scoop is not available on PATH. There is nothing to clean up."
 }
 
+$script:ScoopCommandPath = Get-ScoopCommandPath
+
 if (-not (Get-Command mise -ErrorAction SilentlyContinue)) {
     throw "mise is not available on PATH. Run bootstrap.ps1 first so migrated tools are installed."
 }
@@ -153,7 +221,7 @@ $migrationMap = @(
     @{ Scoop = "chezmoi"; Tool = "chezmoi"; Command = "chezmoi" },
     @{ Scoop = "cmake"; Tool = "cmake"; Command = "cmake" },
     @{ Scoop = "croc"; Tool = "croc"; Command = "croc" },
-    @{ Scoop = "eza"; Tool = "eza"; Command = "eza" },
+    @{ Scoop = "eza"; Tool = @("eza", "github:eza-community/eza"); Command = "eza" },
     @{ Scoop = "fd"; Tool = "fd"; Command = "fd" },
     @{ Scoop = "fzf"; Tool = "fzf"; Command = "fzf" },
     @{ Scoop = "gh"; Tool = "gh"; Command = "gh" },
@@ -169,6 +237,8 @@ $migrationMap = @(
 )
 
 $installedPackages = Get-ScoopInstalledPackages
+$installedPackageSources = Get-ScoopInstalledPackageSources
+$plannedRemoved = New-Object System.Collections.Generic.List[string]
 $removed = New-Object System.Collections.Generic.List[string]
 $skipped = New-Object System.Collections.Generic.List[string]
 
@@ -187,12 +257,13 @@ foreach ($item in $migrationMap) {
     }
 
     if ($PSCmdlet.ShouldProcess("scoop package '$($item.Scoop)'", "Uninstall")) {
-        scoop uninstall $item.Scoop
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to uninstall Scoop package: $($item.Scoop)"
-        }
+        Invoke-ScoopCommand -Arguments @("uninstall", $item.Scoop)
         Write-OK "Removed Scoop package: $($item.Scoop)"
+        $plannedRemoved.Add($item.Scoop) | Out-Null
         $removed.Add($item.Scoop) | Out-Null
+    }
+    elseif ($WhatIfPreference) {
+        $plannedRemoved.Add($item.Scoop) | Out-Null
     }
 }
 
@@ -204,16 +275,13 @@ foreach ($bucketName in $bucketNames) {
         continue
     }
 
-    if (-not (Test-ScoopBucketUnused -BucketName $bucketName)) {
+    if (-not (Test-ScoopBucketUnused -BucketName $bucketName -InstalledPackageSources $installedPackageSources -ExcludedPackages $plannedRemoved)) {
         Write-Info "Keeping Scoop bucket '$bucketName' because installed packages still reference it."
         continue
     }
 
     if ($PSCmdlet.ShouldProcess("scoop bucket '$bucketName'", "Remove")) {
-        scoop bucket rm $bucketName
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to remove Scoop bucket: $bucketName"
-        }
+        Invoke-ScoopCommand -Arguments @("bucket", "rm", $bucketName)
         Write-OK "Removed Scoop bucket: $bucketName"
     }
 }

@@ -128,6 +128,39 @@ function Initialize-BootstrapChezmoi {
     }
 }
 
+function Invoke-ChezmoiApplyChecked {
+    param([switch]$ExcludeScripts)
+
+    if ($ExcludeScripts) {
+        chezmoi apply --exclude=scripts
+    }
+    else {
+        chezmoi apply
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "chezmoi apply failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Invoke-ChezmoiInitApplyChecked {
+    param(
+        [Parameter(Mandatory = $true)][string]$DesiredSource,
+        [switch]$ExcludeScripts
+    )
+
+    if ($ExcludeScripts) {
+        chezmoi init --apply --exclude=scripts $DesiredSource
+    }
+    else {
+        chezmoi init --apply $DesiredSource
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "chezmoi init --apply failed with exit code $LASTEXITCODE"
+    }
+}
+
 function Invoke-MiseSync {
     $syncScript = Join-Path $PSScriptRoot "sync-mise.ps1"
     if (-not (Test-Path $syncScript)) {
@@ -631,7 +664,7 @@ function Invoke-ChezmoiApply {
             Write-Warn "Current source root: $currentSourceRoot"
             Write-Warn "Desired source root: $desiredPath"
             Write-Warn "Keeping existing source and applying current state."
-            chezmoi apply
+            Invoke-ChezmoiApplyChecked -ExcludeScripts
             Write-OK "Chezmoi apply complete"
             $finalSourcePath = Get-ChezmoiSourcePath
             Write-Info "Final chezmoi source-path: $finalSourcePath"
@@ -641,7 +674,7 @@ function Invoke-ChezmoiApply {
         Set-LocalChezmoiSourceDir -SourceDir $desiredPath
 
         try {
-            chezmoi apply
+            Invoke-ChezmoiApplyChecked -ExcludeScripts
             $finalSourcePath = Get-ChezmoiSourcePath
             Write-OK "Chezmoi apply complete"
             Write-Info "Final chezmoi source-path: $finalSourcePath"
@@ -658,7 +691,7 @@ function Invoke-ChezmoiApply {
 
     # Treat "source exists but manages nothing" as effectively uninitialised.
     if ((-not $currentSource) -or (-not $hasManagedFiles)) {
-        chezmoi init --apply $DesiredSource
+        Invoke-ChezmoiInitApplyChecked -DesiredSource $DesiredSource -ExcludeScripts
         Write-OK "Chezmoi initialised and applied from $DesiredSource"
         return
     }
@@ -675,7 +708,7 @@ function Invoke-ChezmoiApply {
             Write-Warn "Could not determine current chezmoi origin; keeping existing source and applying current state."
         }
     }
-    chezmoi apply
+    Invoke-ChezmoiApplyChecked -ExcludeScripts
     Write-OK "Chezmoi apply complete"
 }
 
@@ -1026,9 +1059,9 @@ if (-not $SkipChezmoi) {
     $desiredChezmoiSource = Resolve-DesiredChezmoiSource
     Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
 
-    Write-Step "Syncing mise tools"
     Invoke-MiseSync
 
+    Write-Step "Configuring PowerShell Profile Bridge"
     Sync-PowerShellProfileBridge
 }
 
@@ -1036,7 +1069,7 @@ if (-not $SkipChezmoi) {
 
 if ($SkipChezmoi) {
     Write-Warn "Chezmoi apply was skipped. Managed dotfiles were not deployed."
-    Write-Warn "Re-run bootstrap without -SkipChezmoi, or run 'chezmoi apply' followed by '.\scripts\sync-mise.ps1'."
+    Write-Warn "Re-run bootstrap without -SkipChezmoi, or run 'chezmoi apply --exclude=scripts' followed by '.\scripts\sync-mise.ps1'."
 }
 
 # ─── VS Code Extensions ───────────────────────────────────────────────────────

@@ -456,8 +456,10 @@ Git identity data:
 
 - Managed by `mise`.
 - Global Windows config lives at `~/.config/mise/config.toml` and is managed from `home/dot_config/mise/config.toml`.
-- Bootstrap applies the managed config, then runs `.\scripts\sync-mise.ps1`.
+- `eza` uses the `github:eza-community/eza` backend so `mise` installs release assets instead of compiling with Cargo/MSVC.
+- Bootstrap applies managed files with chezmoi scripts excluded, then runs `.\scripts\sync-mise.ps1` once explicitly.
 - Later config changes trigger the same sync via a chezmoi `run_onchange` script.
+- Run `.\scripts\sync-mise.ps1` manually when you want to repair or revalidate runtimes without changing the managed config.
 - Quick verification:
   - `mise which go`
   - `where.exe go`
