@@ -26,7 +26,7 @@ Reproducible dotfiles + tooling bootstrap using Chezmoi and manifest-driven inst
 This setup gives you:
 
 - Chezmoi-first dotfile deployment (single source of truth)
-- Manifest-driven installs for packages, runtimes, and VS Code extensions
+- Manifest-driven installs for Windows bootstrap packages and VS Code extensions
 - Windows bootstrap plus WSL2 Ubuntu bootstrap flow
 - Runtime management with `mise`
 - Terminal/editor stack with Windows Terminal, Starship, PowerShell profile, and VS Code settings
@@ -73,6 +73,8 @@ First run behavior:
 - If legacy source-state exists at `~/.local/share/chezmoi`, bootstrap creates a timestamped backup before switching.
 - Re-runs reuse existing user `DEV_DRIVE` automatically when it is valid (skip drive picker prompt).
 - Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
+- Uses `mise exec chezmoi@latest` to bootstrap `chezmoi` before the managed global `mise` config is applied.
+- Applies the managed `~/.config/mise/config.toml` and then runs `.\scripts\sync-mise.ps1`.
 
 ### WSL2 (Ubuntu / Debian-family)
 
@@ -204,8 +206,6 @@ Bootstrap reads install inventories from:
   - Scoop buckets/tools
   - PowerShell modules
   - Winget packages (PowerShell + Windows Terminal)
-  - Doppler bucket/package
-  - Global `mise` runtime list (`mise.runtimes`)
   - VS Code extension install list (`vscode.recommendations`)
 - `manifests/linux.ubuntu.packages.json`
   - apt repositories (`aptRepositories`) including third-party sources where required by upstream install methods
@@ -221,6 +221,12 @@ Scripts consuming manifests:
 - `scripts/bootstrap.ps1`
 - `scripts/install-vscode-extensions.ps1`
 - `scripts/bootstrap-wsl.sh`
+
+Windows `mise` source of truth:
+
+- `home/dot_config/mise/config.toml`
+- `scripts/sync-mise.ps1`
+- `home/.chezmoiscripts/run_onchange_after_20-sync-mise.ps1.tmpl`
 
 Linux manifest schema:
 
@@ -248,16 +254,15 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 ### 2. What bootstrap does
 
-- Installs Scoop and configured buckets/tools
+- Installs Scoop and retained bootstrap tools (`git`, `mise`, `vscode`, `miktex`)
 - Installs PowerShell 7 (winget)
 - Installs Windows Terminal (winget)
 - Installs PowerShell modules
-- Ensures configured `mise` runtimes are installed (missing runtimes are installed; existing ones are reported as already installed)
 - Configures Dev Drive directories and environment variables (idempotent on reruns)
 - Ensures Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) are on user PATH without duplicate entries
-- Runs `mise reshim` so runtime binaries (for example `go`) are immediately available
-- Validates configured runtime commands are resolvable on PATH (fails fast if not)
-- Sets up Chezmoi (init/apply) and deploys managed dotfiles
+- Bootstraps `chezmoi` through `mise` when it is not already on PATH
+- Sets up Chezmoi (init/apply) and deploys managed dotfiles, including `~/.config/mise/config.toml`
+- Runs `.\scripts\sync-mise.ps1` to install and reshim the managed global `mise` tools
 - Configures a redirected-profile bridge at the real `$PROFILE.CurrentUserAllHosts` path that dot-sources the chezmoi-managed profile
 - Installs VS Code extensions from manifest
 
@@ -269,7 +274,16 @@ doppler login
 gopass setup
 ```
 
-### 4. First launch workflow
+### 4. Optional cleanup
+
+```powershell
+.\scripts\cleanup-scoop-migrated-tools.ps1 -WhatIf
+.\scripts\cleanup-scoop-migrated-tools.ps1
+```
+
+This removes legacy Scoop-managed CLI tools that are now owned by `mise`, but only when the replacement command is already available from `mise`.
+
+### 5. First launch workflow
 
 1. Open Windows Terminal.
 2. Start `pwsh` and confirm your profile loaded.
@@ -292,9 +306,13 @@ dotfiles/
 |-- scripts/
 |   |-- bootstrap.ps1
 |   |-- bootstrap-wsl.sh
-|   `-- install-vscode-extensions.ps1
+|   |-- cleanup-scoop-migrated-tools.ps1
+|   |-- install-vscode-extensions.ps1
+|   `-- sync-mise.ps1
 `-- home/
     |-- .chezmoiignore.tmpl
+    |-- .chezmoiscripts/
+    |   `-- run_onchange_after_20-sync-mise.ps1.tmpl
     |-- dot_zshrc
     |-- dot_gitconfig.tmpl
     |-- Documents/PowerShell/profile.ps1
@@ -302,6 +320,8 @@ dotfiles/
     |-- AppData/Local/Packages/
     |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
     `-- dot_config/
+        |-- mise/
+        |   `-- config.toml
         `-- starship.toml
 ```
 
@@ -435,15 +455,34 @@ Git identity data:
 ### Runtimes
 
 - Managed by `mise`.
-- Global runtime list from `manifests/windows.packages.json` (`mise.runtimes`).
-- Bootstrap checks each configured runtime and installs only missing ones.
-- Bootstrap keeps the `mise` shims path on user PATH (deduped) and refreshes shims after runtime checks.
+- Global Windows config lives at `~/.config/mise/config.toml` and is managed from `home/dot_config/mise/config.toml`.
+- Bootstrap applies the managed config, then runs `.\scripts\sync-mise.ps1`.
+- Later config changes trigger the same sync via a chezmoi `run_onchange` script.
 - Quick verification:
   - `mise which go`
   - `where.exe go`
   - `go version`
   - `mise which java`
   - `java -version`
+
+Managed Windows CLI tools now include:
+- `chezmoi`
+- `doppler`
+- `starship`
+- `zoxide`
+- `fzf`
+- `yazi`
+- `eza`
+- `ripgrep`
+- `bat`
+- `fd`
+- `lazygit`
+- `gh`
+- `croc`
+- `grex`
+- `jq`
+- `gopass`
+- `cmake`
 
 Repair existing machine (if runtime commands are missing):
 

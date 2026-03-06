@@ -7,6 +7,7 @@
 # Windows-only files — ignore on Linux/macOS
 {{- if ne .chezmoi.os "windows" }}
 Documents/PowerShell
+.chezmoiscripts
 scoop/persist/vscode/data/user-data/User
 AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
 {{- end }}

@@ -1,0 +1,17 @@
+# Managed by chezmoi.
+# Re-run trigger: {{ joinPath .chezmoi.sourceDir "dot_config" "mise" "config.toml" | include | sha256sum }}
+
+if ("{{ .chezmoi.os }}" -ne "windows") {
+    exit 0
+}
+
+$repoRoot = Resolve-Path (Join-Path "{{ .chezmoi.sourceDir }}" "..")
+$syncScript = Join-Path $repoRoot "scripts\sync-mise.ps1"
+
+if (-not (Test-Path -LiteralPath $syncScript)) {
+    Write-Error "sync-mise.ps1 not found at $syncScript"
+    exit 1
+}
+
+& pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File $syncScript
+exit $LASTEXITCODE

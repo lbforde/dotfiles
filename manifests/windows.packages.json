@@ -5,83 +5,16 @@
     },
     {
       "name": "nerd-fonts"
-    },
-    {
-      "name": "versions"
     }
   ],
   "scoopTools": [
-    {
-      "name": "chezmoi",
-      "bucket": "main"
-    },
     {
       "name": "mise",
       "bucket": "main"
     },
     {
-      "name": "starship",
-      "bucket": "main"
-    },
-    {
-      "name": "zoxide",
-      "bucket": "main"
-    },
-    {
-      "name": "fzf",
-      "bucket": "main"
-    },
-    {
-      "name": "yazi",
-      "bucket": "main"
-    },
-    {
-      "name": "eza",
-      "bucket": "main"
-    },
-    {
-      "name": "ripgrep",
-      "bucket": "main"
-    },
-    {
-      "name": "bat",
-      "bucket": "main"
-    },
-    {
-      "name": "fd",
-      "bucket": "main"
-    },
-    {
-      "name": "lazygit",
-      "bucket": "extras"
-    },
-    {
-      "name": "gh",
-      "bucket": "main"
-    },
-    {
-      "name": "croc",
-      "bucket": "main"
-    },
-    {
-      "name": "grex",
-      "bucket": "main"
-    },
-    {
-      "name": "jq",
-      "bucket": "main"
-    },
-    {
-      "name": "gopass",
-      "bucket": "main"
-    },
-    {
       "name": "vscode",
       "bucket": "extras"
-    },
-    {
-      "name": "cmake",
-      "bucket": "main"
     },
     {
       "name": "miktex",
@@ -107,11 +40,6 @@
       "minVersion": "1.1.0"
     }
   ],
-  "doppler": {
-    "bucketName": "doppler",
-    "bucketUrl": "https://github.com/DopplerHQ/scoop-doppler.git",
-    "packageName": "doppler"
-  },
   "wingetPackages": [
     {
       "id": "Microsoft.WindowsTerminal",
@@ -122,18 +50,6 @@
       "source": "winget"
     }
   ],
-  "mise": {
-    "runtimes": [
-      "node@lts",
-      "rust@stable",
-      "go@latest",
-      "bun@latest",
-      "pnpm@latest",
-      "zig@latest",
-      "python@latest",
-      "java@temurin-21"
-    ]
-  },
   "vscode": {
     "recommendations": [
       "zhuangtongfa.Material-theme",

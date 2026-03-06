@@ -92,83 +92,57 @@ function Install-ScoopApp {
     }
 }
 
-function Get-MiseRuntimeCommand {
-    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
+function Initialize-BootstrapChezmoi {
+    param([switch]$Quiet)
 
-    $runtimeName = ($RuntimeSpec -split "@")[0].ToLowerInvariant()
-    switch ($runtimeName) {
-        "rust" { return "rustc" }
-        "python" { return "python" }
-        default { return $runtimeName }
-    }
-}
-
-function Test-MiseRuntimeInstalled {
-    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
-
-    try {
-        $null = (& mise where $RuntimeSpec 2>$null | Out-String).Trim()
-        return ($LASTEXITCODE -eq 0)
-    }
-    catch {
-        return $false
-    }
-}
-
-function Install-MiseRuntime {
-    param([Parameter(Mandatory = $true)][string]$RuntimeSpec)
-
-    if (Test-MiseRuntimeInstalled -RuntimeSpec $RuntimeSpec) {
-        Write-OK "$RuntimeSpec already installed"
+    if (Test-CommandAvailable "chezmoi") {
         return
     }
 
-    Write-Info "Installing $RuntimeSpec..."
-    $output = (& mise use --global $RuntimeSpec 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install $RuntimeSpec via mise. Output: $output"
+    if (-not (Test-CommandAvailable "mise")) {
+        throw "mise is not available on PATH, so chezmoi cannot be bootstrapped."
     }
 
-    Write-OK "$RuntimeSpec installed"
+    if (-not $Quiet) {
+        Write-Info "Bootstrapping chezmoi via mise exec..."
+    }
+
+    & mise exec "chezmoi@latest" --command "chezmoi --version" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to bootstrap chezmoi via mise exec."
+    }
+
+    & mise reshim
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to refresh mise shims after bootstrapping chezmoi."
+    }
+
+    Set-PathEnvironment
+
+    if (-not (Test-CommandAvailable "chezmoi")) {
+        throw "chezmoi is still not available after bootstrapping it via mise."
+    }
+
+    if (-not $Quiet) {
+        Write-OK "chezmoi bootstrapped via mise"
+    }
 }
 
-function Test-MiseRuntimeCommandAvailability {
-    param([Parameter(Mandatory = $true)][string[]]$RuntimeSpecs)
-
-    $missing = @()
-    foreach ($runtime in $RuntimeSpecs) {
-        $command = Get-MiseRuntimeCommand -RuntimeSpec $runtime
-        if (-not (Test-CommandAvailable $command)) {
-            $resolvedPath = ""
-            try {
-                $resolvedPath = (& mise which $command 2>$null | Out-String).Trim()
-            }
-            catch {
-                $resolvedPath = ""
-            }
-
-            $missing += [PSCustomObject]@{
-                Runtime      = $runtime
-                Command      = $command
-                MiseResolved = if ($resolvedPath) { $resolvedPath } else { "<not found by mise which>" }
-            }
-        }
+function Invoke-MiseSync {
+    $syncScript = Join-Path $PSScriptRoot "sync-mise.ps1"
+    if (-not (Test-Path $syncScript)) {
+        throw "mise sync script not found: $syncScript"
     }
 
-    if ($missing.Count -gt 0) {
-        Write-Warn "mise runtime validation failed. Commands missing from PATH:"
-        foreach ($item in $missing) {
-            Write-Warn "  runtime=$($item.Runtime) command=$($item.Command) miseWhich=$($item.MiseResolved)"
-        }
-        throw "Runtime validation failed. Ensure MISE_DATA_DIR shims are on PATH, then run 'mise reshim'."
+    & $syncScript
+    if ($LASTEXITCODE -ne 0) {
+        throw "mise sync failed with exit code $LASTEXITCODE"
     }
-
-    Write-OK "Validated runtime commands on PATH"
 }
 
 function Get-ChezmoiSourcePath {
     # Returns empty string when chezmoi has not been initialised yet.
-    if (-not (Test-CommandAvailable "chezmoi")) { return "" }
+    Initialize-BootstrapChezmoi -Quiet
 
     try {
         $source = (& chezmoi source-path 2>$null | Out-String).Trim()
@@ -181,7 +155,7 @@ function Get-ChezmoiSourcePath {
 
 function Get-ChezmoiRemoteOrigin {
     # Returns origin URL from chezmoi source repo when available.
-    if (-not (Test-CommandAvailable "chezmoi")) { return "" }
+    Initialize-BootstrapChezmoi -Quiet
 
     try {
         $origin = (& chezmoi git -- remote get-url origin 2>$null | Out-String).Trim()
@@ -194,7 +168,7 @@ function Get-ChezmoiRemoteOrigin {
 
 function Test-ChezmoiManagedFilePresent {
     # Returns true when chezmoi currently has at least one managed target.
-    if (-not (Test-CommandAvailable "chezmoi")) { return $false }
+    Initialize-BootstrapChezmoi -Quiet
 
     try {
         $managed = (& chezmoi managed 2>$null | Out-String).Trim()
@@ -634,10 +608,7 @@ function Resolve-DesiredChezmoiSource {
 function Invoke-ChezmoiApply {
     param([Parameter(Mandatory = $true)][string]$DesiredSource)
 
-    if (-not (Test-CommandAvailable "chezmoi")) {
-        Write-Warn "chezmoi is not available on PATH — skipping dotfile apply."
-        return
-    }
+    Initialize-BootstrapChezmoi
 
     $desiredIsRemote = $DesiredSource -match '^(https?|ssh)://|^git@'
 
@@ -859,50 +830,6 @@ foreach ($mod in $modules) {
     }
 }
 
-# ─── Mise Config ─────────────────────────────────────────────────────────────
-
-Write-Step "Setting up mise config"
-$miseConfig = "$env:USERPROFILE\.config\mise\config.toml"
-$miseDir = Split-Path $miseConfig
-if (-not (Test-Path $miseDir)) {
-    New-Item -ItemType Directory -Path $miseDir -Force | Out-Null
-}
-if (-not (Test-Path $miseConfig)) {
-    @'
-[settings]
-experimental = true   # required for hooks and some core tool features
-
-[tools]
-node    = "lts"
-rust    = "stable"
-go      = "latest"
-bun     = "latest"
-pnpm    = "latest"
-zig     = "latest"
-python  = "latest"
-java    = "temurin-21"
-
-# Add more runtimes here as needed, e.g.:
-# python = "3.12"
-# deno   = "latest"
-# ruby   = "latest"
-'@ | Set-Content -Path $miseConfig -Encoding UTF8
-    Write-OK "mise config created at $miseConfig"
-}
-else {
-    Write-OK "mise config already exists"
-}
-
-# ─── Chezmoi Init ─────────────────────────────────────────────────────────────
-
-if (-not $SkipChezmoi) {
-    Write-Step "Configuring Chezmoi"
-    Initialize-LocalChezmoiConfig
-    $desiredChezmoiSource = Resolve-DesiredChezmoiSource
-    Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
-    Sync-PowerShellProfileBridge
-}
-
 # ─── Dev Drive Setup (Z:\) ───────────────────────────────────────────────────
 
 Write-Step "Configuring Dev Drive"
@@ -1091,62 +1018,25 @@ else {
     Write-Warn "Guide: Settings > System > Storage > Advanced storage settings > Disks & volumes"
 }
 
-# ─── Doppler CLI ─────────────────────────────────────────────────────────────
+# ─── Chezmoi Init + Mise Sync ────────────────────────────────────────────────
 
-Write-Step "Installing Doppler CLI"
-$dopplerBucket = $windowsPackages.doppler.bucketName
-$dopplerBucketUrl = $windowsPackages.doppler.bucketUrl
-$dopplerPackage = $windowsPackages.doppler.packageName
+if (-not $SkipChezmoi) {
+    Write-Step "Configuring Chezmoi"
+    Initialize-LocalChezmoiConfig
+    $desiredChezmoiSource = Resolve-DesiredChezmoiSource
+    Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
 
-if (-not (Test-CommandAvailable $dopplerPackage)) {
-    if (-not (Test-ScoopBucketPresent -BucketName $dopplerBucket)) {
-        scoop bucket add $dopplerBucket $dopplerBucketUrl
-        Write-OK "Added bucket: $dopplerBucket"
-    }
-    else {
-        Write-OK "Bucket already added: $dopplerBucket"
-    }
+    Write-Step "Syncing mise tools"
+    Invoke-MiseSync
 
-    scoop install "$dopplerBucket/$dopplerPackage"
-    Write-OK "Doppler CLI installed"
-}
-else {
-    Write-OK "Doppler CLI already installed"
-}
-
-# ─── Languages & Runtimes ─────────────────────────────────────────────────────
-
-Write-Step "Installing Languages & Runtimes via mise"
-
-if (Test-CommandAvailable "mise") {
-    # All core tools managed by mise — no external installers needed.
-    # Rust and Bun are first-class core tools (https://mise.jdx.dev/core-tools.html).
-    # pnpm is installed as a mise tool; corepack can activate it per-project via hooks.
-    # Runtime inventory is stored in manifests/windows.packages.json.
-    $runtimes = @($windowsPackages.mise.runtimes)
-    foreach ($runtime in $runtimes) {
-        Install-MiseRuntime -RuntimeSpec $runtime
-    }
-
-    # Ensure all runtime entrypoints (e.g. go.exe) are materialized under the shims directory.
-    mise reshim
-    Write-OK "mise shims refreshed"
-
-    # Reload PATH from registry and fail fast if any configured runtime command is unresolved.
-    Set-PathEnvironment
-    Test-MiseRuntimeCommandAvailability -RuntimeSpecs $runtimes
-
-    Write-OK "All runtimes installed — managed by mise"
-}
-else {
-    Write-Warn "mise not found — skipping runtime installs. Run 'scoop install mise' then re-run."
+    Sync-PowerShellProfileBridge
 }
 
 # ─── Dotfiles Apply (Chezmoi-first) ──────────────────────────────────────────
 
 if ($SkipChezmoi) {
     Write-Warn "Chezmoi apply was skipped. Managed dotfiles were not deployed."
-    Write-Warn "Re-run bootstrap without -SkipChezmoi, or run 'chezmoi apply' manually."
+    Write-Warn "Re-run bootstrap without -SkipChezmoi, or run 'chezmoi apply' followed by '.\scripts\sync-mise.ps1'."
 }
 
 # ─── VS Code Extensions ───────────────────────────────────────────────────────
@@ -1178,6 +1068,8 @@ Next steps:
        doppler login
   6. Configure gopass:
        gopass setup
+  7. Clean up legacy Scoop-managed CLI tools on this machine:
+       .\scripts\cleanup-scoop-migrated-tools.ps1
 
 "@ -InformationAction Continue
 
