@@ -229,6 +229,7 @@ $migrationMap = @(
     @{ Scoop = "grex"; Tool = "grex"; Command = "grex" },
     @{ Scoop = "jq"; Tool = "jq"; Command = "jq" },
     @{ Scoop = "lazygit"; Tool = "lazygit"; Command = "lazygit" },
+    @{ Scoop = "pnpm"; Tool = "pnpm"; Command = "pnpm" },
     @{ Scoop = "ripgrep"; Tool = "ripgrep"; Command = "rg" },
     @{ Scoop = "starship"; Tool = "starship"; Command = "starship" },
     @{ Scoop = "yazi"; Tool = "yazi"; Command = "yazi" },
