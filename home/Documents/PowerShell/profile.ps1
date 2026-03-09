@@ -67,6 +67,8 @@ function Update-PowerShell {
     if (-not $global:canConnectToGitHub) { return }
     if (-not (Test-UpdateDue)) { return }
 
+    $checkedSuccessfully = $false
+
     try {
         $current = $PSVersionTable.PSVersion
         $latestTag = (Invoke-RestMethod "https://api.github.com/repos/PowerShell/PowerShell/releases/latest").tag_name
@@ -78,16 +80,27 @@ function Update-PowerShell {
 
         if ($latestNormalized -and [version]::TryParse($latestNormalized, [ref]$latest) -and ($current -lt $latest)) {
             Write-Host "[profile] PowerShell $latest available (you have $current) — updating..." -ForegroundColor Yellow
-            Start-Process pwsh -ArgumentList "-NoProfile -Command winget upgrade Microsoft.PowerShell --accept-source-agreements --accept-package-agreements" -Wait -NoNewWindow
-            Write-Host "[profile] PowerShell updated — restart terminal." -ForegroundColor Magenta
+            $upgrade = Start-Process pwsh -ArgumentList "-NoProfile -Command winget upgrade Microsoft.PowerShell --accept-source-agreements --accept-package-agreements" -Wait -NoNewWindow -PassThru
+            if ($upgrade.ExitCode -eq 0) {
+                Write-Host "[profile] PowerShell updated — restart terminal." -ForegroundColor Magenta
+                $checkedSuccessfully = $true
+            }
+            else {
+                Write-Warning "[profile] PowerShell update failed with exit code $($upgrade.ExitCode)."
+            }
+        }
+        else {
+            $checkedSuccessfully = $true
         }
     }
     catch {
         # Silently skip — don't interrupt terminal startup on failure
     }
 
-    # Write stamp only after both checks have run
-    Get-Date -Format 'yyyy-MM-dd' | Set-Content $_stampFile
+    if ($checkedSuccessfully) {
+        # Write stamp only after a successful version check / update.
+        Get-Date -Format 'yyyy-MM-dd' | Set-Content $_stampFile
+    }
 }
 
 # Fire both update checks — modules async, PS version inline but fast
@@ -276,7 +289,6 @@ function Set-LocationHome { Set-Location $env:USERPROFILE }
 function Set-LocationUp { Set-Location .. }
 function Set-LocationUp2 { Set-Location ../.. }
 function Set-LocationUp3 { Set-Location ../../.. }
-function Set-LocationPrev { Set-Location - }
 
 Set-Alias -Name "~"   -Value Set-LocationHome
 Set-Alias -Name ".."  -Value Set-LocationUp
@@ -366,7 +378,14 @@ if (Get-Command lazygit -ErrorAction SilentlyContinue) {
 
 function Invoke-GitStatus { git status @args }
 function Invoke-GitAdd { git add @args }
-function Invoke-GitCommit { git commit -m @args }
+function Invoke-GitCommit {
+    if ($args.Count -eq 1 -and $args[0] -is [string] -and $args[0] -notmatch '^-') {
+        git commit -m $args[0]
+        return
+    }
+
+    git commit @args
+}
 function Invoke-GitPush { git push @args }
 function Invoke-GitPull { git pull @args }
 function Invoke-GitLog { git log --oneline --graph --decorate --all @args }
@@ -411,23 +430,23 @@ function which {
 }
 
 function sudo {
+    $pwshArgs = @("-NoExit")
+
     if ($args.Count -gt 0) {
-        $argList = $args -join ' '
-        # Prefer opening in Windows Terminal; fall back to plain pwsh if not found.
-        if (Get-Command wt -ErrorAction SilentlyContinue) {
-            Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit", "-Command", $argList)
+        $quotedArgs = $args | ForEach-Object {
+            "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent([string]$_))'"
         }
-        else {
-            Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit", "-Command", $argList)
-        }
+        $commandText = '$cmd = @(' + ($quotedArgs -join ', ') + '); if ($cmd.Count -gt 1) { & $cmd[0] @($cmd[1..($cmd.Count - 1)]) } else { & $cmd[0] }'
+        $encodedCommand = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($commandText))
+        $pwshArgs += @("-EncodedCommand", $encodedCommand)
+    }
+
+    # Prefer opening in Windows Terminal; fall back to plain pwsh if not found.
+    if (Get-Command wt -ErrorAction SilentlyContinue) {
+        Start-Process wt -Verb RunAs -ArgumentList (@("pwsh") + $pwshArgs)
     }
     else {
-        if (Get-Command wt -ErrorAction SilentlyContinue) {
-            Start-Process wt -Verb RunAs -ArgumentList @("pwsh", "-NoExit")
-        }
-        else {
-            Start-Process pwsh -Verb RunAs -ArgumentList @("-NoExit")
-        }
+        Start-Process pwsh -Verb RunAs -ArgumentList $pwshArgs
     }
 }
 Set-Alias -Name su -Value sudo -Option AllScope
@@ -499,6 +518,7 @@ function export {
 
 function unset {
     param([string]$Name)
+    [Environment]::SetEnvironmentVariable($Name, $null, "User")
     Remove-Item "Env:$Name" -ErrorAction SilentlyContinue
 }
 
@@ -571,18 +591,25 @@ function netstat {
 }
 
 function curl {
-    param([string]$Url)
-    Invoke-WebRequest $Url @args
+    param([Parameter(ValueFromRemainingArguments = $true)][object[]]$Arguments)
+    $nativeCurl = Get-Command curl.exe -ErrorAction SilentlyContinue
+    if ($nativeCurl) {
+        & $nativeCurl.Source @Arguments
+        return
+    }
+
+    Invoke-WebRequest @Arguments
 }
 
 function wget {
-    param([string]$Url, [string]$OutFile)
-    if ($OutFile) {
-        Invoke-WebRequest $Url -OutFile $OutFile
+    param([Parameter(ValueFromRemainingArguments = $true)][object[]]$Arguments)
+    $nativeWget = Get-Command wget.exe -ErrorAction SilentlyContinue
+    if ($nativeWget) {
+        & $nativeWget.Source @Arguments
+        return
     }
-    else {
-        Invoke-WebRequest $Url
-    }
+
+    Invoke-WebRequest @Arguments
 }
 
 # ─── Text Utilities ───────────────────────────────────────────────────────────
