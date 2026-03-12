@@ -382,10 +382,15 @@ function Set-LocalChezmoiSourceDir {
 }
 
 function Get-ExpectedPowerShellProfilePath {
+    param(
+        [string]$ProfileProperty = "CurrentUserCurrentHost",
+        [string]$FallbackFileName = "Microsoft.PowerShell_profile.ps1"
+    )
+
     # Resolve the real PowerShell user profile target, including known-folder redirection.
     if (Test-CommandAvailable "pwsh") {
         try {
-            $profilePath = (& pwsh -NoProfile -Command '$PROFILE.CurrentUserAllHosts' 2>$null | Out-String).Trim()
+            $profilePath = (& pwsh -NoProfile -Command "`$PROFILE.$ProfileProperty" 2>$null | Out-String).Trim()
             if (-not [string]::IsNullOrWhiteSpace($profilePath)) {
                 return $profilePath
             }
@@ -400,52 +405,30 @@ function Get-ExpectedPowerShellProfilePath {
         $documentsDir = Join-Path $env:USERPROFILE "Documents"
     }
 
-    return (Join-Path $documentsDir "PowerShell\profile.ps1")
+    return (Join-Path $documentsDir ("PowerShell\{0}" -f $FallbackFileName))
 }
 
-function Sync-PowerShellProfileBridge {
-    # Chezmoi manages home/Documents/PowerShell/profile.ps1, but Windows can redirect Documents.
-    # Create a tiny bridge profile in the redirected location that dot-sources the managed profile.
-    $sourceCandidates = @(
-        (Join-Path $env:USERPROFILE "Documents\PowerShell\profile.ps1"),
-        (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "home\Documents\PowerShell\profile.ps1")
+function Set-PowerShellProfileBridge {
+    param(
+        [Parameter(Mandatory = $true)][string]$ManagedProfilePath,
+        [Parameter(Mandatory = $true)][string]$ExpectedProfilePath,
+        [Parameter(Mandatory = $true)][string]$Description
     )
 
-    $chezmoiSourcePath = Get-ChezmoiSourcePath
-    if (-not [string]::IsNullOrWhiteSpace($chezmoiSourcePath)) {
-        $sourceCandidates += (Join-Path $chezmoiSourcePath "Documents\PowerShell\profile.ps1")
-    }
-
-    $managedProfilePath = $sourceCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($managedProfilePath)) {
-        Write-Warn "Managed profile source not found; checked:"
-        foreach ($candidate in $sourceCandidates | Select-Object -Unique) {
-            Write-Warn "  $candidate"
-        }
-        Write-Warn "Skipping redirected profile bridge setup."
-        return
-    }
-
-    $expectedProfilePath = Get-ExpectedPowerShellProfilePath
-    if ([string]::IsNullOrWhiteSpace($expectedProfilePath)) {
-        Write-Warn "Could not resolve PowerShell profile target path; skipping redirected profile bridge setup."
-        return
-    }
-
-    $managedResolved = (Resolve-Path $managedProfilePath).Path
+    $managedResolved = (Resolve-Path $ManagedProfilePath).Path
     try {
-        $expectedResolved = (Resolve-Path $expectedProfilePath -ErrorAction Stop).Path
+        $expectedResolved = (Resolve-Path $ExpectedProfilePath -ErrorAction Stop).Path
     }
     catch {
-        $expectedResolved = $expectedProfilePath
+        $expectedResolved = $ExpectedProfilePath
     }
 
     if ($managedResolved -eq $expectedResolved) {
-        Write-OK "PowerShell profile path is not redirected"
+        Write-OK "$Description is not redirected"
         return
     }
 
-    $expectedDir = Split-Path $expectedProfilePath -Parent
+    $expectedDir = Split-Path $ExpectedProfilePath -Parent
     if (-not (Test-Path $expectedDir)) {
         New-Item -ItemType Directory -Path $expectedDir -Force | Out-Null
     }
@@ -465,7 +448,7 @@ else {
 "@
     $bridgeHash = (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($bridgeContent))) -Algorithm SHA256).Hash
 
-    $expectedContent = if (Test-Path $expectedProfilePath) { Get-Content $expectedProfilePath -Raw -ErrorAction SilentlyContinue } else { "" }
+    $expectedContent = if (Test-Path $ExpectedProfilePath) { Get-Content $ExpectedProfilePath -Raw -ErrorAction SilentlyContinue } else { "" }
     $expectedHash = if ($expectedContent) {
         (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($expectedContent))) -Algorithm SHA256).Hash
     }
@@ -474,21 +457,88 @@ else {
     }
 
     if ($bridgeHash -eq $expectedHash) {
-        Write-OK "PowerShell profile bridge already configured: $expectedProfilePath"
+        Write-OK "$Description already configured: $ExpectedProfilePath"
         return
     }
 
-    $hasExpectedProfile = Test-Path $expectedProfilePath
+    $hasExpectedProfile = Test-Path $ExpectedProfilePath
     $isBootstrapManagedProfile = $hasExpectedProfile -and $expectedContent.Contains($bridgeMarker)
     if ($hasExpectedProfile -and (-not $isBootstrapManagedProfile)) {
         $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-        $backupPath = "$expectedProfilePath.$timestamp.bak"
-        Copy-Item -Path $expectedProfilePath -Destination $backupPath -Force
-        Write-OK "Backed up existing redirected PowerShell profile to $backupPath"
+        $backupPath = "$ExpectedProfilePath.$timestamp.bak"
+        Copy-Item -Path $ExpectedProfilePath -Destination $backupPath -Force
+        Write-OK "Backed up existing profile to $backupPath"
     }
 
-    Set-Content -Path $expectedProfilePath -Value $bridgeContent -Encoding UTF8
-    Write-OK "Configured PowerShell profile bridge at redirected path: $expectedProfilePath"
+    Set-Content -Path $ExpectedProfilePath -Value $bridgeContent -Encoding UTF8
+    Write-OK "Configured $Description at redirected path: $ExpectedProfilePath"
+}
+
+function Remove-LegacyPowerShellProfileBridge {
+    $legacyProfilePath = Get-ExpectedPowerShellProfilePath -ProfileProperty "CurrentUserAllHosts" -FallbackFileName "profile.ps1"
+    if ([string]::IsNullOrWhiteSpace($legacyProfilePath) -or (-not (Test-Path $legacyProfilePath))) {
+        return
+    }
+
+    $bridgeMarker = "# Managed by bootstrap.ps1. Do not edit directly."
+    $legacyContent = Get-Content $legacyProfilePath -Raw -ErrorAction SilentlyContinue
+    if ($legacyContent -and $legacyContent.Contains($bridgeMarker)) {
+        Remove-Item -Path $legacyProfilePath -Force
+        Write-OK "Removed legacy all-hosts PowerShell profile bridge: $legacyProfilePath"
+    }
+}
+
+function Sync-PowerShellProfileBridge {
+    # Chezmoi manages the current-host profile and a VS Code stub, but Windows can redirect Documents.
+    # Create tiny bridges in the redirected location that dot-source the managed files.
+    $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    $runtimeCurrentHostPath = Get-ExpectedPowerShellProfilePath -ProfileProperty "CurrentUserCurrentHost" -FallbackFileName "Microsoft.PowerShell_profile.ps1"
+    if ([string]::IsNullOrWhiteSpace($runtimeCurrentHostPath)) {
+        Write-Warn "Could not resolve PowerShell current-host profile target path; skipping profile bridge setup."
+        return
+    }
+
+    $runtimeProfileDir = Split-Path $runtimeCurrentHostPath -Parent
+    $profileMappings = @(
+        @{
+            ManagedCandidates = @(
+                (Join-Path $env:USERPROFILE "Documents\PowerShell\Microsoft.PowerShell_profile.ps1"),
+                (Join-Path $repoRoot "home\Documents\PowerShell\Microsoft.PowerShell_profile.ps1")
+            )
+            ExpectedProfilePath = $runtimeCurrentHostPath
+            Description = "PowerShell current-host profile bridge"
+        },
+        @{
+            ManagedCandidates = @(
+                (Join-Path $env:USERPROFILE "Documents\PowerShell\Microsoft.VSCode_profile.ps1"),
+                (Join-Path $repoRoot "home\Documents\PowerShell\Microsoft.VSCode_profile.ps1")
+            )
+            ExpectedProfilePath = (Join-Path $runtimeProfileDir "Microsoft.VSCode_profile.ps1")
+            Description = "VS Code PowerShell profile bridge"
+        }
+    )
+
+    $chezmoiSourcePath = Get-ChezmoiSourcePath
+    foreach ($mapping in $profileMappings) {
+        $sourceCandidates = @($mapping.ManagedCandidates)
+        if (-not [string]::IsNullOrWhiteSpace($chezmoiSourcePath)) {
+            $leafName = Split-Path $mapping.ExpectedProfilePath -Leaf
+            $sourceCandidates += (Join-Path $chezmoiSourcePath ("Documents\PowerShell\{0}" -f $leafName))
+        }
+
+        $managedProfilePath = $sourceCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if ([string]::IsNullOrWhiteSpace($managedProfilePath)) {
+            Write-Warn "Managed profile source not found for $($mapping.Description); checked:"
+            foreach ($candidate in $sourceCandidates | Select-Object -Unique) {
+                Write-Warn "  $candidate"
+            }
+            continue
+        }
+
+        Set-PowerShellProfileBridge -ManagedProfilePath $managedProfilePath -ExpectedProfilePath $mapping.ExpectedProfilePath -Description $mapping.Description
+    }
+
+    Remove-LegacyPowerShellProfileBridge
 }
 
 function Update-TomlSectionContent {

@@ -759,14 +759,44 @@ Set-Alias -Name xdg-open -Value open -Option AllScope
 
 # ─── Useful Functions ─────────────────────────────────────────────────────────
 
+function Get-ManagedProfilePath {
+    if ($PROFILE.CurrentUserCurrentHost) {
+        $currentHostDir = Split-Path -Parent $PROFILE.CurrentUserCurrentHost
+        if ($currentHostDir) {
+            $consoleProfilePath = Join-Path $currentHostDir "Microsoft.PowerShell_profile.ps1"
+            if (Test-Path -LiteralPath $consoleProfilePath) {
+                return $consoleProfilePath
+            }
+        }
+    }
+
+    if ($PROFILE.CurrentUserCurrentHost -and (Test-Path -LiteralPath $PROFILE.CurrentUserCurrentHost)) {
+        return $PROFILE.CurrentUserCurrentHost
+    }
+
+    if ($PROFILE.CurrentUserAllHosts -and (Test-Path -LiteralPath $PROFILE.CurrentUserAllHosts)) {
+        return $PROFILE.CurrentUserAllHosts
+    }
+
+    return $PROFILE
+}
+
 function Invoke-Reload {
-    . $PROFILE
+    $reloadTarget = if ($PROFILE.CurrentUserCurrentHost -and (Test-Path -LiteralPath $PROFILE.CurrentUserCurrentHost)) {
+        $PROFILE.CurrentUserCurrentHost
+    }
+    else {
+        Get-ManagedProfilePath
+    }
+
+    . $reloadTarget
+
     Write-Host "[profile] Reloaded." -ForegroundColor DarkGray
 }
 Set-Alias -Name reload -Value Invoke-Reload
 
 function Invoke-ProfileEdit {
-    Invoke-Editor $PROFILE
+    Invoke-Editor (Get-ManagedProfilePath)
 }
 Set-Alias -Name editprofile -Value Invoke-ProfileEdit
 Set-Alias -Name ep          -Value Invoke-ProfileEdit

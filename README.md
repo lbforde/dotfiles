@@ -263,7 +263,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 - Bootstraps `chezmoi` through `mise` when it is not already on PATH
 - Sets up Chezmoi (init/apply) and deploys managed dotfiles, including `~/.config/mise/config.toml`
 - Runs `.\scripts\sync-mise.ps1` to install and reshim the managed global `mise` tools
-- Configures a redirected-profile bridge at the real `$PROFILE.CurrentUserAllHosts` path that dot-sources the chezmoi-managed profile
+- Configures redirected-profile bridges for `$PROFILE.CurrentUserCurrentHost` and `Microsoft.VSCode_profile.ps1` when Documents is redirected
 - Installs VS Code extensions from manifest
 
 ### 3. Post-bootstrap auth
@@ -315,7 +315,8 @@ dotfiles/
     |   `-- run_onchange_after_20-sync-mise.ps1.tmpl
     |-- dot_zshrc
     |-- dot_gitconfig.tmpl
-    |-- Documents/PowerShell/profile.ps1
+    |-- Documents/PowerShell/Microsoft.PowerShell_profile.ps1
+    |-- Documents/PowerShell/Microsoft.VSCode_profile.ps1
     |-- scoop/persist/vscode/data/user-data/User/settings.json
     |-- AppData/Local/Packages/
     |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
@@ -336,19 +337,23 @@ Conventions:
 
 ## PowerShell Profile Reference
 
-Source-state path:
-- `home/Documents/PowerShell/profile.ps1`
+Source-state paths:
+- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`
+- `home/Documents/PowerShell/Microsoft.VSCode_profile.ps1`
 
-Chezmoi-managed path (non-redirected default):
-- `%USERPROFILE%\Documents\PowerShell\profile.ps1`
+Chezmoi-managed paths (non-redirected default):
+- `%USERPROFILE%\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+- `%USERPROFILE%\Documents\PowerShell\Microsoft.VSCode_profile.ps1`
 
-Actual PowerShell runtime path:
-- `$PROFILE.CurrentUserAllHosts`
-- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors the managed profile to this runtime path automatically.
+Actual PowerShell runtime paths:
+- `$PROFILE.CurrentUserCurrentHost`
+- `%USERPROFILE%\Documents\PowerShell\Microsoft.VSCode_profile.ps1` for the VS Code stub when Documents is not redirected
+- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors both managed files into the real runtime profile directory automatically.
 
 Quick verification:
-- `echo $PROFILE.CurrentUserAllHosts`
-- `Test-Path $PROFILE.CurrentUserAllHosts`
+- `echo $PROFILE.CurrentUserCurrentHost`
+- `Test-Path $PROFILE.CurrentUserCurrentHost`
+- `Test-Path (Join-Path (Split-Path $PROFILE.CurrentUserCurrentHost -Parent) 'Microsoft.VSCode_profile.ps1')`
 
 Highlights:
 - Dev Drive environment routing
@@ -552,7 +557,7 @@ git log --show-signature -1
 Main files to edit:
 
 - `home/dot_config/starship.toml`
-- `home/Documents/PowerShell/profile.ps1`
+- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`
 - `home/scoop/persist/vscode/data/user-data/User/settings.json`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 - `manifests/windows.packages.json`
