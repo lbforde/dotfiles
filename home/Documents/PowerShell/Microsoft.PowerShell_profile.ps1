@@ -2,110 +2,102 @@
 #  PowerShell Profile — Windows Dev Environment
 # ============================================================
 
-# ─── Auto-Update (max once per 7 days, only when online) ─────────────────────
+# ─── Manual Update Commands ───────────────────────────────────────────────────
 
-$_stampFile = "$env:TEMP\ps_profile_update.stamp"
-$_updateInterval = 7   # days — set to -1 to check every launch
-
-# Test connectivity to GitHub (used for both update checks)
-$global:canConnectToGitHub = Test-Connection github.com -Count 1 -Quiet -TimeoutSeconds 1
-
-function Test-UpdateDue {
-    if ($_updateInterval -eq -1) { return $true }
-    if (-not (Test-Path $_stampFile)) { return $true }
-    $lastRaw = (Get-Content $_stampFile -Raw).Trim()
-    [datetime]$last = [datetime]::MinValue
-    if ([datetime]::TryParseExact($lastRaw, 'yyyy-MM-dd', $null, [System.Globalization.DateTimeStyles]::None, [ref]$last)) {
-        return ((Get-Date).Date - $last.Date).TotalDays -gt $_updateInterval
-    }
-    return $true
-}
-
-function Update-Profile {
+function Update-ProfileModules {
     <#
     .SYNOPSIS
-        Check for PS module updates. Runs automatically every $_updateInterval days when online.
+        Check PSGallery for newer versions of common profile modules and update them on demand.
     #>
-    if (-not $global:canConnectToGitHub) { return }
-    if (-not (Test-UpdateDue)) { return }
-
-    $job = Start-Job -ScriptBlock {
-        $mods = @("PSReadLine", "PSFzf", "Terminal-Icons", "posh-git")
-        $updated = @()
-        foreach ($mod in $mods) {
-            try {
-                $latest = Find-Module $mod -Repository PSGallery -ErrorAction SilentlyContinue
-                $current = Get-Module -ListAvailable $mod | Sort-Object Version -Descending | Select-Object -First 1
-                if ($latest -and $current -and ($latest.Version -gt $current.Version)) {
-                    Update-Module $mod -Scope CurrentUser -Force -ErrorAction SilentlyContinue
-                    $updated += $mod
-                }
-            }
-            catch {}
-        }
-        return $updated
-    }
-
-    Register-ObjectEvent -InputObject $job -EventName StateChanged -Action {
-        if ($Event.Sender.State -eq "Completed") {
-            $updated = Receive-Job $Event.Sender -ErrorAction SilentlyContinue
-            if ($updated) {
-                Write-Host "[profile] Updated: $($updated -join ', ') — restart to apply." -ForegroundColor DarkGray
-            }
-            Unregister-Event $Event.SourceIdentifier
-            Remove-Job $Event.Sender
-        }
-    } | Out-Null
-}
-
-function Update-PowerShell {
-    <#
-    .SYNOPSIS
-        Check GitHub for a newer PowerShell release and upgrade via winget if one exists.
-        Runs automatically on the same 7-day schedule as Update-Profile.
-    #>
-    if (-not $global:canConnectToGitHub) { return }
-    if (-not (Test-UpdateDue)) { return }
-
-    $checkedSuccessfully = $false
+    $modules = @("PSReadLine", "PSFzf", "Terminal-Icons", "posh-git")
+    $updated = @()
 
     try {
-        $current = $PSVersionTable.PSVersion
-        $latestTag = (Invoke-RestMethod "https://api.github.com/repos/PowerShell/PowerShell/releases/latest").tag_name
-        $latestRaw = $latestTag.TrimStart('v')
-
-        # Parse as semantic versions (string comparison is incorrect for version ordering).
-        $latestNormalized = ([regex]::Match($latestRaw, '^\d+\.\d+\.\d+')).Value
-        [version]$latest = [version]"0.0.0"
-
-        if ($latestNormalized -and [version]::TryParse($latestNormalized, [ref]$latest) -and ($current -lt $latest)) {
-            Write-Host "[profile] PowerShell $latest available (you have $current) — updating..." -ForegroundColor Yellow
-            $upgrade = Start-Process pwsh -ArgumentList "-NoProfile -Command winget upgrade Microsoft.PowerShell --accept-source-agreements --accept-package-agreements" -Wait -NoNewWindow -PassThru
-            if ($upgrade.ExitCode -eq 0) {
-                Write-Host "[profile] PowerShell updated — restart terminal." -ForegroundColor Magenta
-                $checkedSuccessfully = $true
-            }
-            else {
-                Write-Warning "[profile] PowerShell update failed with exit code $($upgrade.ExitCode)."
-            }
-        }
-        else {
-            $checkedSuccessfully = $true
+        if (-not (Test-Connection powershellgallery.com -Count 1 -Quiet -TimeoutSeconds 1)) {
+            Write-Warning "[profile] PSGallery is not reachable right now."
+            return
         }
     }
     catch {
-        # Silently skip — don't interrupt terminal startup on failure
+        Write-Warning "[profile] Could not verify PSGallery connectivity."
+        return
     }
 
-    if ($checkedSuccessfully) {
-        # Write stamp only after a successful version check / update.
-        Get-Date -Format 'yyyy-MM-dd' | Set-Content $_stampFile
+    foreach ($moduleName in $modules) {
+        try {
+            $latest = Find-Module $moduleName -Repository PSGallery -ErrorAction Stop
+            $current = Get-Module -ListAvailable $moduleName | Sort-Object Version -Descending | Select-Object -First 1
+
+            if (-not $current) {
+                Write-Host "[profile] $moduleName is not installed; skipping." -ForegroundColor DarkGray
+                continue
+            }
+
+            if ($latest.Version -gt $current.Version) {
+                Write-Host "[profile] Updating $moduleName $($current.Version) -> $($latest.Version)..." -ForegroundColor Yellow
+                Update-Module $moduleName -Scope CurrentUser -Force -ErrorAction Stop
+                $updated += $moduleName
+            }
+        }
+        catch {
+            Write-Warning ("[profile] Failed to update {0}: {1}" -f $moduleName, $_.Exception.Message)
+        }
+    }
+
+    if ($updated.Count -gt 0) {
+        Write-Host "[profile] Updated: $($updated -join ', ') — restart to apply." -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "[profile] Profile modules are already up to date." -ForegroundColor DarkGray
     }
 }
 
-# Fire both update checks — modules async, PS version inline but fast
-Update-Profile
-Update-PowerShell
+function Update-PowerShellRuntime {
+    <#
+    .SYNOPSIS
+        Check GitHub for a newer PowerShell release and upgrade via winget if one exists.
+    #>
+    try {
+        if (-not (Test-Connection github.com -Count 1 -Quiet -TimeoutSeconds 1)) {
+            Write-Warning "[profile] GitHub is not reachable right now."
+            return
+        }
+    }
+    catch {
+        Write-Warning "[profile] Could not verify GitHub connectivity."
+        return
+    }
+
+    try {
+        $current = $PSVersionTable.PSVersion
+        $latestTag = (Invoke-RestMethod "https://api.github.com/repos/PowerShell/PowerShell/releases/latest" -ErrorAction Stop).tag_name
+        $latestRaw = $latestTag.TrimStart('v')
+        $latestNormalized = ([regex]::Match($latestRaw, '^\d+\.\d+\.\d+')).Value
+        [version]$latest = [version]"0.0.0"
+
+        if (-not $latestNormalized -or -not [version]::TryParse($latestNormalized, [ref]$latest)) {
+            Write-Warning "[profile] Could not parse the latest PowerShell version from GitHub."
+            return
+        }
+
+        if ($current -ge $latest) {
+            Write-Host "[profile] PowerShell is already up to date ($current)." -ForegroundColor DarkGray
+            return
+        }
+
+        Write-Host "[profile] PowerShell $latest available (you have $current) — updating..." -ForegroundColor Yellow
+        $upgrade = Start-Process pwsh -ArgumentList "-NoProfile -Command winget upgrade Microsoft.PowerShell --accept-source-agreements --accept-package-agreements" -Wait -NoNewWindow -PassThru
+        if ($upgrade.ExitCode -eq 0) {
+            Write-Host "[profile] PowerShell updated — restart terminal." -ForegroundColor Magenta
+        }
+        else {
+            Write-Warning "[profile] PowerShell update failed with exit code $($upgrade.ExitCode)."
+        }
+    }
+    catch {
+        Write-Warning "[profile] PowerShell update check failed: $($_.Exception.Message)"
+    }
+}
 
 # ─── Telemetry Opt-out ───────────────────────────────────────────────────────
 
@@ -1129,6 +1121,8 @@ ${y}─────────────────────────�
   ${g}reload${r}              Reload this profile in the current session
   ${g}editprofile${r}  ${g}ep${r}    Open profile in \$EDITOR
   ${g}edit <file>${r}         Open file in \$EDITOR (code --wait → codium --wait → notepad++ → sublime_text → notepad)
+  ${g}Update-ProfileModules${r} Update common profile modules from PSGallery
+  ${g}Update-PowerShellRuntime${r} Update PowerShell via GitHub + winget
   ${g}serve [port]${r}        Python HTTP server in current dir (default 8000)
   ${g}cloc-simple${r}         Count lines of code by file extension
 "@
