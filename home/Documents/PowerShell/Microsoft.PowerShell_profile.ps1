@@ -1130,20 +1130,7 @@ ${y}─────────────────────────�
 
 # Hint at the bottom of startup
 Write-Host "  Type $($PSStyle.Foreground.Green)Show-Help$($PSStyle.Reset) for a command reference." -ForegroundColor DarkGray
-
-# ─── Greeting ─────────────────────────────────────────────────────────────────
-
-function Show-Greeting {
-    $hour = (Get-Date).Hour
-    $greeting = if ($hour -lt 12) { "Good morning" }
-    elseif ($hour -lt 17) { "Good afternoon" }
-    else { "Good evening" }
-
-    Write-Host "$greeting, $env:USERNAME" -ForegroundColor Magenta
-    Write-Host " pwsh $($PSVersionTable.PSVersion)  $(Get-Date -Format 'ddd dd MMM yyyy')" -ForegroundColor DarkGray
-}
-
-Show-Greeting
+Write-Host " pwsh $($PSVersionTable.PSVersion)  $(Get-Date -Format 'ddd dd MMM yyyy')" -ForegroundColor DarkGray
 
 # ─── Zoxide (smarter cd) ─────────────────────────────────────────────────────
 
