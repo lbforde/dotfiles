@@ -193,8 +193,17 @@ foreach ($p in $_devPaths) {
 # ─── Module Imports ───────────────────────────────────────────────────────────
 
 # PSReadLine — enhanced readline with history, predictions, and key bindings
-if (Get-Module -ListAvailable -Name PSReadLine) {
-    Import-Module PSReadLine
+$psReadLineModule = Get-Module -Name PSReadLine
+if (-not $psReadLineModule) {
+    $psReadLineModule = Get-Module -ListAvailable -Name PSReadLine | Sort-Object Version -Descending | Select-Object -First 1
+    if ($psReadLineModule) {
+        # VS Code's PowerShell extension can preload a different PSReadLine version.
+        Import-Module -Name PSReadLine -RequiredVersion $psReadLineModule.Version
+        $psReadLineModule = Get-Module -Name PSReadLine
+    }
+}
+
+if ($psReadLineModule) {
     Set-PSReadLineOption -EditMode Windows
     # Prediction UI fails in redirected/non-interactive hosts; enable only when supported.
     try {
@@ -210,7 +219,7 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineOption -HistorySearchCursorMovesToEnd:$true
     Set-PSReadLineOption -ShowToolTips:$true
     Set-PSReadLineOption -BellStyle None
-    Set-PSReadLineOption -Colors @{
+    $psReadLineColors = @{
         Command          = '#4aa5f0'   # OneDark Pro darker blue
         Parameter        = '#8cc265'   # OneDark Pro darker green
         Operator         = '#42b3c2'   # OneDark Pro darker cyan
@@ -218,8 +227,11 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
         String           = '#8cc265'   # OneDark Pro darker green
         Number           = '#d19a66'   # OneDark Pro darker orange
         Member           = '#d18f52'   # OneDark Pro darker yellow
-        InlinePrediction = '#4f5666'   # OneDark Pro darker comment
     }
+    if ($psReadLineModule.Version -ge [version]'2.1.0') {
+        $psReadLineColors.InlinePrediction = '#4f5666'   # OneDark Pro darker comment
+    }
+    Set-PSReadLineOption -Colors $psReadLineColors
 
     # Key bindings
     Set-PSReadLineKeyHandler -Key Tab             -Function MenuComplete
