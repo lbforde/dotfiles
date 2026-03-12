@@ -415,7 +415,7 @@ function Set-PowerShellProfileBridge {
         [Parameter(Mandatory = $true)][string]$Description
     )
 
-    $managedResolved = (Resolve-Path $ManagedProfilePath).Path
+    $managedResolved = (Resolve-Path -LiteralPath $ManagedProfilePath | Select-Object -ExpandProperty Path -First 1)
     try {
         $expectedResolved = (Resolve-Path $ExpectedProfilePath -ErrorAction Stop).Path
     }
@@ -448,7 +448,12 @@ else {
 "@
     $bridgeHash = (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($bridgeContent))) -Algorithm SHA256).Hash
 
-    $expectedContent = if (Test-Path $ExpectedProfilePath) { Get-Content $ExpectedProfilePath -Raw -ErrorAction SilentlyContinue } else { "" }
+    $expectedContent = if (Test-Path -LiteralPath $ExpectedProfilePath) {
+        [string](Get-Content -LiteralPath $ExpectedProfilePath -Raw -ErrorAction SilentlyContinue)
+    }
+    else {
+        ""
+    }
     $expectedHash = if ($expectedContent) {
         (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($expectedContent))) -Algorithm SHA256).Hash
     }
@@ -461,8 +466,8 @@ else {
         return
     }
 
-    $hasExpectedProfile = Test-Path $ExpectedProfilePath
-    $isBootstrapManagedProfile = $hasExpectedProfile -and $expectedContent.Contains($bridgeMarker)
+    $hasExpectedProfile = Test-Path -LiteralPath $ExpectedProfilePath
+    $isBootstrapManagedProfile = $hasExpectedProfile -and ([string]$expectedContent).Contains($bridgeMarker)
     if ($hasExpectedProfile -and (-not $isBootstrapManagedProfile)) {
         $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
         $backupPath = "$ExpectedProfilePath.$timestamp.bak"
@@ -476,12 +481,12 @@ else {
 
 function Remove-LegacyPowerShellProfileBridge {
     $legacyProfilePath = Get-ExpectedPowerShellProfilePath -ProfileProperty "CurrentUserAllHosts" -FallbackFileName "profile.ps1"
-    if ([string]::IsNullOrWhiteSpace($legacyProfilePath) -or (-not (Test-Path $legacyProfilePath))) {
+    if ([string]::IsNullOrWhiteSpace($legacyProfilePath) -or (-not (Test-Path -LiteralPath $legacyProfilePath))) {
         return
     }
 
     $bridgeMarker = "# Managed by bootstrap.ps1. Do not edit directly."
-    $legacyContent = Get-Content $legacyProfilePath -Raw -ErrorAction SilentlyContinue
+    $legacyContent = [string](Get-Content -LiteralPath $legacyProfilePath -Raw -ErrorAction SilentlyContinue)
     if ($legacyContent -and $legacyContent.Contains($bridgeMarker)) {
         Remove-Item -Path $legacyProfilePath -Force
         Write-OK "Removed legacy all-hosts PowerShell profile bridge: $legacyProfilePath"
