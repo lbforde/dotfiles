@@ -1129,7 +1129,7 @@ ${y}─────────────────────────�
 }
 
 # Hint at the bottom of startup
-Write-Host "Type $($PSStyle.Foreground.Green)Show-Help$($PSStyle.Reset) for a command reference." -ForegroundColor DarkGray
+Write-Host "$($PSStyle.Foreground.BrightBlack)Type $($PSStyle.Foreground.Green)Show-Help$($PSStyle.Foreground.BrightBlack) for a command reference.$($PSStyle.Reset)"
 Write-Host "pwsh $($PSVersionTable.PSVersion)  $(Get-Date -Format 'ddd dd MMM yyyy')" -ForegroundColor DarkGray
 
 # ─── Zoxide (smarter cd) ─────────────────────────────────────────────────────
