@@ -1,269 +1,61 @@
-# Developer Environment Setup Guide (Windows + Linux)
+# Dotfiles
 
-Reproducible dotfiles + tooling bootstrap using Chezmoi and manifest-driven installs.
+Dotfiles and bootstrap scripts for rebuilding this dev environment with `chezmoi`.
+Windows is implemented today; WSL, Linux, and macOS bootstraps are planned, so this README stays honest about current support while leaving room for that broader direction.
 
----
+## Platform Support
 
-## Table of Contents
+| Platform | Status    | Notes                                            |
+| -------- | --------- | ------------------------------------------------ |
+| Windows  | Supported | Bootstrapped today via `scripts/bootstrap.ps1`   |
+| WSL      | Planned   | No bootstrap script or manifest in this repo yet |
+| Linux    | Planned   | No bootstrap script or manifest in this repo yet |
+| macOS    | Planned   | No bootstrap script or manifest in this repo yet |
 
-1. [Overview](#overview)
-2. [Prerequisites](#prerequisites)
-3. [Quick Start](#quick-start)
-4. [Manifest-Driven Installs](#manifest-driven-installs)
-5. [Step-by-Step Installation (Windows)](#step-by-step-installation-windows)
-6. [File Structure](#file-structure)
-7. [PowerShell Profile Reference](#powershell-profile-reference)
-8. [Windows Terminal Keybindings](#windows-terminal-keybindings)
-9. [Chezmoi Dotfile Management](#chezmoi-dotfile-management)
-10. [Document Authoring Workflow](#document-authoring-workflow)
-11. [Tool Reference](#tool-reference)
-12. [Customisation](#customisation)
+## Windows Setup
 
----
+Current setup instructions are for Windows.
 
-## Overview
-
-This setup gives you:
-
-- Chezmoi-first dotfile deployment (single source of truth)
-- Manifest-driven installs for Windows bootstrap packages and VS Code extensions
-- Windows bootstrap plus WSL2 Ubuntu bootstrap flow
-- Runtime management with `mise`
-- Terminal/editor stack with Windows Terminal, Starship, PowerShell profile, and VS Code settings
-
----
-
-## Prerequisites
-
-Windows:
-- Windows 10 22H2+ or Windows 11
-- PowerShell 5.1 (for bootstrap invocation)
-- Internet connection
-- Administrator rights for bootstrap
-
-Linux (Ubuntu/WSL2):
-- `bash`, `python3`, `sudo`
-- Internet connection
-- Sudo-capable user
-
----
-
-## Quick Start
-
-### Windows
-
-Open Windows PowerShell 5.1 as Administrator and run:
+Run the bootstrap from Windows PowerShell 5.1 as Administrator:
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
 .\scripts\bootstrap.ps1
-```
-
-Optional:
-
-```powershell
-.\scripts\bootstrap.ps1 -DevDrive "D:"
-.\scripts\bootstrap.ps1 -ChezmoiRepo "https://github.com/yourname/dotfiles"
-```
-
-First run behavior:
-- Prompts for git name/email if local `~/.config/chezmoi/chezmoi.toml` is missing.
-- Creates local `~/.config/chezmoi/chezmoi.toml` once (machine-local, untracked by source-state).
-- Sets local `sourceDir` to the checked-out repo root so Chezmoi uses this repo directly.
-- If legacy source-state exists at `~/.local/share/chezmoi`, bootstrap creates a timestamped backup before switching.
-- Re-runs reuse existing user `DEV_DRIVE` automatically when it is valid (skip drive picker prompt).
-- Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
-- If you launch bootstrap from `pwsh`, it skips the `Microsoft.PowerShell` Winget package to avoid self-upgrading the active shell and terminating the session.
-- Uses `mise exec chezmoi@latest` to bootstrap `chezmoi` before the managed global `mise` config is applied.
-- Applies the managed `~/.config/mise/config.toml` and then runs `.\scripts\sync-mise.ps1`.
-
-### WSL2 (Ubuntu / Debian-family)
-
-```bash
-chmod +x ./scripts/bootstrap-wsl.sh
-./scripts/bootstrap-wsl.sh
 ```
 
 Useful options:
 
-```bash
-./scripts/bootstrap-wsl.sh --dry-run
-./scripts/bootstrap-wsl.sh --skip-runtimes
-./scripts/bootstrap-wsl.sh --skip-chezmoi
-./scripts/bootstrap-wsl.sh --chezmoi-source /path/to/dotfiles-or-git-url
-./scripts/bootstrap-wsl.sh --manifest manifests/linux.ubuntu.packages.json
+```powershell
+.\scripts\bootstrap.ps1 -DevDrive "D:"
+.\scripts\bootstrap.ps1 -ChezmoiRepo "https://github.com/yourname/dotfiles"
+.\scripts\bootstrap.ps1 -SkipFonts
+.\scripts\bootstrap.ps1 -SkipChezmoi
 ```
 
-WSL bootstrap behavior:
-- Uses explicit phase blocks (`Pre-flight checks`, `Manifest loading`, `Package install`, `Script installs (pre-runtime)`, `Chezmoi apply`, `Runtime install`, `Script installs (post-runtime)`, `Workspace setup`, `Shell config`, `Done`).
-- Configures apt repositories idempotently (reports `already configured` when keyring and source line are already present).
-- Supports apt source placeholders in manifest source lines (`${APT_ARCH}`, `${UBUNTU_CODENAME}`) and codename-gated repos.
-- Installs `jq` as a hard bootstrap dependency when missing, including during `--dry-run` (manifest parsing requires it).
-- Installs apt packages in missing-only mode on reruns (reports `already installed` and only installs missing packages).
-- Enforces fail-fast parity installs: mandatory script installs stop bootstrap on failure.
-- Applies chezmoi in direct-path mode by default (source root is this checked-out repo), matching Windows bootstrap behavior.
-- Creates local `~/.config/chezmoi/chezmoi.toml` when missing, using global git identity values (or interactive prompts when needed).
-- If legacy `~/.local/share/chezmoi` source-state exists, creates a timestamped backup before switching sourceDir.
-- If an existing different direct-path source is already configured, warns and keeps the current source while applying.
-- Uses login-shell account state (`getent`/`/etc/passwd`) for shell checks so reruns do not repeatedly invoke `chsh`.
-- Installs `zinit` idempotently at `${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git` during shell configuration.
-- Refreshes session PATH after pre-runtime and post-runtime script installs so newly installed user-local tools are available in the same run.
-- Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
-- Creates a default projects directory at `$HOME/projects` (or `$PROJECTS` when set).
-- Prints next-step guidance at completion, including re-login guidance when default shell changes.
-- Keeps VS Code extension installation automation Windows-only via `scripts/bootstrap.ps1`.
+What the bootstrap handles:
 
-WSL parity tool install methods:
-- `zinit`: upstream git clone during `Shell config` phase
-- `starship`: managed in `home/dot_zshrc` via Zinit (`gh-r` command release), not `scriptInstalls`
-- `zoxide`: official install script (`scriptInstalls`, pre-runtime)
-- `chezmoi`: official installer script (`scriptInstalls`, pre-runtime)
-- `yazi`: GitHub release artifact install (`scriptInstalls`, pre-runtime)
-- `eza`: official Debian/Ubuntu repo + apt package
-- `lazygit`: upstream release `.deb` install (`scriptInstalls`, pre-runtime)
-- `croc`: official `getcroc` installer script (`scriptInstalls`, pre-runtime)
-- `grex`: Cargo install (`scriptInstalls`, post-runtime)
-- `cmake`: apt package (with optional Kitware apt repo when codename is supported)
+- Installs the current Windows packages, fonts, PowerShell modules, and VS Code extensions from `manifests/windows.packages.json`
+- Sets Dev Drive environment variables and PATH entries needed by the shell and toolchain
+- Initializes and applies `chezmoi` from this repo by default, with backup steps for older local state
+- Runs `.\scripts\sync-mise.ps1` after apply so managed CLI tools are installed and shims are refreshed
 
-Post-bootstrap verification:
+First run notes:
 
-```bash
-zsh --version
-zsh -ic 'zi --version'
-zsh -ic 'starship --version'
-gh --version
-doppler --version
-chezmoi --version
+- You may be prompted for your git name and email if local `chezmoi` data does not exist yet
+- If `DEV_DRIVE` is not already set, the script can prompt for a drive letter unless you pass `-DevDrive`
+- Existing `chezmoi` source state or local editor settings can be backed up before the script switches to the current repo
+- If you launch from `pwsh`, the script skips self-upgrading the active PowerShell session
+
+After bootstrap, open a new shell and run a few quick checks:
+
+```powershell
+echo $PROFILE.CurrentUserCurrentHost
+chezmoi source-path
 mise --version
-opencode --version
-zoxide --version
-yazi --version
-ya --version
-eza --version
-lazygit --version
-croc --version
-grex --version
-cmake --version
-gopass version
+code --list-extensions
 ```
 
----
-
-## Document Authoring Workflow
-
-This repo provisions a cross-platform document authoring workflow in VS Code for Markdown/LaTeX editing and PDF generation:
-
-- Windows native LaTeX build stack:
-  - TeX distro: `MiKTeX` (Winget package `MiKTeX.MiKTeX`)
-  - Build tools: `latexmk`, `xelatex`, `bibtex`, `chktex`
-- WSL2 LaTeX build stack:
-  - TeX distro: `texlive-full` (apt package)
-  - Build tools: `latexmk`, `xelatex`, `bibtex`, `chktex`
-- Grammar tooling:
-  - VS Code extension: `ltex-plus.vscode-ltex-plus`
-  - Java runtime for CLI/tooling: managed by `mise` (`java@temurin-21`)
-  - LTEX+ uses default Java behavior (no forced `ltex.java.path`).
-
-Verification commands:
-
-Windows (`pwsh`):
-
-```powershell
-code --list-extensions --show-versions | rg -i "latex-workshop|ltex"
-latexmk -v
-xelatex --version
-bibtex --version
-chktex --version
-mise which java
-java -version
-```
-
-WSL (`bash`):
-
-```bash
-code --list-extensions --show-versions | rg -i "latex-workshop|ltex"
-latexmk -v
-xelatex --version
-bibtex --version
-chktex --version
-mise which java
-java -version
-```
-
-Expected extensions:
-- `james-yu.latex-workshop`
-- `ltex-plus.vscode-ltex-plus`
-
-Legacy extension migration:
-- `scripts/bootstrap.ps1` removes `valentjn.vscode-ltex` when present, then installs recommendations from `manifests/windows.packages.json`.
-
----
-
-## Manifest-Driven Installs
-
-Bootstrap reads install inventories from:
-
-- `manifests/windows.packages.json`
-  - Winget packages and fonts
-  - PowerShell modules
-  - VS Code extension install list (`vscode.extensions`)
-- `manifests/linux.ubuntu.packages.json`
-  - apt repositories (`aptRepositories`) including third-party sources where required by upstream install methods
-  - required apt packages (`systemPackages`)
-  - phase-aware script-based installers (`scriptInstalls`)
-  - `mise` runtime inventory (`miseRuntimes`)
-  - shell plugin/prompt runtime setup is handled in `home/dot_zshrc` via Zinit
-- `manifests/linux.arch.packages.json`
-  - reserved for non-WSL Linux workflows; not used by `bootstrap-wsl.sh`
-
-Scripts consuming manifests:
-
-- `scripts/bootstrap.ps1`
-- `scripts/bootstrap-wsl.sh`
-
-Windows `mise` source of truth:
-
-- `home/dot_config/mise/config.toml`
-- `scripts/sync-mise.ps1`
-- `home/.chezmoiscripts/run_onchange_after_20-sync-mise.ps1.tmpl`
-
-Linux manifest schema:
-
-- `packageManager`: `apt` or `pacman`
-- `aptRepositories`: apt repository/key configuration objects
-- `systemPackages`: distro packages
-- `scriptInstalls`: install script objects (`name`, `checkCommand`, `installCommand`)
-- `scriptInstalls.phase`: optional install phase (`pre-runtime` or `post-runtime`, default `pre-runtime`)
-- `miseRuntimes`: runtime identifiers (e.g. `node@lts`)
-
-WSL bootstrap constraints:
-- `scripts/bootstrap-wsl.sh` is Ubuntu/Debian-only.
-- Use `manifests/linux.ubuntu.packages.json` with `packageManager: apt`.
-
----
-
-## Step-by-Step Installation (Windows)
-
-### 1. Bootstrap
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force
-.\scripts\bootstrap.ps1
-```
-
-### 2. What bootstrap does
-
-- Installs Windows apps via Winget (`git`, `mise`, `vscode`, `MiKTeX`, `Windows Terminal`, `PowerShell`, `JetBrains Mono Nerd Font`)
-- Installs PowerShell modules
-- Configures Dev Drive directories and environment variables (idempotent on reruns)
-- Ensures Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) are on user PATH without duplicate entries
-- Bootstraps `chezmoi` through `mise` when it is not already on PATH
-- Sets up Chezmoi (init/apply) and deploys managed dotfiles, including `~/.config/mise/config.toml`
-- Runs `.\scripts\sync-mise.ps1` to install and reshim the managed global `mise` tools
-- Configures redirected-profile bridges for `$PROFILE.CurrentUserCurrentHost` and `Microsoft.VSCode_profile.ps1` when Documents is redirected
-- Installs VS Code extensions from manifest
-
-### 3. Post-bootstrap auth
+Optional first-login commands:
 
 ```powershell
 gh auth login
@@ -271,286 +63,57 @@ doppler login
 gopass setup
 ```
 
-### 4. First launch workflow
+## What's Managed Here
 
-1. Open Windows Terminal.
-2. Start `pwsh` and confirm your profile loaded.
-3. Open VS Code and verify extensions/settings were applied.
+- `scripts/bootstrap.ps1`: current bootstrap entry point for Windows
+- `scripts/sync-mise.ps1`: installs and validates the current managed `mise` toolset
+- `manifests/windows.packages.json`: Windows packages, PowerShell modules, fonts, and VS Code extensions
+- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`: PowerShell profile, aliases, helper functions, and shell environment defaults
+- `home/AppData/Roaming/Code/User/settings.json`: VS Code settings applied through `chezmoi`
+- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`: Windows Terminal settings applied through `chezmoi`
 
----
+Right now this repo manages:
 
-## File Structure
+- Shell behavior in PowerShell, including editor selection and helper commands such as `edit` and `Show-Help`
+- VS Code defaults, extensions, and document-authoring settings
+- Windows Terminal profiles and keybindings
+- Installed CLI tools and runtimes through the bootstrap plus `mise`
 
-```text
-dotfiles/
-|-- .chezmoiroot
-|-- examples/
-|   `-- chezmoi/
-|       `-- chezmoi.toml.example
-|-- manifests/
-|   |-- windows.packages.json
-|   |-- linux.ubuntu.packages.json
-|   `-- linux.arch.packages.json
-|-- scripts/
-|   |-- bootstrap.ps1
-|   |-- bootstrap-wsl.sh
-|   `-- sync-mise.ps1
-`-- home/
-    |-- .chezmoiignore.tmpl
-    |-- .chezmoiscripts/
-    |   `-- run_onchange_after_20-sync-mise.ps1.tmpl
-    |-- dot_zshrc
-    |-- dot_gitconfig.tmpl
-    |-- Documents/PowerShell/Microsoft.PowerShell_profile.ps1
-    |-- Documents/PowerShell/Microsoft.VSCode_profile.ps1
-    |-- AppData/Roaming/Code/User/settings.json
-    |-- AppData/Local/Packages/
-    |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
-    `-- dot_config/
-        |-- mise/
-        |   `-- config.toml
-        `-- starship.toml
-```
+## Daily Workflow
 
-Conventions:
-
-- `.chezmoiroot` points source-state at `home/`.
-- `dot_` prefix maps to leading `.` in destination paths.
-- `.chezmoiignore.tmpl` is template-based platform routing.
-- Local `~/.config/chezmoi/chezmoi.toml` is machine-local and intentionally untracked by source-state.
-
----
-
-## PowerShell Profile Reference
-
-Source-state paths:
-- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`
-- `home/Documents/PowerShell/Microsoft.VSCode_profile.ps1`
-
-Chezmoi-managed paths (non-redirected default):
-- `%USERPROFILE%\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
-- `%USERPROFILE%\Documents\PowerShell\Microsoft.VSCode_profile.ps1`
-
-Actual PowerShell runtime paths:
-- `$PROFILE.CurrentUserCurrentHost`
-- `%USERPROFILE%\Documents\PowerShell\Microsoft.VSCode_profile.ps1` for the VS Code stub when Documents is not redirected
-- If Documents is redirected (for example `D:\Documents`), bootstrap mirrors both managed files into the real runtime profile directory automatically.
-
-Quick verification:
-- `echo $PROFILE.CurrentUserCurrentHost`
-- `Test-Path $PROFILE.CurrentUserCurrentHost`
-- `Test-Path (Join-Path (Split-Path $PROFILE.CurrentUserCurrentHost -Parent) 'Microsoft.VSCode_profile.ps1')`
-
-Highlights:
-- Dev Drive environment routing
-- Linux-style aliases/functions
-- VS Code-first `$EDITOR` resolution (`code --wait`)
-- `edit <file>` alias for opening files in `$EDITOR` (replaces Vim-style naming)
-- Argument completers (`git`, `winget`, `gh`, `mise`, `chezmoi`, etc.)
-- `Show-Help` command for in-shell command reference
-
----
-
-## Windows Terminal Keybindings
-
-Managed settings path:
-- `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
-
-Keybindings (balanced port):
-
-- `Alt+Shift+-` split pane vertical
-- `Alt+Shift+\` split pane horizontal
-- `Alt+h/j/k/l` move pane focus
-- `Alt+Shift+h/j/k/l` resize panes
-- `Alt+Shift+c` new tab
-- `Alt+n / Alt+p` next/prev tab
-- `Alt+Shift+z` toggle pane zoom
-- `Alt+Shift+x` close pane
-- `Ctrl+Shift+c / Ctrl+Shift+v` copy/paste
-- `Ctrl+Shift+f` find
-
----
-
-## Chezmoi Dotfile Management
-
-Bootstrap behavior:
-
-- `-ChezmoiRepo` provided: init/apply from that source.
-- Not provided: enforce direct repo-path mode from current checked-out repo (`scripts/..`).
-- Legacy `~/.local/share/chezmoi` source: backup then switch to direct repo-path mode.
-- Already direct-path with a different local source: warn, keep existing source, run `chezmoi apply`.
-- Existing local `~/.config/chezmoi/chezmoi.toml`: editor sections are migrated to VS Code defaults and backup is created.
-
-Daily workflow:
+Common `chezmoi` commands:
 
 ```powershell
-czmd          # chezmoi diff
-czma          # chezmoi apply
-czms          # chezmoi status
-czmu          # chezmoi update
-czmadd <path> # chezmoi add
+chezmoi diff
+chezmoi status
+chezmoi apply
 ```
 
-Backport destination-file changes (generic flow for any Chezmoi-managed path):
+When you change managed tooling and want to resync it:
+
+```powershell
+.\scripts\sync-mise.ps1
+```
+
+When you edit a destination file directly and want to backport it into source state:
 
 ```powershell
 chezmoi status
-chezmoi re-add "<destination-path-from-status>"
+chezmoi re-add "<destination-path>"
 chezmoi diff
 chezmoi apply
-git -C Z:\projects\dotfiles add .
-git -C Z:\projects\dotfiles commit -m "Backport managed file updates"
-git -C Z:\projects\dotfiles push origin master
 ```
 
-Verification:
+If the backported change belongs in this repo, follow up with normal `git add`, `git commit`, and `git push`.
 
-```powershell
-chezmoi source-path
-chezmoi git -- remote get-url origin
-```
+## Files You'll Actually Edit
 
-Git identity data:
+- `manifests/windows.packages.json` when you want to add or remove Windows packages, modules, fonts, or VS Code extensions
+- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` when you want to adjust aliases, prompt behavior, PATH-related setup, or helper commands
+- `home/AppData/Roaming/Code/User/settings.json` when you want to change editor defaults or extension behavior
+- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json` when you want to change terminal profiles, appearance, or keybindings
 
-- `dot_gitconfig.tmpl` uses `{{ .name }}` and `{{ .email }}`.
-- Values come from local `~/.config/chezmoi/chezmoi.toml`.
-- Example template: `examples/chezmoi/chezmoi.toml.example`.
-
----
-
-## Tool Reference
-
-### VS Code
-
-- Settings managed on Windows via Chezmoi target:
-  - `%APPDATA%\Code\User\settings.json`
-- Installed by bootstrap via winget package:
-  - `Microsoft.VisualStudioCode`
-- Installer tasks enabled by bootstrap:
-  - adds `code` to PATH, Explorer context-menu entries, and file associations
-- Extensions installed via:
-  - `manifests/windows.packages.json` (`vscode.extensions`)
-  - `.\scripts\bootstrap.ps1`
-  - Installer auto-removes legacy `valentjn.vscode-ltex` and installs `ltex-plus.vscode-ltex-plus`.
-- Formatter policy:
-  - Format on save is enabled with language-specific formatters (for example: Ruff for Python, Prettier for web/text formats, and language-native formatter extensions for Go/Rust/PowerShell/C/C++).
-  - Save-time safe fixes are explicitly enabled for ESLint and Ruff.
-
-### Windows Terminal
-
-- Settings managed on Windows via Chezmoi target:
-  - `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
-- Installed by bootstrap via winget package:
-  - `Microsoft.WindowsTerminal`
-- Managed Git Bash profile points at:
-  - `%ProgramFiles%\Git\bin\bash.exe`
-
-### Runtimes
-
-- Managed by `mise`.
-- Global Windows config lives at `~/.config/mise/config.toml` and is managed from `home/dot_config/mise/config.toml`.
-- `eza` uses the `github:eza-community/eza` backend so `mise` installs release assets instead of compiling with Cargo/MSVC.
-- Bootstrap applies managed files with chezmoi scripts excluded, then runs `.\scripts\sync-mise.ps1` once explicitly.
-- Later config changes trigger the same sync via a chezmoi `run_onchange` script.
-- Run `.\scripts\sync-mise.ps1` manually when you want to repair or revalidate runtimes without changing the managed config.
-- Quick verification:
-  - `mise which go`
-  - `where.exe go`
-  - `go version`
-  - `mise which java`
-  - `java -version`
-
-Managed Windows CLI tools now include:
-- `chezmoi`
-- `doppler`
-- `starship`
-- `zoxide`
-- `fzf`
-- `yazi`
-- `eza`
-- `ripgrep`
-- `bat`
-- `fd`
-- `lazygit`
-- `gh`
-- `croc`
-- `grex`
-- `jq`
-- `gopass`
-- `cmake`
-
-Repair existing machine (if runtime commands are missing):
-
-```powershell
-$devDrive = [Environment]::GetEnvironmentVariable("DEV_DRIVE", "User")
-if (-not $devDrive) { $devDrive = "Z:" }
-
-$miseDataDir = "$devDrive\tools\mise"
-$miseShims = "$miseDataDir\shims"
-
-New-Item -ItemType Directory -Path $miseShims -Force | Out-Null
-[Environment]::SetEnvironmentVariable("MISE_DATA_DIR", $miseDataDir, "User")
-
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($userPath -notlike "*$miseShims*") {
-  [Environment]::SetEnvironmentVariable("Path", "$miseShims;$userPath", "User")
-}
-
-$env:MISE_DATA_DIR = $miseDataDir
-$env:Path = "$miseShims;$env:Path"
-
-mise reshim
-
-where.exe go
-go version
-```
-
-Then close all terminals and VS Code windows, and reopen.
-
-### Git Commit Signing (SSH)
-
-Use this if you want signed commits in terminal and VS Code without GPG.
-
-```powershell
-git config --global gpg.format ssh
-git config --global user.signingkey "<SSH_PUBLIC_KEY_PATH>"
-git config --global commit.gpgsign true
-git config --global gpg.ssh.allowedSignersFile "$env:USERPROFILE\.ssh\allowed_signers"
-```
-
-Create/update `~/.ssh/allowed_signers` with one line:
-
-```text
-<SIGNING_EMAIL> namespaces="git" <KEY_TYPE> <BASE64_KEY_DATA>
-```
-
-Placeholder guide:
-- `<SSH_PUBLIC_KEY_PATH>`: path to your signing public key, for example `$env:USERPROFILE\.ssh\github_signing_key.pub`
-- `<SIGNING_EMAIL>`: the value from `git config user.email`
-- `<KEY_TYPE> <BASE64_KEY_DATA>`: copy the key type + base64 payload from the `.pub` file
-
-Verification:
-
-```powershell
-git config --global --get gpg.format
-git config --global --get user.signingkey
-git config --global --get commit.gpgsign
-git log --show-signature -1
-```
-
----
-
-## Customisation
-
-Main files to edit:
-
-- `home/dot_config/starship.toml`
-- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`
-- `home/AppData/Roaming/Code/User/settings.json`
-- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
-- `manifests/windows.packages.json`
-
-After updates:
+If you change managed files, re-apply with:
 
 ```powershell
 chezmoi apply

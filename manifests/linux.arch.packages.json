@@ -1,6 +1,0 @@
-{
-  "packageManager": "pacman",
-  "notes": "Reserved for future non-WSL Arch bootstrap flow. Not used by scripts/bootstrap-wsl.sh.",
-  "systemPackages": [],
-  "miseRuntimes": []
-}
