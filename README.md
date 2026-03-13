@@ -1,20 +1,17 @@
 # Dotfiles
 
 Dotfiles and bootstrap scripts for rebuilding this dev environment with `chezmoi`.
-Windows is implemented today; WSL, Linux, and macOS bootstraps are planned, so this README stays honest about current support while leaving room for that broader direction.
 
 ## Platform Support
 
 | Platform | Status    | Notes                                            |
 | -------- | --------- | ------------------------------------------------ |
-| Windows  | Supported | Bootstrapped today via `scripts/bootstrap.ps1`   |
+| Windows  | Supported | Bootstrapped via `scripts/bootstrap.ps1`         |
 | WSL      | Planned   | No bootstrap script or manifest in this repo yet |
 | Linux    | Planned   | No bootstrap script or manifest in this repo yet |
 | macOS    | Planned   | No bootstrap script or manifest in this repo yet |
 
 ## Windows Setup
-
-Current setup instructions are for Windows.
 
 Run the bootstrap from Windows PowerShell 5.1 as Administrator:
 
