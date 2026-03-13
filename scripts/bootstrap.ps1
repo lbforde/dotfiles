@@ -10,8 +10,6 @@
 #>
 
 param(
-    [switch]$SkipFonts,
-    [switch]$SkipChezmoi,
     [string]$ChezmoiRepo = "",   # e.g. "https://github.com/yourname/dotfiles"
     [string]$DevDrive = ""    # leave blank to be prompted; or pass e.g. "D:" to skip prompt
 )
@@ -890,7 +888,7 @@ git config --system core.longpaths true 2>$null
 
 # ─── Windows Applications (Winget) ───────────────────────────────────────────
 
-Write-Step "Installing Windows Applications"
+Write-Step "Installing Winget Packages"
 $wingetPackages = @($windowsPackages.wingetPackages | Where-Object { $_.id -ne "Git.Git" })
 $skippedPowerShellPackage = $false
 
@@ -903,16 +901,6 @@ foreach ($package in $wingetPackages) {
     }
 
     Install-WingetPackage -Package $package
-}
-
-# ─── Nerd Fonts (Winget) ─────────────────────────────────────────────────────
-
-if (-not $SkipFonts) {
-    Write-Step "Installing Nerd Fonts"
-    $fonts = @($windowsPackages.fonts)
-    foreach ($font in $fonts) {
-        Install-WingetPackage -Package $font
-    }
 }
 
 # ─── PowerShell Modules ──────────────────────────────────────────────────────
@@ -1123,24 +1111,15 @@ else {
 
 # ─── Chezmoi Init + Mise Sync ────────────────────────────────────────────────
 
-if (-not $SkipChezmoi) {
-    Write-Step "Configuring Chezmoi"
-    Initialize-LocalChezmoiConfig
-    $desiredChezmoiSource = Resolve-DesiredChezmoiSource
-    Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
+Write-Step "Configuring Chezmoi"
+Initialize-LocalChezmoiConfig
+$desiredChezmoiSource = Resolve-DesiredChezmoiSource
+Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
 
-    Invoke-MiseSync
+Invoke-MiseSync
 
-    Write-Step "Configuring PowerShell Profile Bridge"
-    Sync-PowerShellProfileBridge
-}
-
-# ─── Dotfiles Apply (Chezmoi-first) ──────────────────────────────────────────
-
-if ($SkipChezmoi) {
-    Write-Warn "Chezmoi apply was skipped. Managed dotfiles were not deployed."
-    Write-Warn "Re-run bootstrap without -SkipChezmoi, or run 'chezmoi apply --exclude=scripts' followed by '.\scripts\sync-mise.ps1'."
-}
+Write-Step "Configuring PowerShell Profile Bridge"
+Sync-PowerShellProfileBridge
 
 # ─── VS Code Extensions ───────────────────────────────────────────────────────
 

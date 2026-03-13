@@ -1,10 +1,4 @@
 {
-  "fonts": [
-    {
-      "id": "DEVCOM.JetBrainsMonoNerdFont",
-      "source": "winget"
-    }
-  ],
   "powershellModules": [
     {
       "name": "PSReadLine",
@@ -44,6 +38,10 @@
     },
     {
       "id": "Microsoft.WindowsTerminal",
+      "source": "winget"
+    },
+    {
+      "id": "DEVCOM.JetBrainsMonoNerdFont",
       "source": "winget"
     },
     {
