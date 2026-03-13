@@ -135,7 +135,7 @@
         "guid": "{2ece5bfe-50ed-5f3a-ab87-5cd4baafed2b}",
         "hidden": false,
         "name": "Git Bash",
-        "commandline": "\"%USERPROFILE%\\scoop\\apps\\git\\current\\bin\\bash.exe\" --login -i"
+        "commandline": "\"%ProgramFiles%\\Git\\bin\\bash.exe\" --login -i"
       },
       {
         "guid": "{a1095650-85e1-50f7-b436-3ac81018996c}",

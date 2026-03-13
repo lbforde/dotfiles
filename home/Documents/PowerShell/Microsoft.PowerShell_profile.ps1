@@ -918,29 +918,6 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
     }
 }
 
-# scoop — static subcommand completion (no native complete API)
-Register-ArgumentCompleter -Native -CommandName scoop -ScriptBlock {
-    param($wordToComplete, $commandAst, $cursorPosition)
-    $subcommands = @(
-        'install', 'uninstall', 'update', 'status', 'search', 'info', 'list',
-        'bucket', 'cache', 'cleanup', 'reset', 'depends', 'export', 'import',
-        'hold', 'unhold', 'prefix', 'home', 'cat', 'which', 'checkup', 'help'
-    )
-    $elements = $commandAst.CommandElements
-    if ($elements.Count -ge 2 -and $elements[1].Value -eq 'bucket') {
-        # scoop bucket <subcommand>
-        @('add', 'remove', 'list', 'known', 'update') | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
-    }
-    elseif ($elements.Count -le 2) {
-        # Completing the top-level subcommand
-        $subcommands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
-    }
-}
-
 # chezmoi — static subcommand completion (no native complete API)
 Register-ArgumentCompleter -Native -CommandName chezmoi -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)

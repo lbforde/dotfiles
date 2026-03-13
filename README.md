@@ -153,7 +153,7 @@ gopass version
 This repo provisions a cross-platform document authoring workflow in VS Code for Markdown/LaTeX editing and PDF generation:
 
 - Windows native LaTeX build stack:
-  - TeX distro: `MiKTeX` (Scoop package `miktex`)
+  - TeX distro: `MiKTeX` (Winget package `MiKTeX.MiKTeX`)
   - Build tools: `latexmk`, `xelatex`, `bibtex`, `chktex`
 - WSL2 LaTeX build stack:
   - TeX distro: `texlive-full` (apt package)
@@ -203,9 +203,8 @@ Legacy extension migration:
 Bootstrap reads install inventories from:
 
 - `manifests/windows.packages.json`
-  - Scoop buckets/tools
+  - Winget packages and fonts
   - PowerShell modules
-  - Winget packages (PowerShell + Windows Terminal)
   - VS Code extension install list (`vscode.extensions`)
 - `manifests/linux.ubuntu.packages.json`
   - apt repositories (`aptRepositories`) including third-party sources where required by upstream install methods
@@ -219,6 +218,7 @@ Bootstrap reads install inventories from:
 Scripts consuming manifests:
 
 - `scripts/bootstrap.ps1`
+- `scripts/uninstall-scoop-migrated-apps.ps1`
 - `scripts/bootstrap-wsl.sh`
 
 Windows `mise` source of truth:
@@ -253,9 +253,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 ### 2. What bootstrap does
 
-- Installs Scoop and retained bootstrap tools (`git`, `mise`, `vscode`, `miktex`)
-- Installs PowerShell 7 (winget)
-- Installs Windows Terminal (winget)
+- Installs Windows apps via Winget (`git`, `mise`, `vscode`, `MiKTeX`, `Windows Terminal`, `PowerShell`, `JetBrains Mono Nerd Font`)
 - Installs PowerShell modules
 - Configures Dev Drive directories and environment variables (idempotent on reruns)
 - Ensures Dev Drive `mise` shims (`<DevDrive>\tools\mise\shims`) are on user PATH without duplicate entries
@@ -276,11 +274,11 @@ gopass setup
 ### 4. Optional cleanup
 
 ```powershell
-.\scripts\cleanup-scoop-migrated-tools.ps1 -WhatIf
-.\scripts\cleanup-scoop-migrated-tools.ps1
+.\scripts\uninstall-scoop-migrated-apps.ps1 -WhatIf
+.\scripts\uninstall-scoop-migrated-apps.ps1
 ```
 
-This removes legacy Scoop-managed CLI tools that are now owned by `mise`, but only when the replacement command is already available from `mise`.
+This removes migrated Scoop apps that are now declared in `manifests/windows.packages.json` and managed by Winget. It does not uninstall Scoop itself.
 
 ### 5. First launch workflow
 
@@ -305,7 +303,7 @@ dotfiles/
 |-- scripts/
 |   |-- bootstrap.ps1
 |   |-- bootstrap-wsl.sh
-|   |-- cleanup-scoop-migrated-tools.ps1
+|   |-- uninstall-scoop-migrated-apps.ps1
 |   `-- sync-mise.ps1
 `-- home/
     |-- .chezmoiignore.tmpl
@@ -315,7 +313,7 @@ dotfiles/
     |-- dot_gitconfig.tmpl
     |-- Documents/PowerShell/Microsoft.PowerShell_profile.ps1
     |-- Documents/PowerShell/Microsoft.VSCode_profile.ps1
-    |-- scoop/persist/vscode/data/user-data/User/settings.json
+    |-- AppData/Roaming/Code/User/settings.json
     |-- AppData/Local/Packages/
     |   `-- Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
     `-- dot_config/
@@ -435,11 +433,9 @@ Git identity data:
 ### VS Code
 
 - Settings managed on Windows via Chezmoi target:
-  - `%USERPROFILE%\scoop\persist\vscode\data\user-data\User\settings.json`
-- Scoop path note:
-  - `%USERPROFILE%\scoop\apps\vscode\current\data\user-data\User` points to the same persisted data.
-- Migration note:
-  - Legacy `%APPDATA%\Code\User\settings.json` may remain on disk but is no longer managed by this repo for Scoop VS Code installs.
+  - `%APPDATA%\Code\User\settings.json`
+- Installed by bootstrap via winget package:
+  - `Microsoft.VisualStudioCode`
 - Extensions installed via:
   - `manifests/windows.packages.json` (`vscode.extensions`)
   - `.\scripts\bootstrap.ps1`
@@ -454,6 +450,8 @@ Git identity data:
   - `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
 - Installed by bootstrap via winget package:
   - `Microsoft.WindowsTerminal`
+- Managed Git Bash profile points at:
+  - `%ProgramFiles%\Git\bin\bash.exe`
 
 ### Runtimes
 
@@ -556,7 +554,7 @@ Main files to edit:
 
 - `home/dot_config/starship.toml`
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`
-- `home/scoop/persist/vscode/data/user-data/User/settings.json`
+- `home/AppData/Roaming/Code/User/settings.json`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 - `manifests/windows.packages.json`
 

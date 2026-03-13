@@ -1,27 +1,11 @@
 {
-  "scoopBuckets": [
+  "fonts": [
     {
-      "name": "extras"
-    },
-    {
-      "name": "nerd-fonts"
+      "id": "DEVCOM.JetBrainsMonoNerdFont",
+      "source": "winget",
+      "legacyScoopPackage": "JetBrainsMono-NF"
     }
   ],
-  "scoopTools": [
-    {
-      "name": "mise",
-      "bucket": "main"
-    },
-    {
-      "name": "vscode",
-      "bucket": "extras"
-    },
-    {
-      "name": "miktex",
-      "bucket": "main"
-    }
-  ],
-  "fonts": ["JetBrainsMono-NF"],
   "powershellModules": [
     {
       "name": "PSReadLine",
@@ -41,6 +25,26 @@
     }
   ],
   "wingetPackages": [
+    {
+      "id": "Git.Git",
+      "source": "winget",
+      "legacyScoopPackage": "git"
+    },
+    {
+      "id": "jdx.mise",
+      "source": "winget",
+      "legacyScoopPackage": "mise"
+    },
+    {
+      "id": "Microsoft.VisualStudioCode",
+      "source": "winget",
+      "legacyScoopPackage": "vscode"
+    },
+    {
+      "id": "MiKTeX.MiKTeX",
+      "source": "winget",
+      "legacyScoopPackage": "miktex"
+    },
     {
       "id": "Microsoft.WindowsTerminal",
       "source": "winget"

@@ -3,8 +3,8 @@
 .SYNOPSIS
     Windows Developer Environment Bootstrap Script
 .DESCRIPTION
-    Installs and configures a full developer environment using Scoop, Winget,
-    and all associated tools. Run once as Administrator to get started.
+    Installs and configures a full developer environment using Winget and
+    associated tools. Run once as Administrator to get started.
 .NOTES
     Run with: Set-ExecutionPolicy Bypass -Scope Process -Force; .\bootstrap.ps1
 #>
@@ -76,20 +76,57 @@ function Get-ManifestJson {
     return Get-Content $manifestPath -Raw | ConvertFrom-Json -Depth 10
 }
 
-function Install-ScoopApp {
-    param([string]$App, [string]$Bucket = "main")
+function Test-WingetPackageInstalled {
+    param([Parameter(Mandatory = $true)][string]$Id)
 
-    # Use bucket-qualified names for non-main buckets so installs are explicit.
-    $packageRef = if ($Bucket -and $Bucket -ne "main") { "$Bucket/$App" } else { $App }
+    $output = @(& winget list --id $Id --exact --accept-source-agreements --disable-interactivity 2>&1)
+    if ($LASTEXITCODE -eq 0) {
+        return $true
+    }
 
-    if (-not (scoop info $packageRef 2>&1 | Select-String "Installed")) {
-        Write-Info "Installing $packageRef..."
-        scoop install $packageRef
-        Write-OK "$App installed"
+    $message = ($output | Out-String).Trim()
+    if ($message -match "No installed package found matching input criteria") {
+        return $false
     }
-    else {
-        Write-OK "$App already installed"
+
+    throw "Unable to determine whether winget package '$Id' is installed. Output: $message"
+}
+
+function Install-WingetPackage {
+    param([Parameter(Mandatory = $true)][object]$Package)
+
+    $packageId = [string]$Package.id
+    if ([string]::IsNullOrWhiteSpace($packageId)) {
+        throw "Winget package entry is missing an id."
     }
+
+    if (Test-WingetPackageInstalled -Id $packageId) {
+        Write-OK "$packageId already installed"
+        return
+    }
+
+    $arguments = @(
+        "install",
+        "--id", $packageId,
+        "--exact",
+        "--silent",
+        "--accept-source-agreements",
+        "--accept-package-agreements",
+        "--disable-interactivity"
+    )
+
+    if ($Package.PSObject.Properties.Name -contains "source" -and -not [string]::IsNullOrWhiteSpace([string]$Package.source)) {
+        $arguments += @("--source", [string]$Package.source)
+    }
+
+    Write-Info "Installing $packageId via winget..."
+    & winget @arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install winget package '$packageId'."
+    }
+
+    Set-PathEnvironment
+    Write-OK "$packageId installed via winget"
 }
 
 function Install-VSCodeExtensions {
@@ -271,47 +308,6 @@ function Test-ChezmoiManagedFilePresent {
     catch {
         return $false
     }
-}
-
-function Test-ScoopBucketPresent {
-    param([Parameter(Mandatory = $true)][string]$BucketName)
-
-    if (-not (Test-CommandAvailable "scoop")) { return $false }
-
-    try {
-        $bucketLines = scoop bucket list 2>$null
-    }
-    catch {
-        return $false
-    }
-
-    foreach ($entry in $bucketLines) {
-        if ($null -eq $entry) { continue }
-
-        $name = ""
-        if ($entry -is [string]) {
-            $trimmed = $entry.Trim()
-            if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
-            if ($trimmed -match "^(Name|----)\b") { continue }
-
-            $parts = $trimmed -split "\s+"
-            if ($parts.Count -gt 0) {
-                $name = $parts[0]
-            }
-        }
-        elseif ($entry.PSObject.Properties.Name -contains "Name") {
-            $name = [string]$entry.Name
-        }
-        else {
-            $name = [string]$entry
-        }
-
-        if ($name -eq $BucketName) {
-            return $true
-        }
-    }
-
-    return $false
 }
 
 function Get-ChezmoiSourceRootPath {
@@ -833,6 +829,14 @@ function Invoke-ChezmoiApply {
 # Keep package/runtime inventories in JSON so this script stays logic-focused.
 $windowsPackages = Get-ManifestJson "manifests\windows.packages.json"
 
+# ─── Winget Availability ─────────────────────────────────────────────────────
+
+Write-Step "Checking Winget"
+if (-not (Test-CommandAvailable "winget")) {
+    throw "winget is required for Windows bootstrap. Install Microsoft App Installer / Winget, then rerun .\scripts\bootstrap.ps1."
+}
+Write-OK "winget is available"
+
 # ─── Execution Policy ────────────────────────────────────────────────────────
 
 Write-Step "Configuring Execution Policy"
@@ -855,109 +859,39 @@ else {
     Write-OK "NuGet provider already present"
 }
 
-# ─── Scoop ───────────────────────────────────────────────────────────────────
-
-Write-Step "Installing Scoop"
-if (-not (Test-CommandAvailable "scoop")) {
-    $scoopInstallerPath = Join-Path $env:TEMP "install-scoop.ps1"
-    Invoke-WebRequest -Uri "https://get.scoop.sh" -OutFile $scoopInstallerPath -ErrorAction Stop
-    try {
-        & pwsh -NoProfile -ExecutionPolicy Bypass -File $scoopInstallerPath
-    }
-    finally {
-        Remove-Item -Path $scoopInstallerPath -Force -ErrorAction SilentlyContinue
-    }
-    Set-PathEnvironment
-    Write-OK "Scoop installed"
-}
-else {
-    Write-OK "Scoop already installed"
-}
-
-# Add buckets
-Write-Step "Configuring Scoop Buckets"
-$buckets = @($windowsPackages.scoopBuckets)
-foreach ($bucket in $buckets) {
-    $bucketName = $bucket.name
-    if (-not (Test-ScoopBucketPresent -BucketName $bucketName)) {
-        if ($bucket.PSObject.Properties.Name -contains "url" -and $bucket.url) {
-            scoop bucket add $bucketName $bucket.url
-        }
-        else {
-            scoop bucket add $bucketName
-        }
-        Write-OK "Added bucket: $bucketName"
-    }
-    else {
-        Write-OK "Bucket already added: $bucketName"
-    }
-}
-
 # ─── Git (needed early for chezmoi etc.) ─────────────────────────────────────
 
 Write-Step "Installing Git"
-Install-ScoopApp "git"
+$gitWingetPackage = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Git.Git" } | Select-Object -First 1
+if (-not $gitWingetPackage) {
+    throw "manifests/windows.packages.json must include the Git.Git winget package."
+}
+
+Install-WingetPackage -Package $gitWingetPackage
+
+if (-not (Test-CommandAvailable "git")) {
+    throw "git is not available on PATH after Winget installation."
+}
+
 # Ensure long paths are enabled for Windows
 git config --system core.longpaths true 2>$null
 
-# ─── PowerShell 7 ────────────────────────────────────────────────────────────
+# ─── Windows Applications (Winget) ───────────────────────────────────────────
 
-Write-Step "Installing PowerShell 7"
-if (-not (Test-CommandAvailable "pwsh")) {
-    # Winget IDs are manifest-driven so package choices stay in one place.
-    $pwshWinget = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Microsoft.PowerShell" } | Select-Object -First 1
-    $pwshWingetId = if ($pwshWinget) { $pwshWinget.id } else { "Microsoft.PowerShell" }
-    $pwshWingetSource = if ($pwshWinget -and $pwshWinget.source) { $pwshWinget.source } else { "winget" }
+Write-Step "Installing Windows Applications"
+$wingetPackages = @($windowsPackages.wingetPackages | Where-Object { $_.id -ne "Git.Git" })
 
-    winget install --id $pwshWingetId --source $pwshWingetSource --accept-source-agreements --accept-package-agreements --silent
-    Set-PathEnvironment
-    Write-OK "PowerShell 7 installed via winget"
-}
-else {
-    Write-OK "PowerShell 7 already installed"
+foreach ($package in $wingetPackages) {
+    Install-WingetPackage -Package $package
 }
 
-# ─── Windows Terminal ─────────────────────────────────────────────────────────
-
-Write-Step "Installing Windows Terminal"
-if (-not (Test-CommandAvailable "wt")) {
-    $wtWinget = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Microsoft.WindowsTerminal" } | Select-Object -First 1
-    $wtWingetId = if ($wtWinget) { $wtWinget.id } else { "Microsoft.WindowsTerminal" }
-    $wtWingetSource = if ($wtWinget -and $wtWinget.source) { $wtWinget.source } else { "winget" }
-
-    winget install --id $wtWingetId --source $wtWingetSource --accept-source-agreements --accept-package-agreements --silent
-    Set-PathEnvironment
-    Write-OK "Windows Terminal installed via winget"
-}
-else {
-    Write-OK "Windows Terminal already installed"
-}
-
-# ─── Core CLI Tools (Scoop) ───────────────────────────────────────────────────
-
-Write-Step "Installing Core CLI Tools"
-
-$scoopTools = @($windowsPackages.scoopTools)
-
-foreach ($tool in $scoopTools) {
-    $bucketName = if ($tool.bucket) { $tool.bucket } else { "main" }
-    Install-ScoopApp $tool.name $bucketName
-}
-
-# ─── JetBrains Mono Nerd Font ────────────────────────────────────────────────
+# ─── Nerd Fonts (Winget) ─────────────────────────────────────────────────────
 
 if (-not $SkipFonts) {
     Write-Step "Installing Nerd Fonts"
     $fonts = @($windowsPackages.fonts)
-    foreach ($fontName in $fonts) {
-        $installed = scoop info $fontName 2>&1 | Select-String "Installed"
-        if (-not $installed) {
-            scoop install $fontName
-            Write-OK "$fontName installed"
-        }
-        else {
-            Write-OK "$fontName already installed"
-        }
+    foreach ($font in $fonts) {
+        Install-WingetPackage -Package $font
     }
 }
 
@@ -1209,8 +1143,8 @@ Next steps:
        doppler login
   6. Configure gopass:
        gopass setup
-  7. Clean up legacy Scoop-managed CLI tools on this machine:
-       .\scripts\cleanup-scoop-migrated-tools.ps1
+  7. Optionally remove migrated Scoop apps after Winget bootstrap:
+       .\scripts\uninstall-scoop-migrated-apps.ps1
 
 "@ -InformationAction Continue
 
