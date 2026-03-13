@@ -25,13 +25,11 @@ Useful options:
 ```powershell
 .\scripts\bootstrap.ps1 -DevDrive "D:"
 .\scripts\bootstrap.ps1 -ChezmoiRepo "https://github.com/yourname/dotfiles"
-.\scripts\bootstrap.ps1 -SkipFonts
-.\scripts\bootstrap.ps1 -SkipChezmoi
 ```
 
 What the bootstrap handles:
 
-- Installs the current Windows packages, fonts, PowerShell modules, and VS Code extensions from `manifests/windows.packages.json`
+- Installs the current winget packages, PowerShell modules, and VS Code extensions from `manifests/windows.packages.json`
 - Sets Dev Drive environment variables and PATH entries needed by the shell and toolchain
 - Initializes and applies `chezmoi` from this repo by default, with backup steps for older local state
 - Runs `.\scripts\sync-mise.ps1` after apply so managed CLI tools are installed and shims are refreshed
@@ -64,7 +62,7 @@ gopass setup
 
 - `scripts/bootstrap.ps1`: current bootstrap entry point for Windows
 - `scripts/sync-mise.ps1`: installs and validates the current managed `mise` toolset
-- `manifests/windows.packages.json`: Windows packages, PowerShell modules, fonts, and VS Code extensions
+- `manifests/windows.packages.json`: winget packages, PowerShell modules, and VS Code extensions
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`: PowerShell profile, aliases, helper functions, and shell environment defaults
 - `home/AppData/Roaming/Code/User/settings.json`: VS Code settings applied through `chezmoi`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`: Windows Terminal settings applied through `chezmoi`
@@ -105,7 +103,7 @@ If the backported change belongs in this repo, follow up with normal `git add`, 
 
 ## Files You'll Actually Edit
 
-- `manifests/windows.packages.json` when you want to add or remove Windows packages, modules, fonts, or VS Code extensions
+- `manifests/windows.packages.json` when you want to add or remove winget packages, modules, or VS Code extensions
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` when you want to adjust aliases, prompt behavior, PATH-related setup, or helper commands
 - `home/AppData/Roaming/Code/User/settings.json` when you want to change editor defaults or extension behavior
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json` when you want to change terminal profiles, appearance, or keybindings
