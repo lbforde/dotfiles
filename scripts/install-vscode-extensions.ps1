@@ -33,7 +33,7 @@ if (-not (Test-Path $extensionsFile)) {
     exit 1
 }
 
-$extensions = (Get-Content $extensionsFile -Raw | ConvertFrom-Json).vscode.recommendations
+$extensions = (Get-Content $extensionsFile -Raw | ConvertFrom-Json).vscode.extensions
 
 # ─── Get currently installed extensions ───────────────────────────────────────
 

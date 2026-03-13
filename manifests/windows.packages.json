@@ -51,7 +51,7 @@
     }
   ],
   "vscode": {
-    "recommendations": [
+    "extensions": [
       "zhuangtongfa.Material-theme",
       "usernamehw.errorlens",
       "eamodio.gitlens",
