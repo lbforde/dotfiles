@@ -92,6 +92,67 @@ function Install-ScoopApp {
     }
 }
 
+function Install-VSCodeExtensions {
+    if (-not (Test-CommandAvailable "code")) {
+        Write-Warn "VS Code 'code' CLI not on PATH yet — restart your shell and rerun:"
+        Write-Warn "  .\scripts\bootstrap.ps1"
+        return
+    }
+
+    $manifest = Get-ManifestJson -RelativePath "manifests/windows.packages.json"
+    $extensions = @($manifest.vscode.extensions)
+    $installed = @(code --list-extensions 2>$null | ForEach-Object { $_.ToLower() })
+    $legacyLtexExtension = "valentjn.vscode-ltex"
+
+    if ($installed -contains $legacyLtexExtension) {
+        Write-Step "Migrating legacy LTeX extension"
+        try {
+            code --uninstall-extension $legacyLtexExtension --force 2>&1 | Out-Null
+            Write-OK "Removed legacy extension: $legacyLtexExtension"
+            $installed = @(code --list-extensions 2>$null | ForEach-Object { $_.ToLower() })
+        }
+        catch {
+            Write-Warn "Failed to uninstall legacy extension: $legacyLtexExtension"
+        }
+    }
+
+    Write-Step "Installing VS Code Extensions ($($extensions.Count) total)"
+
+    $installedCount = 0
+    $skippedCount = 0
+    $failed = @()
+
+    foreach ($ext in $extensions) {
+        if ($installed -contains $ext.ToLower()) {
+            Write-Host "  · $ext (already installed)" -ForegroundColor DarkGray
+            $skippedCount++
+            continue
+        }
+
+        try {
+            Write-Host "  → Installing $ext..." -ForegroundColor Gray
+            code --install-extension $ext --force 2>&1 | Out-Null
+            Write-OK $ext
+            $installedCount++
+        }
+        catch {
+            Write-Warn "Failed to install: $ext"
+            $failed += $ext
+        }
+    }
+
+    Write-Host ""
+    Write-Host "  ─────────────────────────────────" -ForegroundColor DarkGray
+    Write-OK "Installed : $installedCount"
+    Write-Host "  · Skipped  : $skippedCount (already present)" -ForegroundColor DarkGray
+
+    if ($failed.Count -gt 0) {
+        Write-Host ""
+        Write-Warn "Failed to install $($failed.Count) extension(s):"
+        $failed | ForEach-Object { Write-Warn "  · $_" }
+    }
+}
+
 function Initialize-BootstrapChezmoi {
     param([switch]$Quiet)
 
@@ -1129,15 +1190,7 @@ if ($SkipChezmoi) {
 
 # ─── VS Code Extensions ───────────────────────────────────────────────────────
 
-Write-Step "Installing VS Code Extensions"
-$extScript = Join-Path $PSScriptRoot "install-vscode-extensions.ps1"
-if ((Test-Path $extScript) -and (Test-CommandAvailable "code")) {
-    & $extScript
-}
-elseif (-not (Test-CommandAvailable "code")) {
-    Write-Warn "VS Code 'code' CLI not on PATH yet — restart your shell and run:"
-    Write-Warn "  .\scripts\install-vscode-extensions.ps1"
-}
+Install-VSCodeExtensions
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 

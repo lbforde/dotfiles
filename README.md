@@ -110,7 +110,7 @@ WSL bootstrap behavior:
 - Installs `mise` runtimes idempotently, runs `mise reshim`, and validates runtime commands are resolvable on PATH.
 - Creates a default projects directory at `$HOME/projects` (or `$PROJECTS` when set).
 - Prints next-step guidance at completion, including re-login guidance when default shell changes.
-- Keeps VS Code extension installation automation Windows-only (`scripts/install-vscode-extensions.ps1`).
+- Keeps VS Code extension installation automation Windows-only via `scripts/bootstrap.ps1`.
 
 WSL parity tool install methods:
 - `zinit`: upstream git clone during `Shell config` phase
@@ -194,7 +194,7 @@ Expected extensions:
 - `ltex-plus.vscode-ltex-plus`
 
 Legacy extension migration:
-- `scripts/install-vscode-extensions.ps1` removes `valentjn.vscode-ltex` when present, then installs recommendations from `manifests/windows.packages.json`.
+- `scripts/bootstrap.ps1` removes `valentjn.vscode-ltex` when present, then installs recommendations from `manifests/windows.packages.json`.
 
 ---
 
@@ -206,7 +206,7 @@ Bootstrap reads install inventories from:
   - Scoop buckets/tools
   - PowerShell modules
   - Winget packages (PowerShell + Windows Terminal)
-  - VS Code extension install list (`vscode.recommendations`)
+  - VS Code extension install list (`vscode.extensions`)
 - `manifests/linux.ubuntu.packages.json`
   - apt repositories (`aptRepositories`) including third-party sources where required by upstream install methods
   - required apt packages (`systemPackages`)
@@ -219,7 +219,6 @@ Bootstrap reads install inventories from:
 Scripts consuming manifests:
 
 - `scripts/bootstrap.ps1`
-- `scripts/install-vscode-extensions.ps1`
 - `scripts/bootstrap-wsl.sh`
 
 Windows `mise` source of truth:
@@ -307,7 +306,6 @@ dotfiles/
 |   |-- bootstrap.ps1
 |   |-- bootstrap-wsl.sh
 |   |-- cleanup-scoop-migrated-tools.ps1
-|   |-- install-vscode-extensions.ps1
 |   `-- sync-mise.ps1
 `-- home/
     |-- .chezmoiignore.tmpl
@@ -443,8 +441,8 @@ Git identity data:
 - Migration note:
   - Legacy `%APPDATA%\Code\User\settings.json` may remain on disk but is no longer managed by this repo for Scoop VS Code installs.
 - Extensions installed via:
-  - `manifests/windows.packages.json` (`vscode.recommendations`)
-  - `.\scripts\install-vscode-extensions.ps1`
+  - `manifests/windows.packages.json` (`vscode.extensions`)
+  - `.\scripts\bootstrap.ps1`
   - Installer auto-removes legacy `valentjn.vscode-ltex` and installs `ltex-plus.vscode-ltex-plus`.
 - Formatter policy:
   - Format on save is enabled with language-specific formatters (for example: Ruff for Python, Prettier for web/text formats, and language-native formatter extensions for Go/Rust/PowerShell/C/C++).
