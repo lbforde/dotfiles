@@ -52,7 +52,7 @@ Linux (Ubuntu/WSL2):
 
 ### Windows
 
-Open PowerShell as Administrator and run:
+Open Windows PowerShell 5.1 as Administrator and run:
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -73,6 +73,7 @@ First run behavior:
 - If legacy source-state exists at `~/.local/share/chezmoi`, bootstrap creates a timestamped backup before switching.
 - Re-runs reuse existing user `DEV_DRIVE` automatically when it is valid (skip drive picker prompt).
 - Auto-migrates existing local chezmoi `[edit]`/`[merge]`/`[diff]` settings to VS Code defaults, with timestamped backup.
+- If you launch bootstrap from `pwsh`, it skips the `Microsoft.PowerShell` Winget package to avoid self-upgrading the active shell and terminating the session.
 - Uses `mise exec chezmoi@latest` to bootstrap `chezmoi` before the managed global `mise` config is applied.
 - Applies the managed `~/.config/mise/config.toml` and then runs `.\scripts\sync-mise.ps1`.
 

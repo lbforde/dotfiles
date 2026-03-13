@@ -45,6 +45,10 @@ function Test-CommandAvailable {
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
+function Test-RunningInPowerShellCoreHost {
+    return $PSVersionTable.PSEdition -eq "Core"
+}
+
 function Set-PathEnvironment {
     [CmdletBinding(SupportsShouldProcess)]
     param()
@@ -880,8 +884,16 @@ git config --system core.longpaths true 2>$null
 
 Write-Step "Installing Windows Applications"
 $wingetPackages = @($windowsPackages.wingetPackages | Where-Object { $_.id -ne "Git.Git" })
+$skippedPowerShellPackage = $false
 
 foreach ($package in $wingetPackages) {
+    if ($package.id -eq "Microsoft.PowerShell" -and (Test-RunningInPowerShellCoreHost)) {
+        Write-Warn "Skipping Microsoft.PowerShell because bootstrap is running inside pwsh. Updating the current shell can terminate this session."
+        Write-Info "Run bootstrap from Windows PowerShell 5.1 to let it install or upgrade PowerShell, or run: winget upgrade --id Microsoft.PowerShell --exact"
+        $skippedPowerShellPackage = $true
+        continue
+    }
+
     Install-WingetPackage -Package $package
 }
 
@@ -1125,6 +1137,10 @@ if ($SkipChezmoi) {
 # ─── VS Code Extensions ───────────────────────────────────────────────────────
 
 Install-VSCodeExtensions
+
+if ($skippedPowerShellPackage) {
+    Write-Warn "Microsoft.PowerShell was skipped because bootstrap ran inside pwsh."
+}
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
