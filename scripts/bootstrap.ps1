@@ -123,6 +123,14 @@ function Install-WingetPackage {
         $arguments += @("--source", [string]$Package.source)
     }
 
+    if ($Package.PSObject.Properties.Name -contains "scope" -and -not [string]::IsNullOrWhiteSpace([string]$Package.scope)) {
+        $arguments += @("--scope", [string]$Package.scope)
+    }
+
+    if ($Package.PSObject.Properties.Name -contains "override" -and -not [string]::IsNullOrWhiteSpace([string]$Package.override)) {
+        $arguments += @("--override", [string]$Package.override)
+    }
+
     Write-Info "Installing $packageId via winget..."
     & winget @arguments
     if ($LASTEXITCODE -ne 0) {

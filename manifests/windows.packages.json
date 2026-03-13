@@ -38,6 +38,8 @@
     {
       "id": "Microsoft.VisualStudioCode",
       "source": "winget",
+      "scope": "user",
+      "override": "/VERYSILENT /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath",
       "legacyScoopPackage": "vscode"
     },
     {

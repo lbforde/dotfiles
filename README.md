@@ -437,6 +437,8 @@ Git identity data:
   - `%APPDATA%\Code\User\settings.json`
 - Installed by bootstrap via winget package:
   - `Microsoft.VisualStudioCode`
+- Installer tasks enabled by bootstrap:
+  - adds `code` to PATH, Explorer context-menu entries, and file associations
 - Extensions installed via:
   - `manifests/windows.packages.json` (`vscode.extensions`)
   - `.\scripts\bootstrap.ps1`
