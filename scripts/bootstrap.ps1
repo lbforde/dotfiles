@@ -1167,8 +1167,6 @@ Next steps:
        doppler login
   6. Configure gopass:
        gopass setup
-  7. Optionally remove migrated Scoop apps after Winget bootstrap:
-       .\scripts\uninstall-scoop-migrated-apps.ps1
 
 "@ -InformationAction Continue
 

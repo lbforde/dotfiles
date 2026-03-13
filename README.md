@@ -219,7 +219,6 @@ Bootstrap reads install inventories from:
 Scripts consuming manifests:
 
 - `scripts/bootstrap.ps1`
-- `scripts/uninstall-scoop-migrated-apps.ps1`
 - `scripts/bootstrap-wsl.sh`
 
 Windows `mise` source of truth:
@@ -272,16 +271,7 @@ doppler login
 gopass setup
 ```
 
-### 4. Optional cleanup
-
-```powershell
-.\scripts\uninstall-scoop-migrated-apps.ps1 -WhatIf
-.\scripts\uninstall-scoop-migrated-apps.ps1
-```
-
-This removes migrated Scoop apps that are now declared in `manifests/windows.packages.json` and managed by Winget. It does not uninstall Scoop itself.
-
-### 5. First launch workflow
+### 4. First launch workflow
 
 1. Open Windows Terminal.
 2. Start `pwsh` and confirm your profile loaded.
@@ -304,7 +294,6 @@ dotfiles/
 |-- scripts/
 |   |-- bootstrap.ps1
 |   |-- bootstrap-wsl.sh
-|   |-- uninstall-scoop-migrated-apps.ps1
 |   `-- sync-mise.ps1
 `-- home/
     |-- .chezmoiignore.tmpl

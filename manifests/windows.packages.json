@@ -2,8 +2,7 @@
   "fonts": [
     {
       "id": "DEVCOM.JetBrainsMonoNerdFont",
-      "source": "winget",
-      "legacyScoopPackage": "JetBrainsMono-NF"
+      "source": "winget"
     }
   ],
   "powershellModules": [
@@ -27,25 +26,21 @@
   "wingetPackages": [
     {
       "id": "Git.Git",
-      "source": "winget",
-      "legacyScoopPackage": "git"
+      "source": "winget"
     },
     {
       "id": "jdx.mise",
-      "source": "winget",
-      "legacyScoopPackage": "mise"
+      "source": "winget"
     },
     {
       "id": "Microsoft.VisualStudioCode",
       "source": "winget",
       "scope": "user",
-      "override": "/VERYSILENT /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath",
-      "legacyScoopPackage": "vscode"
+      "override": "/VERYSILENT /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath"
     },
     {
       "id": "MiKTeX.MiKTeX",
-      "source": "winget",
-      "legacyScoopPackage": "miktex"
+      "source": "winget"
     },
     {
       "id": "Microsoft.WindowsTerminal",
