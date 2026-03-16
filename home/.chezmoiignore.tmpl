@@ -7,7 +7,7 @@
 # Windows-only files — ignore on Linux/macOS
 {{- if ne .chezmoi.os "windows" }}
 Documents/PowerShell
-.chezmoiscripts
+.chezmoiscripts/*.ps1
 AppData/Roaming/Code/User
 AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
 {{- end }}
@@ -15,7 +15,7 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
 # Linux/macOS-only files — ignore on Windows
 {{- if eq .chezmoi.os "windows" }}
 .zshrc
-.config/zsh
+.chezmoiscripts/*.sh
 {{- end }}
 
 # Never manage local chezmoi runtime config from source state.

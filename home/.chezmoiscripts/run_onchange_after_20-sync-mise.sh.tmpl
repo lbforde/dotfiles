@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Managed by chezmoi.
+# Re-run trigger: {{ joinPath .chezmoi.sourceDir "dot_config" "mise" "config.toml" | include | sha256sum }}
+
+if [[ "{{ .chezmoi.os }}" == "windows" ]]; then
+  exit 0
+fi
+
+repo_root="$(cd -- "{{ .chezmoi.sourceDir }}/.." && pwd)"
+sync_script="$repo_root/scripts/sync-mise.sh"
+
+if [[ ! -f "$sync_script" ]]; then
+  echo "sync-mise.sh not found at $sync_script" >&2
+  exit 1
+fi
+
+bash "$sync_script"

@@ -5,6 +5,10 @@
 *.bash text eol=lf
 *.zsh text eol=lf
 *.zshrc text eol=lf
+home/dot_zshrc text eol=lf
+home/.chezmoiignore.tmpl text eol=lf
+home/.chezmoiscripts/*.sh.tmpl text eol=lf
+home/.chezmoiscripts/*.ps1.tmpl text eol=crlf
 
 # Data/docs should stay LF for cross-platform consistency.
 *.json text eol=lf

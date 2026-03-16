@@ -1,13 +1,26 @@
 #!/usr/bin/env zsh
 
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+mkdir -p "$XDG_CACHE_HOME/zsh" "$XDG_DATA_HOME" "$XDG_STATE_HOME/zsh"
+
+typeset -U path PATH
+path=("$HOME/.local/bin" "$path[@]")
+export PATH
+
 if command -v code >/dev/null 2>&1; then
   export EDITOR="code --wait"
 elif command -v codium >/dev/null 2>&1; then
   export EDITOR="codium --wait"
 elif command -v nvim >/dev/null 2>&1; then
   export EDITOR="nvim"
-else
+elif command -v vim >/dev/null 2>&1; then
   export EDITOR="vim"
+else
+  export EDITOR="vi"
 fi
 
 export VISUAL="$EDITOR"
@@ -36,51 +49,90 @@ else
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'head -n 50 {}'"
 fi
 
-ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+export PROJECTS="${PROJECTS:-$HOME/projects}"
+
+ZINIT_HOME="${XDG_DATA_HOME}/zinit/zinit.git"
 if [[ ! -f "${ZINIT_HOME}/zinit.zsh" ]] && command -v git >/dev/null 2>&1; then
   mkdir -p -- "${ZINIT_HOME:h}"
   git clone "https://github.com/zdharma-continuum/zinit.git" "$ZINIT_HOME"
 fi
 
+_fzf_tab_preview() {
+  local target="$1"
+
+  if [[ -z "$target" ]]; then
+    return 0
+  fi
+
+  if (( $+commands[eza] )); then
+    eza -1 --group-directories-first --color=always "$target" 2>/dev/null
+    return 0
+  fi
+
+  if command -v ls >/dev/null 2>&1; then
+    ls --color=always -1 "$target" 2>/dev/null
+  fi
+}
+
 if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
   source "${ZINIT_HOME}/zinit.zsh"
 
-  zinit ice as"command" from"gh-r" atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" atpull"%atclone" src"init.zsh"
-  zinit light starship/starship
-
   zinit light zsh-users/zsh-completions
+  zinit light Aloxaf/fzf-tab
 
   zstyle ':completion:*:descriptions' format '[%d]'
   zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
   zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
   zstyle ':completion:*' menu no
 
-  autoload -Uz compinit && compinit
-
-  zinit light Aloxaf/fzf-tab
   zstyle ':fzf-tab:*' fzf-flags --height=60% --layout=reverse --border --ansi
   zstyle ':fzf-tab:*' fzf-pad 4
   zstyle ':fzf-tab:*' switch-group ',' '.'
   zstyle ':fzf-tab:*' continuous-trigger '/'
-  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'if (( $+commands[eza] )); then eza -1 --color=always $realpath; else ls --color=always -1 $realpath; fi'
-  zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'if (( $+commands[eza] )); then eza -1 --color=always $realpath; else ls --color=always -1 $realpath; fi'
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview '_fzf_tab_preview "$realpath"'
+  zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '_fzf_tab_preview "$realpath"'
   zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' fzf-preview 'echo ${(P)word}'
 
+  autoload -Uz compinit
+  compinit -d "${XDG_CACHE_HOME}/zsh/zcompdump-${ZSH_VERSION}"
   zinit cdreplay -q
 
-  zinit ice wait"1" lucid
   zinit light zsh-users/zsh-autosuggestions
-
-  zinit ice wait"2" lucid
-  zinit light zdharma-continuum/fast-syntax-highlighting
+  zinit light zsh-users/zsh-syntax-highlighting
 fi
 
-if command -v zoxide >/dev/null 2>&1; then
-  eval "$(zoxide init zsh)"
-fi
+bindkey -e
+bindkey '^p' history-search-backward
+bindkey '^n' history-search-forward
+bindkey '^[w' kill-region
+
+HISTSIZE=5000
+HISTFILE="${XDG_STATE_HOME}/zsh/history"
+SAVEHIST=$HISTSIZE
+HISTDUP=erase
+setopt appendhistory
+setopt sharehistory
+setopt hist_ignore_space
+setopt hist_ignore_all_dups
+setopt hist_save_no_dups
+setopt hist_ignore_dups
+setopt hist_find_no_dups
+setopt interactivecomments
 
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh --cmd cd)"
+fi
+
+if command -v fzf >/dev/null 2>&1; then
+  eval "$(fzf --zsh)"
+fi
+
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
 fi
 
 if command -v eza >/dev/null 2>&1; then
@@ -117,11 +169,8 @@ mkcd() {
 }
 
 proj() {
-  if [ -n "$PROJECTS" ] && [ -d "$PROJECTS" ]; then
-    cd -- "$PROJECTS" || return
-  else
-    cd -- "$HOME/projects" || return
-  fi
+  mkdir -p -- "$PROJECTS"
+  cd -- "$PROJECTS" || return
 }
 
 edit() {
@@ -140,18 +189,27 @@ editprofile() {
 
 alias ep='editprofile'
 
-alias gs='git status'
+alias g='git'
 alias ga='git add'
-alias gcommit='git commit -m'
-alias gpush='git push'
-alias gpl='git pull'
-alias glog='git log --oneline --graph --decorate --all'
-alias gd='git diff'
+alias gaa='git add --all'
 alias gb='git branch'
+alias gc='git commit -v'
+alias 'gc!'='git commit -v --amend'
+alias gcam='git commit -a -m'
 alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gf='git fetch'
+alias gl='git pull'
+alias glo='git log --oneline --decorate'
+alias gloga='git log --oneline --decorate --graph --all'
+alias gp='git push'
+alias 'gpf!'='git push --force-with-lease'
+alias gpr='git pull --rebase'
+alias gst='git status'
 alias gsw='git switch'
-alias gst='git stash'
-alias gcl='git clone'
+alias gswc='git switch -c'
 
 if command -v lazygit >/dev/null 2>&1; then
   alias lg='lazygit'
@@ -162,9 +220,9 @@ if command -v yazi >/dev/null 2>&1; then
     local tmp cwd
     tmp="$(mktemp -t yazi-cwd.XXXXXX)"
     yazi "$@" --cwd-file="$tmp"
-    if [ -f "$tmp" ]; then
-      cwd="$(cat "$tmp")"
-      if [ -n "$cwd" ] && [ -d "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    if [[ -f "$tmp" ]]; then
+      cwd="$(<"$tmp")"
+      if [[ -n "$cwd" && -d "$cwd" && "$cwd" != "$PWD" ]]; then
         cd -- "$cwd" || return
       fi
       rm -f "$tmp"

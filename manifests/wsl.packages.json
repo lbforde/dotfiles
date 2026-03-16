@@ -1,0 +1,9 @@
+{
+  "aptPackages": [
+    "ca-certificates",
+    "curl",
+    "git",
+    "unzip",
+    "zsh"
+  ]
+}
