@@ -31,12 +31,14 @@
 [push]
     default       = current
     autoSetupRemote = true
+    followTags = true
 
 [pull]
     rebase = false
 
 [fetch]
     prune = true
+    pruneTags = true
 
 [merge]
     conflictstyle = zdiff3
@@ -56,6 +58,7 @@
     sort = -committerdate
 
 [tag]
+    gpgsign = true
     sort = version:refname
 
 [color]
