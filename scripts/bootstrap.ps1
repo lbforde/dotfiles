@@ -22,6 +22,8 @@ $script:ChezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
 $script:ChezmoiConfigPath = Join-Path $script:ChezmoiConfigDir "chezmoi.toml"
 $script:WindowsBootstrapMarkerPath = Join-Path $script:ChezmoiConfigDir "windows-bootstrap-complete"
 $script:WindowsBootstrapLogPath = Join-Path $script:ChezmoiConfigDir "windows-bootstrap.log"
+$script:WindowsSshDir = Join-Path $env:USERPROFILE ".ssh"
+$script:DefaultWindowsGitHubKeyName = "github_personal_key"
 $script:BootstrapTranscriptStarted = $false
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -148,6 +150,12 @@ function ConvertTo-NormalizedPathEntry {
 
     if ([string]::IsNullOrWhiteSpace($PathEntry)) { return "" }
     return $PathEntry.Trim().TrimEnd('\')
+}
+
+function ConvertTo-TomlBasicStringLiteral {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    return '"' + $Value.Replace('\', '\\').Replace('"', '\"') + '"'
 }
 
 function Get-ManifestJson {
@@ -710,6 +718,190 @@ function Update-TomlSectionContent {
     return $updated
 }
 
+function Update-TomlSectionValues {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)][string]$Content,
+        [Parameter(Mandatory = $true)][string]$Section,
+        [Parameter(Mandatory = $true)][System.Collections.Specialized.OrderedDictionary]$DesiredValues,
+        [switch]$OnlyIfMissing,
+        [Parameter(Mandatory = $true)][ref]$Changed
+    )
+
+    $pattern = "(?ms)^\[" + [regex]::Escape($Section) + "\]\s*(?<body>[\s\S]*?)(?=^\[|\z)"
+    $match = [regex]::Match($Content, $pattern)
+    $lines = New-Object System.Collections.Generic.List[string]
+
+    if ($match.Success) {
+        $existingBody = $match.Groups["body"].Value.TrimEnd("`r", "`n")
+        if (-not [string]::IsNullOrWhiteSpace($existingBody)) {
+            foreach ($line in ($existingBody -split "\r?\n")) {
+                $lines.Add($line.TrimEnd()) | Out-Null
+            }
+        }
+    }
+
+    foreach ($entry in $DesiredValues.GetEnumerator()) {
+        $targetLine = "    {0} = {1}" -f $entry.Key, $entry.Value
+        $lineIndex = -1
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+            if ($lines[$index] -match ("^\s*" + [regex]::Escape([string]$entry.Key) + "\s*=")) {
+                $lineIndex = $index
+                break
+            }
+        }
+
+        if ($lineIndex -ge 0) {
+            if (-not $OnlyIfMissing -and $lines[$lineIndex] -ne $targetLine) {
+                $lines[$lineIndex] = $targetLine
+                $Changed.Value = $true
+            }
+            continue
+        }
+
+        $lines.Add($targetLine) | Out-Null
+        $Changed.Value = $true
+    }
+
+    $sectionBody = if ($lines.Count -gt 0) { ($lines -join "`n") + "`n" } else { "" }
+    $replacement = "[{0}]`n{1}" -f $Section, $sectionBody
+
+    if ($match.Success) {
+        return $Content.Substring(0, $match.Index) + $replacement + $Content.Substring($match.Index + $match.Length)
+    }
+
+    $trimmed = $Content.TrimEnd("`r", "`n")
+    if ([string]::IsNullOrWhiteSpace($trimmed)) {
+        return $replacement
+    }
+
+    return "$trimmed`n`n$replacement"
+}
+
+function Get-LocalChezmoiDataValue {
+    param(
+        [Parameter(Mandatory = $true)][string]$ConfigPath,
+        [Parameter(Mandatory = $true)][string]$Key
+    )
+
+    if (-not (Test-Path -LiteralPath $ConfigPath)) {
+        return ""
+    }
+
+    $content = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction SilentlyContinue
+    if ([string]::IsNullOrWhiteSpace($content)) {
+        return ""
+    }
+
+    $sectionMatch = [regex]::Match($content, "(?ms)^\[data\]\s*(?<body>[\s\S]*?)(?=^\[|\z)")
+    if (-not $sectionMatch.Success) {
+        return ""
+    }
+
+    $keyPattern = "(?m)^\s*" + [regex]::Escape($Key) + "\s*=\s*(?<value>.+?)\s*$"
+    $valueMatch = [regex]::Match($sectionMatch.Groups["body"].Value, $keyPattern)
+    if (-not $valueMatch.Success) {
+        return ""
+    }
+
+    $rawValue = $valueMatch.Groups["value"].Value.Trim()
+    if ($rawValue.Length -ge 2 -and $rawValue.StartsWith('"') -and $rawValue.EndsWith('"')) {
+        $unquoted = $rawValue.Substring(1, $rawValue.Length - 2)
+        return $unquoted.Replace('\"', '"').Replace('\\', '\')
+    }
+
+    return $rawValue
+}
+
+function Get-WindowsGitEmail {
+    $email = Get-LocalChezmoiDataValue -ConfigPath $script:ChezmoiConfigPath -Key "email"
+    if (-not [string]::IsNullOrWhiteSpace($email)) {
+        return $email
+    }
+
+    try {
+        $gitEmail = (& git config --global --get user.email 2>$null | Out-String).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($gitEmail)) {
+            return $gitEmail
+        }
+    }
+    catch {
+    }
+
+    return ""
+}
+
+function Get-WindowsGitHubKeyName {
+    $configuredKeyName = Get-LocalChezmoiDataValue -ConfigPath $script:ChezmoiConfigPath -Key "ssh_github_key_name"
+    if (-not [string]::IsNullOrWhiteSpace($configuredKeyName)) {
+        return $configuredKeyName
+    }
+
+    $configuredPublicKeyPath = Get-LocalChezmoiDataValue -ConfigPath $script:ChezmoiConfigPath -Key "git_signing_key"
+    if (-not [string]::IsNullOrWhiteSpace($configuredPublicKeyPath)) {
+        return [IO.Path]::GetFileNameWithoutExtension($configuredPublicKeyPath)
+    }
+
+    return $script:DefaultWindowsGitHubKeyName
+}
+
+function Get-WindowsGitHubKeyComment {
+    $configuredComment = Get-LocalChezmoiDataValue -ConfigPath $script:ChezmoiConfigPath -Key "ssh_github_key_comment"
+    if (-not [string]::IsNullOrWhiteSpace($configuredComment)) {
+        return $configuredComment
+    }
+
+    return Get-WindowsGitEmail
+}
+
+function Update-LocalChezmoiSshConfig {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)][string]$ConfigPath,
+        [Parameter(Mandatory = $true)][string]$KeyName,
+        [Parameter(Mandatory = $true)][string]$KeyComment
+    )
+
+    if (-not (Test-Path -LiteralPath $ConfigPath)) {
+        Write-Info "Local chezmoi config not present yet; SSH config data will be created during 'chezmoi init'."
+        return
+    }
+
+    $content = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction SilentlyContinue
+    if ($null -eq $content) {
+        Write-Warn "Could not read local chezmoi config for SSH migration: $ConfigPath"
+        return
+    }
+
+    $privateKeyPath = Join-Path $script:WindowsSshDir $KeyName
+    $publicKeyPath = "$privateKeyPath.pub"
+    $allowedSignersPath = Join-Path $script:WindowsSshDir "allowed_signers"
+
+    $changed = $false
+    $desiredDataValues = [ordered]@{
+        git_signing_key          = ConvertTo-TomlBasicStringLiteral -Value $publicKeyPath
+        git_gpg_format           = ConvertTo-TomlBasicStringLiteral -Value "ssh"
+        git_commit_gpgsign       = "true"
+        git_allowed_signers_file = ConvertTo-TomlBasicStringLiteral -Value $allowedSignersPath
+        ssh_github_key_name      = ConvertTo-TomlBasicStringLiteral -Value $KeyName
+        ssh_github_key_comment   = ConvertTo-TomlBasicStringLiteral -Value $KeyComment
+    }
+    $content = Update-TomlSectionValues -Content $content -Section "data" -DesiredValues $desiredDataValues -OnlyIfMissing -Changed ([ref]$changed)
+
+    if (-not $changed) {
+        Write-OK "Local chezmoi SSH config data already present"
+        return
+    }
+
+    if ($PSCmdlet.ShouldProcess($ConfigPath, "Backfill local chezmoi SSH config data")) {
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backupPath = "$ConfigPath.$timestamp.bak"
+        Copy-Item -Path $ConfigPath -Destination $backupPath -Force
+        $content | Set-Content -Path $ConfigPath -Encoding UTF8
+        Write-OK "Backfilled local chezmoi SSH config data (backup: $backupPath)"
+    }
+}
+
 function Update-LocalChezmoiEditorConfig {
     [CmdletBinding(SupportsShouldProcess)]
     param([Parameter(Mandatory = $true)][string]$ConfigPath)
@@ -766,6 +958,96 @@ function Initialize-LocalChezmoiConfig {
 
     Write-Info "Local chezmoi config is not present yet. It will be created by '.chezmoi.toml.tmpl' during 'chezmoi init'."
     return $false
+}
+
+function Initialize-WindowsSshSetup {
+    Write-Step "Configuring Windows SSH"
+
+    if (-not (Test-CommandAvailable "ssh")) {
+        throw "ssh.exe is required for Windows SSH bootstrap but was not found on PATH."
+    }
+    if (-not (Test-CommandAvailable "ssh-keygen")) {
+        throw "ssh-keygen.exe is required for Windows SSH bootstrap but was not found on PATH."
+    }
+    if (-not (Test-CommandAvailable "ssh-add")) {
+        throw "ssh-add.exe is required for Windows SSH bootstrap but was not found on PATH."
+    }
+
+    if (-not (Test-Path -LiteralPath $script:WindowsSshDir)) {
+        New-Item -ItemType Directory -Path $script:WindowsSshDir -Force | Out-Null
+        Write-OK "Created SSH directory: $script:WindowsSshDir"
+    }
+    else {
+        Write-OK "SSH directory already present: $script:WindowsSshDir"
+    }
+
+    $keyName = Get-WindowsGitHubKeyName
+    if ([string]::IsNullOrWhiteSpace($keyName)) {
+        $keyName = $script:DefaultWindowsGitHubKeyName
+    }
+
+    $keyComment = Get-WindowsGitHubKeyComment
+    if ([string]::IsNullOrWhiteSpace($keyComment)) {
+        throw "Could not determine the SSH key comment. Set [data].email in $($script:ChezmoiConfigPath) or configure git user.email before rerunning bootstrap."
+    }
+
+    $privateKeyPath = Join-Path $script:WindowsSshDir $keyName
+    $publicKeyPath = "$privateKeyPath.pub"
+
+    if (-not (Test-Path -LiteralPath $privateKeyPath)) {
+        Write-Info "Generating SSH key '$keyName' for GitHub auth and Git signing..."
+        & ssh-keygen -t ed25519 -f $privateKeyPath -C $keyComment
+        if ($LASTEXITCODE -ne 0) {
+            throw "ssh-keygen failed while creating '$privateKeyPath'."
+        }
+        Write-OK "Created SSH key: $privateKeyPath"
+    }
+    else {
+        Write-OK "SSH private key already present: $privateKeyPath"
+    }
+
+    if (-not (Test-Path -LiteralPath $publicKeyPath)) {
+        throw "SSH private key exists at '$privateKeyPath' but the matching public key '$publicKeyPath' is missing. Repair the keypair or remove the private key and rerun bootstrap."
+    }
+    Write-OK "SSH public key available: $publicKeyPath"
+
+    $sshAgentService = Get-Service -Name "ssh-agent" -ErrorAction SilentlyContinue
+    if ($null -eq $sshAgentService) {
+        throw "Windows ssh-agent service was not found. Enable the built-in OpenSSH Client/Agent features, then rerun bootstrap."
+    }
+
+    if ($sshAgentService.StartType -ne "Automatic") {
+        Set-Service -Name "ssh-agent" -StartupType Automatic
+        Write-OK "Set ssh-agent startup type to Automatic"
+    }
+    else {
+        Write-OK "ssh-agent startup type already Automatic"
+    }
+
+    if ($sshAgentService.Status -ne "Running") {
+        Start-Service -Name "ssh-agent"
+        Write-OK "Started ssh-agent service"
+    }
+    else {
+        Write-OK "ssh-agent service already running"
+    }
+
+    & ssh-add $privateKeyPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "ssh-add failed while loading '$privateKeyPath' into ssh-agent."
+    }
+    Write-OK "Loaded SSH key into ssh-agent"
+
+    Update-LocalChezmoiSshConfig -ConfigPath $script:ChezmoiConfigPath -KeyName $keyName -KeyComment $keyComment
+
+    $publicKeyContents = (Get-Content -LiteralPath $publicKeyPath -Raw -ErrorAction SilentlyContinue).Trim()
+    if ([string]::IsNullOrWhiteSpace($publicKeyContents)) {
+        throw "SSH public key at '$publicKeyPath' is empty or unreadable."
+    }
+
+    Write-Information "" -InformationAction Continue
+    Write-Information "Add this public key to GitHub for auth and SSH signing:" -InformationAction Continue
+    Write-Information "  $publicKeyContents" -InformationAction Continue
 }
 
 function Resolve-DesiredChezmoiSource {
@@ -1166,6 +1448,7 @@ else {
 
 Write-Step "Configuring Chezmoi"
 Initialize-LocalChezmoiConfig
+Initialize-WindowsSshSetup
 if ($FromChezmoiHook) {
     Write-OK "Chezmoi source apply is managed by the calling chezmoi command"
 }

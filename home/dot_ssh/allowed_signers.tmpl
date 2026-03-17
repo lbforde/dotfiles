@@ -1,0 +1,21 @@
+{{- $keyName := .ssh_github_key_name | default "github_personal_key" -}}
+{{- $defaultPublicKeyPath := joinPath (env "HOME") ".ssh" (printf "%s.pub" $keyName) -}}
+{{- $publicKeyPath := .git_signing_key | default $defaultPublicKeyPath -}}
+{{- if and .email (stat $publicKeyPath) -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- $publicKeyContents := output "powershell.exe" "-NoProfile" "-Command" (printf "Get-Content -LiteralPath '%s' -Raw" ($publicKeyPath | replace "'" "''")) | trim -}}
+{{- if not $publicKeyContents -}}
+{{- fail (printf "SSH public key at %s is empty or unreadable." $publicKeyPath) -}}
+{{- end -}}
+{{ .email }} namespaces="git" {{ $publicKeyContents }}
+{{- else -}}
+{{- $publicKeyContents := output "cat" $publicKeyPath | trim -}}
+{{- if not $publicKeyContents -}}
+{{- fail (printf "SSH public key at %s is empty or unreadable." $publicKeyPath) -}}
+{{- end -}}
+{{ .email }} namespaces="git" {{ $publicKeyContents }}
+{{- end -}}
+{{- else -}}
+# SSH signing not configured yet.
+# Expected public key: {{ $publicKeyPath }}
+{{- end }}

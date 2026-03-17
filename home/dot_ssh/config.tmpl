@@ -1,0 +1,6 @@
+# GitHub Personal Account
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/{{ .ssh_github_key_name | default "github_personal_key" }}
+  IdentitiesOnly yes
