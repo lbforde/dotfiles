@@ -1,8 +1,6 @@
-{{- $name := .name | default (promptString "name" "Git user.name") -}}
-{{- $email := .email | default (promptString "email" "Git user.email") -}}
 [user]
-    name  = {{ $name | quote }}
-    email = {{ $email | quote }}
+    name  = {{ .name | quote }}
+    email = {{ .email | quote }}
 {{- if .git_signing_key }}
     signingkey = {{ .git_signing_key | quote }}
 {{- end }}
