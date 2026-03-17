@@ -87,7 +87,6 @@ if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
   source "${ZINIT_HOME}/zinit.zsh"
 
   zinit light zsh-users/zsh-completions
-  zinit light Aloxaf/fzf-tab
 
   zstyle ':completion:*:descriptions' format '[%d]'
   zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -102,12 +101,14 @@ if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
   zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '_fzf_tab_preview "$realpath"'
   zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' fzf-preview 'echo ${(P)word}'
 
+  zinit light Aloxaf/fzf-tab
+
   autoload -Uz compinit
   compinit -d "${XDG_CACHE_HOME}/zsh/zcompdump-${ZSH_VERSION}"
   zinit cdreplay -q
 
+  zinit ice wait lucid
   zinit light zsh-users/zsh-autosuggestions
-  zinit light zsh-users/zsh-syntax-highlighting
 fi
 
 bindkey -e
@@ -237,4 +238,8 @@ if command -v yazi >/dev/null 2>&1; then
       rm -f "$tmp"
     fi
   }
+fi
+
+if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
+  zinit light zsh-users/zsh-syntax-highlighting
 fi
