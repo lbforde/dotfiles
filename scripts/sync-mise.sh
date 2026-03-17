@@ -2,6 +2,21 @@
 
 set -euo pipefail
 
+ensure_user_bin_dirs_on_path() {
+  local bin_dir
+
+  for bin_dir in "$HOME/.local/bin" "$HOME/bin"; do
+    if [[ ! -d "$bin_dir" ]]; then
+      continue
+    fi
+
+    case ":$PATH:" in
+      *":$bin_dir:"*) ;;
+      *) export PATH="$bin_dir:$PATH" ;;
+    esac
+  done
+}
+
 write_step() {
   printf '\n=== %s ===\n' "$1"
 }
@@ -13,6 +28,8 @@ write_ok() {
 write_warn() {
   printf '  [warn] %s\n' "$1" >&2
 }
+
+ensure_user_bin_dirs_on_path
 
 if ! command -v mise >/dev/null 2>&1; then
   printf 'mise is not available on PATH. Install it first, then rerun this script.\n' >&2
