@@ -1,5 +1,5 @@
-{{- $name := promptString "name" "Git user.name" -}}
-{{- $email := promptString "email" "Git user.email" -}}
+{{- $name := promptStringOnce . "name" "Git user.name" -}}
+{{- $email := promptStringOnce . "email" "Git user.email" -}}
 {{- $windowsBootstrapScript := joinPath (env "USERPROFILE") ".local" "share" "chezmoi" "scripts" "bootstrap.ps1" -}}
 {{- $wslBootstrapScript := joinPath (env "HOME") ".local" "share" "chezmoi" "scripts" "bootstrap-wsl.sh" -}}
 {{- $windowsSshDir := joinPath (env "USERPROFILE") ".ssh" -}}

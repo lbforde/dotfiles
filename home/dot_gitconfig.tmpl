@@ -1,6 +1,8 @@
+{{- if and (hasKey . "name") (hasKey . "email") }}
 [user]
     name  = {{ .name | quote }}
     email = {{ .email | quote }}
+{{- end }}
 {{- if .git_signing_key }}
     signingkey = {{ .git_signing_key | quote }}
 {{- end }}
