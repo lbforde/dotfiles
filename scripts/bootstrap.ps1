@@ -21,27 +21,29 @@ $script:BootstrapScriptPath = $PSCommandPath
 $script:ChezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
 $script:ChezmoiConfigPath = Join-Path $script:ChezmoiConfigDir "chezmoi.toml"
 $script:WindowsBootstrapMarkerPath = Join-Path $script:ChezmoiConfigDir "windows-bootstrap-complete"
+$script:WindowsBootstrapLogPath = Join-Path $script:ChezmoiConfigDir "windows-bootstrap.log"
+$script:BootstrapTranscriptStarted = $false
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function Write-Step {
     param([string]$Message)
-    Write-Information "`n$($PSStyle.Foreground.Cyan)━━━ $Message ━━━$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "`n=== $Message ===" -InformationAction Continue
 }
 
 function Write-OK {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.Green)✓ $Message$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "  [ok] $Message" -InformationAction Continue
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Warning "$($PSStyle.Foreground.Yellow)⚠ $Message$($PSStyle.Reset)"
+    Write-Warning $Message
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.DarkGray)🛈 $Message$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "  [info] $Message" -InformationAction Continue
 }
 
 function Test-CommandAvailable {
@@ -79,6 +81,28 @@ function Set-WindowsBootstrapComplete {
     Write-OK "Recorded Windows bootstrap marker"
 }
 
+function Start-BootstrapTranscript {
+    if ($script:BootstrapTranscriptStarted) {
+        return
+    }
+
+    if (-not (Test-Path -LiteralPath $script:ChezmoiConfigDir)) {
+        New-Item -ItemType Directory -Path $script:ChezmoiConfigDir -Force | Out-Null
+    }
+
+    Start-Transcript -Path $script:WindowsBootstrapLogPath -Force | Out-Null
+    $script:BootstrapTranscriptStarted = $true
+}
+
+function Stop-BootstrapTranscript {
+    if (-not $script:BootstrapTranscriptStarted) {
+        return
+    }
+
+    Stop-Transcript | Out-Null
+    $script:BootstrapTranscriptStarted = $false
+}
+
 function Start-SelfElevatedBootstrap {
     $argumentList = @(
         "-NoProfile",
@@ -101,7 +125,7 @@ function Start-SelfElevatedBootstrap {
     Write-Warn "Administrator privileges are required. Relaunching bootstrap with UAC..."
     $process = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentList -Verb RunAs -PassThru -Wait
     if ($process.ExitCode -ne 0) {
-        throw "Elevated bootstrap failed with exit code $($process.ExitCode)."
+        throw "Elevated bootstrap failed with exit code $($process.ExitCode). See $script:WindowsBootstrapLogPath for details."
     }
 }
 
@@ -115,7 +139,7 @@ function Set-PathEnvironment {
             [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
             [System.Environment]::GetEnvironmentVariable("Path", "User")
         )
-        Write-Info "⟳ PATH refreshed"
+        Write-Info "PATH refreshed"
     }
 }
 
@@ -135,7 +159,7 @@ function Get-ManifestJson {
         throw "Manifest not found: $manifestPath"
     }
 
-    return Get-Content $manifestPath -Raw | ConvertFrom-Json -Depth 10
+    return Get-Content $manifestPath -Raw | ConvertFrom-Json
 }
 
 function Test-WingetPackageInstalled {
@@ -201,7 +225,7 @@ function Install-WingetPackage {
 
 function Install-VSCodeExtensions {
     if (-not (Test-CommandAvailable "code")) {
-        Write-Warn "VS Code 'code' CLI not on PATH yet — restart your shell and rerun:"
+        Write-Warn "VS Code 'code' CLI not on PATH yet - restart your shell and rerun:"
         Write-Warn "  .\scripts\bootstrap.ps1"
         return
     }
@@ -231,13 +255,13 @@ function Install-VSCodeExtensions {
 
     foreach ($ext in $extensions) {
         if ($installed -contains $ext.ToLower()) {
-            Write-Host "  · $ext (already installed)" -ForegroundColor DarkGray
+            Write-Host "  - $ext (already installed)" -ForegroundColor DarkGray
             $skippedCount++
             continue
         }
 
         try {
-            Write-Host "  → Installing $ext..." -ForegroundColor Gray
+            Write-Host "  > Installing $ext..." -ForegroundColor Gray
             code --install-extension $ext --force 2>&1 | Out-Null
             Write-OK $ext
             $installedCount++
@@ -249,14 +273,14 @@ function Install-VSCodeExtensions {
     }
 
     Write-Host ""
-    Write-Host "  ─────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  ---------------------------------" -ForegroundColor DarkGray
     Write-OK "Installed : $installedCount"
-    Write-Host "  · Skipped  : $skippedCount (already present)" -ForegroundColor DarkGray
+    Write-Host "  - Skipped  : $skippedCount (already present)" -ForegroundColor DarkGray
 
     if ($failed.Count -gt 0) {
         Write-Host ""
         Write-Warn "Failed to install $($failed.Count) extension(s):"
-        $failed | ForEach-Object { Write-Warn "  · $_" }
+        $failed | ForEach-Object { Write-Warn "  - $_" }
     }
 }
 
@@ -856,6 +880,15 @@ elseif (-not (Test-Administrator)) {
     return
 }
 
+if ($FromChezmoiHook) {
+    Start-BootstrapTranscript
+}
+
+trap {
+    Stop-BootstrapTranscript
+    throw
+}
+
 # ─── Manifest Data ───────────────────────────────────────────────────────────
 
 # Keep package/runtime inventories in JSON so this script stays logic-focused.
@@ -976,11 +1009,11 @@ if (-not $DevDrive) {
     }
 
     Write-Information "" -InformationAction Continue
-    Write-Information "  $($PSStyle.Foreground.Cyan)Available drives:$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "  Available drives:" -InformationAction Continue
     Write-Information "" -InformationAction Continue
     for ($i = 0; $i -lt $drives.Count; $i++) {
         $d = $drives[$i]
-        $tag = if ($d.FS -eq "ReFS") { " ← ReFS (recommended)" } else { "" }
+        $tag = if ($d.FS -eq "ReFS") { " - ReFS (recommended)" } else { "" }
         $name = if ($d.Label) { " [$($d.Label)]" } else { "" }
         Write-Information ("  [{0}] {1}{2}  {3}  {4} GB free{5}" -f
             ($i + 1), $d.Letter, $name, $d.FS, $d.FreeGB, $tag) -InformationAction Continue
@@ -992,7 +1025,7 @@ if (-not $DevDrive) {
         if ($raw -eq "") { $raw = "1" }
         $idx = 0
         $valid = [int]::TryParse($raw, [ref]$idx) -and $idx -ge 1 -and $idx -le $drives.Count
-        if (-not $valid) { Write-Warn "Invalid selection — enter a number between 1 and $($drives.Count)" }
+        if (-not $valid) { Write-Warn "Invalid selection - enter a number between 1 and $($drives.Count)" }
     } while (-not $valid)
 
     $DevDrive = $drives[$idx - 1].Letter
@@ -1000,7 +1033,7 @@ if (-not $DevDrive) {
     Write-OK "Dev Drive set to $DevDrive"
 }
 
-$devDrive = $DevDrive.TrimEnd('\')   # normalise — strip any trailing backslash
+$devDrive = $DevDrive.TrimEnd('\')   # normalise - strip any trailing backslash
 
 if (Test-Path $devDrive) {
     # Create standard directory structure on the Dev Drive
@@ -1125,7 +1158,7 @@ if (Test-Path $devDrive) {
 
 }
 else {
-    Write-Warn "$devDrive not found — skipping Dev Drive setup. Format your SSD as a Dev Drive and re-run with -DevDrive '$devDrive'."
+    Write-Warn "$devDrive not found - skipping Dev Drive setup. Format your SSD as a Dev Drive and re-run with -DevDrive '$devDrive'."
     Write-Warn "Guide: Settings > System > Storage > Advanced storage settings > Disks & volumes"
 }
 
@@ -1160,15 +1193,15 @@ if ($FromChezmoiHook) {
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
 
-Write-Information "`n$($PSStyle.Foreground.Green)============================================================$($PSStyle.Reset)" -InformationAction Continue
-Write-Information "  $($PSStyle.Foreground.Green)✓  Dev environment setup complete!$($PSStyle.Reset)" -InformationAction Continue
-Write-Information "$($PSStyle.Foreground.Green)============================================================$($PSStyle.Reset)" -InformationAction Continue
-Write-Information @"
+Write-Information "`n============================================================" -InformationAction Continue
+Write-Information "  [ok] Dev environment setup complete!" -InformationAction Continue
+Write-Information "============================================================" -InformationAction Continue
+Write-Information @" 
 
 Next steps:
   1. Open Windows Terminal (dotfiles are deployed by chezmoi apply)
   2. Launch pwsh and verify the profile loads correctly
-  3. Open VS Code — extensions were installed automatically
+  3. Open VS Code - extensions were installed automatically
   4. Authenticate GitHub CLI:
        gh auth login
   5. Authenticate Doppler (opens browser, once per workplace):
@@ -1177,5 +1210,7 @@ Next steps:
        gopass setup
 
 "@ -InformationAction Continue
+
+Stop-BootstrapTranscript
 
 
