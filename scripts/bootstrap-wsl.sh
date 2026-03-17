@@ -631,8 +631,12 @@ else
   apply_chezmoi "$(resolve_desired_chezmoi_source)"
 fi
 
-write_step "Syncing mise tools"
-sync_mise
+if [[ "$from_chezmoi_hook" -eq 1 ]]; then
+  write_ok "Mise sync is deferred until after chezmoi apply"
+else
+  write_step "Syncing mise tools"
+  sync_mise
+fi
 
 ensure_login_shell
 
