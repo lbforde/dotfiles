@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Windows Developer Environment Bootstrap Script
 .DESCRIPTION
@@ -111,8 +111,10 @@ function Set-PathEnvironment {
 
     # Reload PATH from the registry so tools installed earlier in this session are immediately usable
     if ($PSCmdlet.ShouldProcess("PATH environment", "Refresh from machine and user registry values")) {
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-        [System.Environment]::GetEnvironmentVariable("Path", "User")
+        $env:Path = (
+            [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+            [System.Environment]::GetEnvironmentVariable("Path", "User")
+        )
         Write-Info "⟳ PATH refreshed"
     }
 }
