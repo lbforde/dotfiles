@@ -3,6 +3,7 @@
 set -euo pipefail
 
 chezmoi_repo=""
+from_chezmoi_hook=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -14,9 +15,13 @@ while [[ $# -gt 0 ]]; do
       chezmoi_repo="$2"
       shift 2
       ;;
+    --from-chezmoi-hook)
+      from_chezmoi_hook=1
+      shift
+      ;;
     -h|--help)
       cat <<'EOF'
-Usage: bash ./scripts/bootstrap-wsl.sh [--chezmoi-repo <source>]
+Usage: bash ./scripts/bootstrap-wsl.sh [--chezmoi-repo <source>] [--from-chezmoi-hook]
 
 Bootstraps the Ubuntu/WSL environment for this dotfiles repo.
 EOF
@@ -33,6 +38,7 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 manifest_path="$repo_root/manifests/wsl.packages.json"
 chezmoi_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi"
 chezmoi_config_path="$chezmoi_config_dir/chezmoi.toml"
+wsl_bootstrap_marker_path="$chezmoi_config_dir/wsl-bootstrap-complete"
 mise_bin_dir="${HOME}/.local/bin"
 ssh_dir="${HOME}/.ssh"
 default_github_key_name="github_personal_key"
@@ -51,6 +57,15 @@ write_warn() {
 
 write_info() {
   printf '  [info] %s\n' "$1"
+}
+
+test_wsl_bootstrap_complete() {
+  [[ -f "$wsl_bootstrap_marker_path" ]]
+}
+
+set_wsl_bootstrap_complete() {
+  mkdir -p "$chezmoi_config_dir"
+  : >"$wsl_bootstrap_marker_path"
 }
 
 require_command() {
@@ -534,6 +549,22 @@ ensure_login_shell() {
   fi
 }
 
+if [[ "$from_chezmoi_hook" -eq 1 && "${DOTFILES_BOOTSTRAP_ACTIVE:-}" == "1" ]]; then
+  exit 0
+fi
+
+export DOTFILES_BOOTSTRAP_ACTIVE=1
+
+if [[ "$from_chezmoi_hook" -eq 1 ]]; then
+  write_step "Checking WSL bootstrap hook"
+  if test_wsl_bootstrap_complete; then
+    write_ok "WSL bootstrap already completed for this machine"
+    exit 0
+  fi
+
+  write_ok "Running bootstrap from chezmoi hook"
+fi
+
 write_step "Checking platform"
 if ! command -v apt-get >/dev/null 2>&1; then
   printf 'This bootstrap currently supports Ubuntu/Debian environments with apt.\n' >&2
@@ -560,12 +591,20 @@ ensure_mise
 write_step "Configuring Chezmoi"
 ensure_local_chezmoi_config
 ensure_wsl_ssh_setup
-apply_chezmoi "$(resolve_desired_chezmoi_source)"
+if [[ "$from_chezmoi_hook" -eq 1 ]]; then
+  write_ok "Chezmoi source apply is managed by the calling chezmoi command"
+else
+  apply_chezmoi "$(resolve_desired_chezmoi_source)"
+fi
 
 write_step "Syncing mise tools"
 sync_mise
 
 ensure_login_shell
+
+if [[ "$from_chezmoi_hook" -eq 1 ]]; then
+  set_wsl_bootstrap_complete
+fi
 
 cat <<'EOF'
 
