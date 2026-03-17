@@ -2,7 +2,6 @@
 bun = "latest"
 bat = "latest"
 cmake = "latest"
-chezmoi = "latest"
 croc = "latest"
 doppler = "latest"
 "github:eza-community/eza" = "latest"

@@ -19,10 +19,6 @@
   ],
   "wingetPackages": [
     {
-      "id": "Git.Git",
-      "source": "winget"
-    },
-    {
       "id": "jdx.mise",
       "source": "winget"
     },

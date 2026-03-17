@@ -1,0 +1,32 @@
+{{- $name := promptString "name" "Git user.name" -}}
+{{- $email := promptString "email" "Git user.email" -}}
+{{- $windowsBootstrapScript := joinPath (env "USERPROFILE") ".local" "share" "chezmoi" "scripts" "bootstrap.ps1" -}}
+# Local Chezmoi runtime config (machine-specific)
+[data]
+    name  = {{ $name | quote }}
+    email = {{ $email | quote }}
+
+[edit]
+    command = "code"
+    args    = ["--wait"]
+
+[merge]
+    command = "code"
+    args    = ["--wait", "--merge", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Base {{ "}}" }}", "{{ "{{" }} .Destination {{ "}}" }}"]
+
+[diff]
+    command = "code"
+    args    = ["--wait", "--diff", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+
+[git]
+    autoCommit = false
+    autoPush   = false
+
+[template]
+    options = ["missingkey=default"]
+
+{{- if eq (env "OS") "Windows_NT" }}
+[hooks.read-source-state.pre]
+    command = "powershell.exe"
+    args    = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", {{ $windowsBootstrapScript | quote }}, "-FromChezmoiHook"]
+{{- end }}

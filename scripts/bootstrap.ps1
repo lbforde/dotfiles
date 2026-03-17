@@ -1,20 +1,26 @@
-﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Windows Developer Environment Bootstrap Script
 .DESCRIPTION
     Installs and configures a full developer environment using Winget and
-    associated tools. Run once as Administrator to get started.
+    associated tools. Self-elevates when admin access is required and can run
+    from a chezmoi read-source-state hook during first apply.
 .NOTES
     Run with: Set-ExecutionPolicy Bypass -Scope Process -Force; .\bootstrap.ps1
 #>
 
 param(
     [string]$ChezmoiRepo = "",   # e.g. "https://github.com/yourname/dotfiles"
-    [string]$DevDrive = ""    # leave blank to be prompted; or pass e.g. "D:" to skip prompt
+    [string]$DevDrive = "",   # leave blank to be prompted; or pass e.g. "D:" to skip prompt
+    [switch]$FromChezmoiHook
 )
 
 $ErrorActionPreference = "Stop"
+$script:BootstrapRepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$script:BootstrapScriptPath = $PSCommandPath
+$script:ChezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
+$script:ChezmoiConfigPath = Join-Path $script:ChezmoiConfigDir "chezmoi.toml"
+$script:WindowsBootstrapMarkerPath = Join-Path $script:ChezmoiConfigDir "windows-bootstrap-complete"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -45,6 +51,58 @@ function Test-CommandAvailable {
 
 function Test-RunningInPowerShellCoreHost {
     return $PSVersionTable.PSEdition -eq "Core"
+}
+
+function Test-Administrator {
+    $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal]::new($currentIdentity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Get-WindowsBootstrapMarkerPath {
+    return $script:WindowsBootstrapMarkerPath
+}
+
+function Test-WindowsBootstrapComplete {
+    $markerPath = Get-WindowsBootstrapMarkerPath
+    return Test-Path -LiteralPath $markerPath
+}
+
+function Set-WindowsBootstrapComplete {
+    $markerPath = Get-WindowsBootstrapMarkerPath
+    $markerDir = Split-Path $markerPath -Parent
+    if (-not (Test-Path -LiteralPath $markerDir)) {
+        New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
+    }
+
+    Set-Content -Path $markerPath -Value (Get-Date -Format "o") -Encoding UTF8
+    Write-OK "Recorded Windows bootstrap marker"
+}
+
+function Start-SelfElevatedBootstrap {
+    $argumentList = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", $script:BootstrapScriptPath
+    )
+
+    if ($ChezmoiRepo) {
+        $argumentList += @("-ChezmoiRepo", $ChezmoiRepo)
+    }
+
+    if ($DevDrive) {
+        $argumentList += @("-DevDrive", $DevDrive)
+    }
+
+    if ($FromChezmoiHook) {
+        $argumentList += "-FromChezmoiHook"
+    }
+
+    Write-Warn "Administrator privileges are required. Relaunching bootstrap with UAC..."
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentList -Verb RunAs -PassThru -Wait
+    if ($process.ExitCode -ne 0) {
+        throw "Elevated bootstrap failed with exit code $($process.ExitCode)."
+    }
 }
 
 function Set-PathEnvironment {
@@ -200,40 +258,15 @@ function Install-VSCodeExtensions {
     }
 }
 
-function Initialize-BootstrapChezmoi {
-    param([switch]$Quiet)
+function Get-ChezmoiExecutable {
+    Set-PathEnvironment -Confirm:$false
 
-    if (Test-CommandAvailable "chezmoi") {
-        return
+    $command = Get-Command chezmoi -ErrorAction SilentlyContinue
+    if ($null -eq $command) {
+        throw "chezmoi is required but was not found on PATH. Install it first with: winget install --exact --id twpayne.chezmoi"
     }
 
-    if (-not (Test-CommandAvailable "mise")) {
-        throw "mise is not available on PATH, so chezmoi cannot be bootstrapped."
-    }
-
-    if (-not $Quiet) {
-        Write-Info "Bootstrapping chezmoi via mise exec..."
-    }
-
-    & mise exec "chezmoi@latest" --command "chezmoi --version" | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to bootstrap chezmoi via mise exec."
-    }
-
-    & mise reshim
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to refresh mise shims after bootstrapping chezmoi."
-    }
-
-    Set-PathEnvironment
-
-    if (-not (Test-CommandAvailable "chezmoi")) {
-        throw "chezmoi is still not available after bootstrapping it via mise."
-    }
-
-    if (-not $Quiet) {
-        Write-OK "chezmoi bootstrapped via mise"
-    }
+    return $command.Source
 }
 
 function Invoke-ChezmoiApplyChecked {
@@ -283,7 +316,11 @@ function Invoke-MiseSync {
 
 function Get-ChezmoiSourcePath {
     # Returns empty string when chezmoi has not been initialised yet.
-    Initialize-BootstrapChezmoi -Quiet
+    if ($FromChezmoiHook) {
+        return $script:BootstrapRepoRoot
+    }
+
+    Get-ChezmoiExecutable | Out-Null
 
     try {
         $source = (& chezmoi source-path 2>$null | Out-String).Trim()
@@ -296,7 +333,7 @@ function Get-ChezmoiSourcePath {
 
 function Get-ChezmoiRemoteOrigin {
     # Returns origin URL from chezmoi source repo when available.
-    Initialize-BootstrapChezmoi -Quiet
+    Get-ChezmoiExecutable | Out-Null
 
     try {
         $origin = (& chezmoi git -- remote get-url origin 2>$null | Out-String).Trim()
@@ -309,7 +346,7 @@ function Get-ChezmoiRemoteOrigin {
 
 function Test-ChezmoiManagedFilePresent {
     # Returns true when chezmoi currently has at least one managed target.
-    Initialize-BootstrapChezmoi -Quiet
+    Get-ChezmoiExecutable | Out-Null
 
     try {
         $managed = (& chezmoi managed 2>$null | Out-String).Trim()
@@ -689,81 +726,33 @@ function Update-LocalChezmoiEditorConfig {
 
 function Initialize-LocalChezmoiConfig {
     # ~/.config/chezmoi/chezmoi.toml is machine-local state and is never managed by source-state.
-    $chezmoiConfigDir = Join-Path $env:USERPROFILE ".config\chezmoi"
-    $chezmoiConfigPath = Join-Path $chezmoiConfigDir "chezmoi.toml"
-
-    if (Test-Path $chezmoiConfigPath) {
-        $existing = Get-Content $chezmoiConfigPath -Raw -ErrorAction SilentlyContinue
+    if (Test-Path $script:ChezmoiConfigPath) {
+        $existing = Get-Content $script:ChezmoiConfigPath -Raw -ErrorAction SilentlyContinue
         if ($existing -match "Your Name|your@email.com") {
-            Write-Warn "Local chezmoi config still has placeholder identity values: $chezmoiConfigPath"
+            Write-Warn "Local chezmoi config still has placeholder identity values: $script:ChezmoiConfigPath"
         }
         else {
             Write-OK "Local chezmoi config already present"
         }
-        Update-LocalChezmoiEditorConfig -ConfigPath $chezmoiConfigPath
-        return
+        Update-LocalChezmoiEditorConfig -ConfigPath $script:ChezmoiConfigPath
+        return $true
     }
 
-    Write-Info "No local chezmoi config found. Enter machine-specific identity values."
-
-    $defaultName = (git config --global user.name 2>$null | Out-String).Trim()
-    $defaultEmail = (git config --global user.email 2>$null | Out-String).Trim()
-
-    do {
-        $namePrompt = if ($defaultName) { "  Git user.name [$defaultName]" } else { "  Git user.name" }
-        $name = Read-Host $namePrompt
-        if (-not $name -and $defaultName) { $name = $defaultName }
-    } while ([string]::IsNullOrWhiteSpace($name))
-
-    do {
-        $emailPrompt = if ($defaultEmail) { "  Git user.email [$defaultEmail]" } else { "  Git user.email" }
-        $email = Read-Host $emailPrompt
-        if (-not $email -and $defaultEmail) { $email = $defaultEmail }
-    } while ([string]::IsNullOrWhiteSpace($email))
-
-    New-Item -ItemType Directory -Path $chezmoiConfigDir -Force | Out-Null
-
-    @"
-# Local Chezmoi runtime config (machine-specific)
-[data]
-    name  = "$name"
-    email = "$email"
-
-[edit]
-    command = "code"
-    args    = ["--wait"]
-
-[merge]
-    command = "code"
-    args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]
-
-[diff]
-    command = "code"
-    args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Target }}"]
-
-[git]
-    autoCommit = false
-    autoPush   = false
-
-[template]
-    # Valid options are default/invalid, zero, or error.
-    options = ["missingkey=default"]
-"@ | Set-Content -Path $chezmoiConfigPath -Encoding UTF8
-
-    Write-OK "Created local chezmoi config at $chezmoiConfigPath"
+    Write-Info "Local chezmoi config is not present yet. It will be created by '.chezmoi.toml.tmpl' during 'chezmoi init'."
+    return $false
 }
 
 function Resolve-DesiredChezmoiSource {
     if ($ChezmoiRepo -ne "") { return $ChezmoiRepo }
 
     # Default source is this checked-out repo (script lives under scripts/).
-    return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    return $script:BootstrapRepoRoot
 }
 
 function Invoke-ChezmoiApply {
     param([Parameter(Mandatory = $true)][string]$DesiredSource)
 
-    Initialize-BootstrapChezmoi
+    Get-ChezmoiExecutable | Out-Null
 
     $desiredIsRemote = $DesiredSource -match '^(https?|ssh)://|^git@'
 
@@ -777,6 +766,12 @@ function Invoke-ChezmoiApply {
 
         Write-Info "Chezmoi source mode: direct-path"
         Write-Info "Desired source root: $desiredPath"
+
+        if ((-not $currentSource) -or (-not $hasManagedFiles)) {
+            Invoke-ChezmoiInitApplyChecked -DesiredSource $desiredPath -ExcludeScripts
+            Write-OK "Chezmoi initialised and applied from $desiredPath"
+            return
+        }
 
         if ($hasManagedFiles -and $currentSourceRoot -and ($currentSourceRoot -ne $desiredPath) -and ($currentSourceRoot -eq $defaultSourceRoot)) {
             Backup-ChezmoiSourceRoot -SourceRoot $currentSourceRoot | Out-Null
@@ -834,6 +829,31 @@ function Invoke-ChezmoiApply {
     Write-OK "Chezmoi apply complete"
 }
 
+if ($FromChezmoiHook -and $env:DOTFILES_BOOTSTRAP_ACTIVE -eq "1") {
+    return
+}
+
+$env:DOTFILES_BOOTSTRAP_ACTIVE = "1"
+
+if ($FromChezmoiHook) {
+    Write-Step "Checking Windows bootstrap hook"
+    if (Test-WindowsBootstrapComplete) {
+        Write-OK "Windows bootstrap already completed for this machine"
+        return
+    }
+
+    if (-not (Test-Administrator)) {
+        Start-SelfElevatedBootstrap
+        return
+    }
+
+    Write-OK "Running elevated bootstrap from chezmoi hook"
+}
+elseif (-not (Test-Administrator)) {
+    Start-SelfElevatedBootstrap
+    return
+}
+
 # ─── Manifest Data ───────────────────────────────────────────────────────────
 
 # Keep package/runtime inventories in JSON so this script stays logic-focused.
@@ -869,27 +889,25 @@ else {
     Write-OK "NuGet provider already present"
 }
 
-# ─── Git (needed early for chezmoi etc.) ─────────────────────────────────────
+# ─── Git + Chezmoi Prereqs ───────────────────────────────────────────────────
 
-Write-Step "Installing Git"
-$gitWingetPackage = $windowsPackages.wingetPackages | Where-Object { $_.id -eq "Git.Git" } | Select-Object -First 1
-if (-not $gitWingetPackage) {
-    throw "manifests/windows.packages.json must include the Git.Git winget package."
-}
-
-Install-WingetPackage -Package $gitWingetPackage
-
+Write-Step "Checking Git"
 if (-not (Test-CommandAvailable "git")) {
-    throw "git is not available on PATH after Winget installation."
+    throw "git is required but was not found on PATH. Install it first with: winget install --exact --id Git.Git"
 }
+Write-OK "git is available"
 
 # Ensure long paths are enabled for Windows
 git config --system core.longpaths true 2>$null
 
+Write-Step "Checking Chezmoi"
+Get-ChezmoiExecutable | Out-Null
+Write-OK "chezmoi is available"
+
 # ─── Windows Applications (Winget) ───────────────────────────────────────────
 
 Write-Step "Installing Winget Packages"
-$wingetPackages = @($windowsPackages.wingetPackages | Where-Object { $_.id -ne "Git.Git" })
+$wingetPackages = @($windowsPackages.wingetPackages)
 $skippedPowerShellPackage = $false
 
 foreach ($package in $wingetPackages) {
@@ -1113,8 +1131,13 @@ else {
 
 Write-Step "Configuring Chezmoi"
 Initialize-LocalChezmoiConfig
-$desiredChezmoiSource = Resolve-DesiredChezmoiSource
-Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
+if ($FromChezmoiHook) {
+    Write-OK "Chezmoi source apply is managed by the calling chezmoi command"
+}
+else {
+    $desiredChezmoiSource = Resolve-DesiredChezmoiSource
+    Invoke-ChezmoiApply -DesiredSource $desiredChezmoiSource
+}
 
 Invoke-MiseSync
 
@@ -1127,6 +1150,10 @@ Install-VSCodeExtensions
 
 if ($skippedPowerShellPackage) {
     Write-Warn "Microsoft.PowerShell was skipped because bootstrap ran inside pwsh."
+}
+
+if ($FromChezmoiHook) {
+    Set-WindowsBootstrapComplete
 }
 
 # ─── Done ─────────────────────────────────────────────────────────────────────

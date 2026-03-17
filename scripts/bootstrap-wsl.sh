@@ -271,23 +271,9 @@ ensure_chezmoi() {
     return
   fi
 
-  write_step "Bootstrapping chezmoi via mise"
-  mise exec chezmoi@latest -- chezmoi --version >/dev/null
-  mise reshim >/dev/null
-
-  local mise_shims
-  mise_shims="${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims"
-  case ":$PATH:" in
-    *":$mise_shims:"*) ;;
-    *) export PATH="$mise_shims:$PATH" ;;
-  esac
-
-  if ! command -v chezmoi >/dev/null 2>&1; then
-    printf 'chezmoi is still not available after bootstrapping it with mise.\n' >&2
-    exit 1
-  fi
-
-  write_ok "chezmoi bootstrapped via mise"
+  printf 'chezmoi is required but was not found on PATH.\n' >&2
+  printf 'Install chezmoi first, then rerun this bootstrap.\n' >&2
+  exit 1
 }
 
 apply_chezmoi() {
