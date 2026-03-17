@@ -957,7 +957,7 @@ function Initialize-LocalChezmoiConfig {
         return $true
     }
 
-    Write-Info "Local chezmoi config is not present yet. It will be created by '.chezmoi.toml.tmpl' during 'chezmoi init'."
+    Write-Info "Local chezmoi config is not present yet. It will be created by 'home/.chezmoi.toml.tmpl' during 'chezmoi init'."
     return $false
 }
 

@@ -51,7 +51,7 @@ What the bootstrap handles:
 
 First run notes:
 
-- `chezmoi init` creates the local `~/.config/chezmoi/chezmoi.toml` from `.chezmoi.toml.tmpl` and prompts for your git name and email
+- `chezmoi init` creates the local `~/.config/chezmoi/chezmoi.toml` from `home/.chezmoi.toml.tmpl` and prompts for your git name and email
 - The first Windows apply can trigger a UAC prompt because `scripts/bootstrap.ps1` self-elevates when admin rights are needed
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
@@ -167,7 +167,7 @@ ssh -T git@github.com
 
 ## What's Managed Here
 
-- `.chezmoi.toml.tmpl`: init-time local config template and Windows first-apply hook wiring
+- `home/.chezmoi.toml.tmpl`: init-time local config template and Windows/WSL first-apply hook wiring
 - `scripts/bootstrap.ps1`: current bootstrap entry point for Windows
 - `scripts/bootstrap-wsl.sh`: bootstrap entry point for Ubuntu on WSL
 - `scripts/sync-mise.ps1`: installs and validates the current managed `mise` toolset
@@ -224,7 +224,7 @@ If the backported change belongs in this repo, follow up with normal `git add`, 
 
 - `manifests/windows.packages.json` when you want to add or remove winget packages, modules, or VS Code extensions
 - `manifests/wsl.packages.json` when you want to change the Ubuntu bootstrap packages
-- `.chezmoi.toml.tmpl` when you want to change local `chezmoi` prompts, editor integration, or first-apply hook behavior
+- `home/.chezmoi.toml.tmpl` when you want to change local `chezmoi` prompts, editor integration, or first-apply hook behavior
 - `home/dot_ssh/config.tmpl` when you want to change the shared SSH host config for GitHub or other identities
 - `home/dot_ssh/allowed_signers.tmpl` when you want to change how Git SSH signing trust is rendered from the local public key
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` when you want to adjust aliases, prompt behavior, PATH-related setup, or helper commands
