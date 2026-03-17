@@ -1,26 +1,26 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $ErrorActionPreference = "Stop"
 
 function Write-Step {
     param([string]$Message)
-    Write-Information "`n$($PSStyle.Foreground.Cyan)━━━ $Message ━━━$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "`n=== $Message ===" -InformationAction Continue
 }
 
 function Write-OK {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.Green)✓ $Message$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "  [ok] $Message" -InformationAction Continue
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Warning "$($PSStyle.Foreground.Yellow)⚠ $Message$($PSStyle.Reset)"
+    Write-Warning $Message
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Information "  $($PSStyle.Foreground.DarkGray)🛈 $Message$($PSStyle.Reset)" -InformationAction Continue
+    Write-Information "  [info] $Message" -InformationAction Continue
 }
 
 function Set-PathEnvironment {
