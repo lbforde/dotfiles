@@ -51,6 +51,15 @@ fi
 
 export PROJECTS="${PROJECTS:-$HOME/projects}"
 
+SSH_GITHUB_KEY_PATH="${HOME}/.ssh/github_personal_key"
+if command -v keychain >/dev/null 2>&1 && [[ -f "$SSH_GITHUB_KEY_PATH" ]]; then
+  keychain_output="$(keychain --eval --quiet --agents ssh "$SSH_GITHUB_KEY_PATH" 2>/dev/null || true)"
+  if [[ -n "$keychain_output" ]]; then
+    eval "$keychain_output"
+  fi
+fi
+unset SSH_GITHUB_KEY_PATH keychain_output
+
 ZINIT_HOME="${XDG_DATA_HOME}/zinit/zinit.git"
 if [[ ! -f "${ZINIT_HOME}/zinit.zsh" ]] && command -v git >/dev/null 2>&1; then
   mkdir -p -- "${ZINIT_HOME:h}"

@@ -2,7 +2,8 @@
   "aptPackages": [
     "ca-certificates",
     "curl",
-    "git",
+    "keychain",
+    "openssh-client",
     "unzip",
     "zsh"
   ]

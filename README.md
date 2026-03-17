@@ -74,14 +74,27 @@ Optional first-login commands:
 
 ```powershell
 gh auth login
-ssh -T git@github.com
 doppler login
 gopass setup
 ```
 
+Register the generated SSH key with GitHub after `gh auth login`:
+
+```powershell
+gh auth status
+gh ssh-key add "$env:USERPROFILE\.ssh\github_personal_key.pub" --type authentication --title "liam-windows-auth"
+gh ssh-key add "$env:USERPROFILE\.ssh\github_personal_key.pub" --type signing --title "liam-windows-signing"
+ssh -T git@github.com
+```
+
 ## WSL Ubuntu Setup
 
-Install `chezmoi` first using your preferred method, then run the bootstrap from inside Ubuntu on WSL:
+Install the two explicit prerequisites first inside Ubuntu on WSL using your preferred method:
+
+- `git`
+- `chezmoi`
+
+Then run the bootstrap from inside Ubuntu on WSL:
 
 ```bash
 bash ./scripts/bootstrap-wsl.sh
@@ -96,7 +109,9 @@ bash ./scripts/bootstrap-wsl.sh --chezmoi-repo "https://github.com/yourname/dotf
 What the bootstrap handles:
 
 - Installs the current Ubuntu bootstrap packages from `manifests/wsl.packages.json`
-- Requires an existing `chezmoi` install and then initialises or applies this repo
+- Requires existing `git` and `chezmoi` installs, then initialises or applies this repo
+- Installs `keychain` and the WSL SSH tooling from the managed apt package list
+- Creates or reuses `~/.ssh/github_personal_key` for GitHub auth and Git SSH signing
 - Initializes and applies `chezmoi` from this repo by default
 - Runs `./scripts/sync-mise.sh` so managed CLI tools are installed and shims are refreshed
 - Changes the login shell to `zsh` when needed
@@ -104,6 +119,9 @@ What the bootstrap handles:
 First run notes:
 
 - You may be prompted for your git name and email if local `chezmoi` data does not exist yet
+- If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
+- Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
+- `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells
 - VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies
 - The shell prompt stays on the shared `starship` config, while `zinit` manages `fzf-tab`, `zsh-completions`, `zsh-autosuggestions`, and `zsh-syntax-highlighting`
 
@@ -112,8 +130,10 @@ After bootstrap, open a new Ubuntu shell and run a few quick checks:
 ```bash
 echo "$SHELL"
 chezmoi source-path
+git config --global --get user.signingkey
 mise --version
-zsh -lic 'command -v zsh starship mise zoxide fzf opencode'
+zsh -lic 'command -v zsh starship mise zoxide fzf opencode keychain'
+zsh -lic 'ssh-add -l'
 ```
 
 Optional first-login commands:
@@ -122,6 +142,15 @@ Optional first-login commands:
 gh auth login
 doppler login
 gopass setup
+```
+
+Register the generated SSH key with GitHub after `gh auth login`:
+
+```bash
+gh auth status
+gh ssh-key add ~/.ssh/github_personal_key.pub --type authentication --title "liam-wsl-auth"
+gh ssh-key add ~/.ssh/github_personal_key.pub --type signing --title "liam-wsl-signing"
+ssh -T git@github.com
 ```
 
 ## What's Managed Here
