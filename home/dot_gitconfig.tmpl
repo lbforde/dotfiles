@@ -3,21 +3,21 @@
     name  = {{ .name | quote }}
     email = {{ .email | quote }}
 {{- end }}
-{{- if .git_signing_key }}
+{{- if hasKey . "git_signing_key" }}
     signingkey = {{ .git_signing_key | quote }}
 {{- end }}
 
-{{- if .git_gpg_format }}
+{{- if hasKey . "git_gpg_format" }}
 [gpg]
     format = {{ .git_gpg_format | quote }}
 {{- end }}
 
-{{- if .git_commit_gpgsign }}
+{{- if hasKey . "git_commit_gpgsign" }}
 [commit]
     gpgsign = true
 {{- end }}
 
-{{- if .git_allowed_signers_file }}
+{{- if hasKey . "git_allowed_signers_file" }}
 [gpg "ssh"]
     allowedSignersFile = {{ .git_allowed_signers_file | quote }}
 {{- end }}

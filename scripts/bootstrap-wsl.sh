@@ -39,7 +39,9 @@ manifest_path="$repo_root/manifests/wsl.packages.json"
 chezmoi_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi"
 chezmoi_config_path="$chezmoi_config_dir/chezmoi.toml"
 wsl_bootstrap_marker_path="$chezmoi_config_dir/wsl-bootstrap-complete"
-mise_bin_dir="${HOME}/.local/bin"
+local_bin_dir="${HOME}/.local/bin"
+home_bin_dir="${HOME}/bin"
+profile_path="${HOME}/.profile"
 ssh_dir="${HOME}/.ssh"
 default_github_key_name="github_personal_key"
 
@@ -75,11 +77,39 @@ require_command() {
   fi
 }
 
-ensure_local_bin_on_path() {
-  case ":$PATH:" in
-    *":$mise_bin_dir:"*) ;;
-    *) export PATH="$mise_bin_dir:$PATH" ;;
-  esac
+ensure_user_bin_dirs_on_path() {
+  local bin_dir
+
+  for bin_dir in "$local_bin_dir" "$home_bin_dir"; do
+    if [[ ! -d "$bin_dir" ]]; then
+      continue
+    fi
+
+    case ":$PATH:" in
+      *":$bin_dir:"*) ;;
+      *) export PATH="$bin_dir:$PATH" ;;
+    esac
+  done
+}
+
+ensure_user_bin_dirs_in_profile() {
+  local marker_start marker_end
+  marker_start="# Added by dotfiles bootstrap"
+  marker_end="# End dotfiles bootstrap"
+
+  if [[ -f "$profile_path" ]] && grep -Fq "$marker_start" "$profile_path"; then
+    write_ok "User bin PATH block already present in $profile_path"
+    return
+  fi
+
+  cat >>"$profile_path" <<'EOF'
+
+# Added by dotfiles bootstrap
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+# End dotfiles bootstrap
+EOF
+
+  write_ok "Ensured user bin directories are added from $profile_path"
 }
 
 load_manifest_packages() {
@@ -391,7 +421,7 @@ resolve_desired_chezmoi_source() {
 }
 
 ensure_mise() {
-  ensure_local_bin_on_path
+  ensure_user_bin_dirs_on_path
   if command -v mise >/dev/null 2>&1; then
     write_ok "mise is available"
     return
@@ -399,7 +429,7 @@ ensure_mise() {
 
   write_step "Installing mise"
   curl https://mise.run | sh
-  ensure_local_bin_on_path
+  ensure_user_bin_dirs_on_path
 
   if ! command -v mise >/dev/null 2>&1; then
     printf 'mise is still not available after installation.\n' >&2
@@ -421,13 +451,16 @@ ensure_git() {
 }
 
 ensure_chezmoi() {
+  ensure_user_bin_dirs_on_path
   if command -v chezmoi >/dev/null 2>&1; then
     write_ok "chezmoi is available"
     return
   fi
 
   printf 'chezmoi is required but was not found on PATH.\n' >&2
-  printf 'Install chezmoi first, then rerun this bootstrap.\n' >&2
+  printf 'Install it with: sh -c "$(curl -fsLS get.chezmoi.io)"\n' >&2
+  printf 'Then run: export PATH="$HOME/.local/bin:$HOME/bin:$PATH"\n' >&2
+  printf 'Then rerun this bootstrap.\n' >&2
   exit 1
 }
 
@@ -575,6 +608,7 @@ write_ok "apt-get is available"
 write_step "Checking prerequisites"
 ensure_git
 ensure_chezmoi
+ensure_user_bin_dirs_in_profile
 
 write_step "Installing apt packages"
 mapfile -t apt_packages < <(load_manifest_packages)

@@ -1,7 +1,13 @@
-{{- $keyName := .ssh_github_key_name | default "github_personal_key" -}}
+{{- $keyName := "github_personal_key" -}}
+{{- if hasKey . "ssh_github_key_name" -}}
+{{- $keyName = .ssh_github_key_name -}}
+{{- end -}}
 {{- $defaultPublicKeyPath := joinPath (env "HOME") ".ssh" (printf "%s.pub" $keyName) -}}
-{{- $publicKeyPath := .git_signing_key | default $defaultPublicKeyPath -}}
-{{- if and .email (stat $publicKeyPath) -}}
+{{- $publicKeyPath := $defaultPublicKeyPath -}}
+{{- if hasKey . "git_signing_key" -}}
+{{- $publicKeyPath = .git_signing_key -}}
+{{- end -}}
+{{- if and (hasKey . "email") .email (stat $publicKeyPath) -}}
 {{- if eq .chezmoi.os "windows" -}}
 {{- $publicKeyContents := output "powershell.exe" "-NoProfile" "-Command" (printf "Get-Content -LiteralPath '%s' -Raw" ($publicKeyPath | replace "'" "''")) | trim -}}
 {{- if not $publicKeyContents -}}

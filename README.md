@@ -94,6 +94,16 @@ Install the two explicit prerequisites first inside Ubuntu on WSL using your pre
 - `git`
 - `chezmoi`
 
+One straightforward path is:
+
+```bash
+sudo apt update
+sudo apt install -y git curl
+sh -c "$(curl -fsLS get.chezmoi.io)"
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+chezmoi init --apply yourname/dotfiles
+```
+
 Then run the bootstrap from inside Ubuntu on WSL:
 
 ```bash
@@ -120,6 +130,7 @@ What the bootstrap handles:
 First run notes:
 
 - `chezmoi init --apply` in WSL can now prompt for your git name and email through the first-apply bootstrap path when local `chezmoi` data does not exist yet
+- `bootstrap-wsl.sh` ensures `~/.local/bin` and `~/bin` are available in later login shells by appending a small PATH block to `~/.profile`
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells

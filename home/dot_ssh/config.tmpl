@@ -1,6 +1,10 @@
+{{- $keyName := "github_personal_key" -}}
+{{- if hasKey . "ssh_github_key_name" -}}
+{{- $keyName = .ssh_github_key_name -}}
+{{- end -}}
 # GitHub Personal Account
 Host github.com
   HostName github.com
   User git
-  IdentityFile ~/.ssh/{{ .ssh_github_key_name | default "github_personal_key" }}
+  IdentityFile ~/.ssh/{{ $keyName }}
   IdentitiesOnly yes
