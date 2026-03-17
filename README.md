@@ -87,6 +87,8 @@ gh ssh-key add "$env:USERPROFILE\.ssh\github_personal_key.pub" --type signing --
 ssh -T git@github.com
 ```
 
+If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
+
 ## WSL Ubuntu Setup
 
 Install the two explicit prerequisites first inside Ubuntu on WSL using your preferred method:
@@ -164,6 +166,8 @@ gh ssh-key add ~/.ssh/github_personal_key.pub --type authentication --title "lia
 gh ssh-key add ~/.ssh/github_personal_key.pub --type signing --title "liam-wsl-signing"
 ssh -T git@github.com
 ```
+
+If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
 
 ## What's Managed Here
 

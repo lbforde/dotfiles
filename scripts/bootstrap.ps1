@@ -879,6 +879,7 @@ function Update-LocalChezmoiSshConfig {
 
     $changed = $false
     $desiredDataValues = [ordered]@{
+        github_use_ssh_instead_of_https = "false"
         git_signing_key          = ConvertTo-TomlBasicStringLiteral -Value $publicKeyPath
         git_gpg_format           = ConvertTo-TomlBasicStringLiteral -Value "ssh"
         git_commit_gpgsign       = "true"

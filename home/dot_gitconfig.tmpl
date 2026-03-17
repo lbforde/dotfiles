@@ -76,5 +76,9 @@
     undo = reset HEAD~1 --mixed
     wip  = commit -am "wip"
 
+# Set [data].github_use_ssh_instead_of_https = true in local chezmoi.toml
+# after GitHub SSH auth is working on this machine.
+{{- if and (hasKey . "github_use_ssh_instead_of_https") .github_use_ssh_instead_of_https }}
 [url "git@github.com:"]
     insteadOf = https://github.com/
+{{- end }}

@@ -10,6 +10,7 @@
 [data]
     name  = {{ $name | quote }}
     email = {{ $email | quote }}
+    github_use_ssh_instead_of_https = false
 {{- if eq (env "OS") "Windows_NT" }}
     git_signing_key          = {{ printf "%s.pub" $windowsGithubKeyPath | quote }}
     git_gpg_format           = "ssh"

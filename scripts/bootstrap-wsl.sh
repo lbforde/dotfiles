@@ -176,6 +176,7 @@ create_local_chezmoi_config() {
 [data]
     name  = "$(printf '%s' "$default_name" | sed 's/"/\\"/g')"
     email = "$(printf '%s' "$default_email" | sed 's/"/\\"/g')"
+    github_use_ssh_instead_of_https = false
     git_signing_key          = "$(printf '%s' "$ssh_public_key_path" | sed 's/"/\\"/g')"
     git_gpg_format           = "ssh"
     git_commit_gpgsign       = true
@@ -293,6 +294,7 @@ if section_match:
         lines = body.splitlines()
 
 desired = OrderedDict([
+    ("github_use_ssh_instead_of_https", "false"),
     ("git_signing_key", toml_string(f"{ssh_dir}/{key_name}.pub")),
     ("git_gpg_format", toml_string("ssh")),
     ("git_commit_gpgsign", "true"),
