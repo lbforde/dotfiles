@@ -914,17 +914,18 @@ function Update-LocalChezmoiEditorConfig {
         return
     }
 
+    $editorCommand = if (Get-Command "code.cmd" -ErrorAction SilentlyContinue) { "code.cmd" } else { "code" }
     $changed = $false
     $content = Update-TomlSectionContent -Content $content -Section "edit" -Lines @(
-        'command = "code"',
+        ('command = "{0}"' -f $editorCommand),
         'args    = ["--wait"]'
     ) -Changed ([ref]$changed)
     $content = Update-TomlSectionContent -Content $content -Section "merge" -Lines @(
-        'command = "code"',
+        ('command = "{0}"' -f $editorCommand),
         'args    = ["--wait", "--merge", "{{ .Destination }}", "{{ .Source }}", "{{ .Base }}", "{{ .Destination }}"]'
     ) -Changed ([ref]$changed)
     $content = Update-TomlSectionContent -Content $content -Section "diff" -Lines @(
-        'command = "code"',
+        ('command = "{0}"' -f $editorCommand),
         'args    = ["--wait", "--diff", "{{ .Destination }}", "{{ .Target }}"]'
     ) -Changed ([ref]$changed)
 

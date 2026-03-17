@@ -20,15 +20,27 @@
 {{- end }}
 
 [edit]
+{{- if eq (env "OS") "Windows_NT" }}
+    command = "code.cmd"
+{{- else }}
     command = "code"
+{{- end }}
     args    = ["--wait"]
 
 [merge]
+{{- if eq (env "OS") "Windows_NT" }}
+    command = "code.cmd"
+{{- else }}
     command = "code"
+{{- end }}
     args    = ["--wait", "--merge", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Base {{ "}}" }}", "{{ "{{" }} .Destination {{ "}}" }}"]
 
 [diff]
+{{- if eq (env "OS") "Windows_NT" }}
+    command = "code.cmd"
+{{- else }}
     command = "code"
+{{- end }}
     args    = ["--wait", "--diff", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
 
 [git]
