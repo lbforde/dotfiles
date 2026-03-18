@@ -1,27 +1,31 @@
 {{- $name := promptStringOnce . "name" "Git user.name" -}}
 {{- $email := promptStringOnce . "email" "Git user.email" -}}
+{{- $isWindows := eq (env "OS") "Windows_NT" -}}
+{{- $isWsl := ne (env "WSL_DISTRO_NAME") "" -}}
+{{- $homeDir := env "HOME" -}}
+{{- if $isWindows -}}
+{{- $homeDir = env "USERPROFILE" -}}
+{{- end -}}
 {{- $windowsBootstrapScript := joinPath (env "USERPROFILE") ".local" "share" "chezmoi" "scripts" "bootstrap.ps1" -}}
 {{- $wslBootstrapScript := joinPath (env "HOME") ".local" "share" "chezmoi" "scripts" "bootstrap-wsl.sh" -}}
-{{- $windowsSshDir := joinPath (env "USERPROFILE") ".ssh" -}}
-{{- $windowsGithubKeyName := "github_personal_key" -}}
-{{- $windowsGithubKeyPath := joinPath $windowsSshDir $windowsGithubKeyName -}}
-{{- $windowsAllowedSignersPath := joinPath $windowsSshDir "allowed_signers" -}}
+{{- $sshDir := joinPath $homeDir ".ssh" -}}
+{{- $githubKeyName := "github_personal_key" -}}
+{{- $githubKeyPath := joinPath $sshDir $githubKeyName -}}
+{{- $allowedSignersPath := joinPath $sshDir "allowed_signers" -}}
 # Local Chezmoi runtime config (machine-specific)
 [data]
     name  = {{ $name | quote }}
     email = {{ $email | quote }}
     github_use_ssh_instead_of_https = false
-{{- if eq (env "OS") "Windows_NT" }}
-    git_signing_key          = {{ printf "%s.pub" $windowsGithubKeyPath | quote }}
+    git_signing_key          = {{ printf "%s.pub" $githubKeyPath | quote }}
     git_gpg_format           = "ssh"
     git_commit_gpgsign       = true
-    git_allowed_signers_file = {{ $windowsAllowedSignersPath | quote }}
-    ssh_github_key_name      = {{ $windowsGithubKeyName | quote }}
+    git_allowed_signers_file = {{ $allowedSignersPath | quote }}
+    ssh_github_key_name      = {{ $githubKeyName | quote }}
     ssh_github_key_comment   = {{ $email | quote }}
-{{- end }}
 
 [edit]
-{{- if eq (env "OS") "Windows_NT" }}
+{{- if $isWindows }}
     command = "code.cmd"
 {{- else }}
     command = "code"
@@ -29,7 +33,7 @@
     args    = ["--wait"]
 
 [merge]
-{{- if eq (env "OS") "Windows_NT" }}
+{{- if $isWindows }}
     command = "code.cmd"
 {{- else }}
     command = "code"
@@ -37,7 +41,7 @@
     args    = ["--wait", "--merge", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Base {{ "}}" }}", "{{ "{{" }} .Destination {{ "}}" }}"]
 
 [diff]
-{{- if eq (env "OS") "Windows_NT" }}
+{{- if $isWindows }}
     command = "code.cmd"
 {{- else }}
     command = "code"
@@ -51,11 +55,11 @@
 [template]
     options = ["missingkey=default"]
 
-{{- if eq (env "OS") "Windows_NT" }}
+{{- if $isWindows }}
 [hooks.read-source-state.pre]
     command = "powershell.exe"
     args    = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", {{ $windowsBootstrapScript | quote }}, "-FromChezmoiHook"]
-{{- else if env "WSL_DISTRO_NAME" }}
+{{- else if $isWsl }}
 [hooks.read-source-state.pre]
     command = "bash"
     args    = [{{ $wslBootstrapScript | quote }}, "--from-chezmoi-hook"]
