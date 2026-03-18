@@ -10,8 +10,14 @@ mkdir -p "$XDG_CACHE_HOME/zsh" "$XDG_DATA_HOME" "$XDG_STATE_HOME/zsh"
 typeset -U path PATH
 path=("$HOME/.local/bin" "$HOME/bin" "$path[@]")
 
-if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslpath >/dev/null 2>&1; then
-  path=("/mnt/c/Users/Liam/AppData/Local/Programs/Microsoft VS Code/bin" "$path[@]")
+if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslvar >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
+  localappdata="$(wslvar LOCALAPPDATA 2>/dev/null)"
+  if [[ -n "$localappdata" ]]; then
+    vscode_bin="$(wslpath -u "$localappdata")/Programs/Microsoft VS Code/bin"
+    [[ -d "$vscode_bin" ]] && path=("$vscode_bin" "$path[@]")
+    unset vscode_bin
+  fi
+  unset localappdata
 fi
 
 

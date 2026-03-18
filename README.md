@@ -156,7 +156,7 @@ First run notes:
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells
-- VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies, with the VS Code CLI added back explicitly in `~/.zshrc`
+- VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies, with the VS Code CLI added back explicitly in `~/.zshrc` via `wslvar LOCALAPPDATA` plus `wslpath`
 - The shell prompt stays on the shared `starship` config, while `zinit` manages `fzf-tab`, `zsh-completions`, `zsh-autosuggestions`, and `zsh-syntax-highlighting`
 
 After bootstrap, open a new Ubuntu shell and run a few quick checks:
