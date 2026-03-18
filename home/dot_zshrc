@@ -196,7 +196,7 @@ edit() {
 }
 
 reload() {
-  source "${ZDOTDIR:-$HOME}/.zshrc"
+  exec zsh
 }
 
 editprofile() {
