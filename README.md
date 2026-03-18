@@ -9,7 +9,7 @@ Dotfiles and bootstrap scripts for rebuilding this dev environment with `chezmoi
 | Windows  | Supported | Bootstrapped via `scripts/bootstrap.ps1`         |
 | WSL      | Supported | Bootstrapped via `scripts/bootstrap-wsl.sh`      |
 | Linux    | Planned   | No bootstrap script or manifest in this repo yet |
-| macOS    | Planned   | No bootstrap script or manifest in this repo yet |
+| macOS    | Supported | Bootstrapped via `scripts/bootstrap-macos.sh`    |
 
 ## Windows Setup
 
@@ -42,7 +42,8 @@ Fallback manual bootstrap from an existing local checkout:
 
 What the bootstrap handles:
 
-- Installs the current winget packages, PowerShell modules, and VS Code extensions from `manifests/windows.packages.json`
+- Installs the current winget packages and PowerShell modules from `manifests/windows.packages.json`
+- Installs the shared VS Code extension set from `manifests/vscode.extensions.json`
 - Sets Dev Drive environment variables and PATH entries needed by the shell and toolchain
 - Creates or reuses `~/.ssh/github_personal_key`, enables the Windows `ssh-agent` service, and loads the key for GitHub auth plus Git SSH signing
 - Renders `~/.ssh/config` and `~/.ssh/allowed_signers` through `chezmoi`
@@ -84,6 +85,88 @@ Register the generated SSH key with GitHub after `gh auth login`:
 gh auth status
 gh ssh-key add "$env:USERPROFILE\.ssh\github_personal_key.pub" --type authentication --title "liam-windows-auth"
 gh ssh-key add "$env:USERPROFILE\.ssh\github_personal_key.pub" --type signing --title "liam-windows-signing"
+ssh -T git@github.com
+```
+
+If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
+
+## macOS Setup
+
+Install Homebrew first, then the two explicit prerequisites:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install git chezmoi
+```
+
+Then initialise and apply the dotfiles:
+
+```bash
+chezmoi init --apply yourname/dotfiles
+```
+
+Useful options:
+
+```bash
+chezmoi init --apply https://github.com/yourname/dotfiles
+```
+
+Fallback manual bootstrap from an existing local checkout:
+
+```bash
+bash ./scripts/bootstrap-macos.sh
+bash ./scripts/bootstrap-macos.sh --chezmoi-repo "https://github.com/yourname/dotfiles"
+```
+
+What the bootstrap handles:
+
+- Installs the current macOS Homebrew formulae and casks from `manifests/macos.packages.json`
+- Installs Ghostty as the intended macOS terminal emulator
+- Installs VS Code plus the shared VS Code extension set from `manifests/vscode.extensions.json`
+- Installs JetBrains Mono Nerd Font so the managed terminal and editor font settings render correctly
+- Creates or reuses `~/.ssh/github_personal_key`, loads it into `ssh-agent`, and uses the macOS Keychain flow when available
+- Renders `~/.ssh/config` and `~/.ssh/allowed_signers` through `chezmoi`
+- Applies Ghostty config at `~/.config/ghostty/config.ghostty` using Ghostty's supported XDG config path on macOS
+- Applies macOS VS Code settings at `~/Library/Application Support/Code/User/settings.json`
+- Runs during the first macOS `chezmoi apply` via a `read-source-state.pre` hook, then stays out of the way on later applies
+- Runs `./scripts/sync-mise.sh` so managed CLI tools are installed and shims are refreshed
+- Changes the login shell to `zsh` when needed
+
+First run notes:
+
+- `chezmoi init` creates the local `~/.config/chezmoi/chezmoi.toml` from `home/.chezmoi.toml.tmpl` and prompts for your git name and email
+- The Homebrew VS Code cask provides the `code` CLI used for editor integration and extension installation
+- If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
+- Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
+- `~/.zshrc` now initializes Homebrew early so brew-installed tools are available in new shells on both Apple Silicon and Intel Macs
+
+After bootstrap, open Ghostty and run a few quick checks:
+
+```bash
+echo "$SHELL"
+brew --prefix
+chezmoi source-path
+git config --global --get user.signingkey
+mise --version
+code --list-extensions
+zsh -lic 'command -v brew code zsh starship mise zoxide fzf yazi'
+ssh-add -l
+```
+
+Optional first-login commands:
+
+```bash
+gh auth login
+doppler login
+gopass setup
+```
+
+Register the generated SSH key with GitHub after `gh auth login`:
+
+```bash
+gh auth status
+gh ssh-key add ~/.ssh/github_personal_key.pub --type authentication --title "liam-mac-auth"
+gh ssh-key add ~/.ssh/github_personal_key.pub --type signing --title "liam-mac-signing"
 ssh -T git@github.com
 ```
 
@@ -191,27 +274,33 @@ If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is workin
 
 ## What's Managed Here
 
-- `home/.chezmoi.toml.tmpl`: init-time local config template and Windows/WSL first-apply hook wiring
+- `home/.chezmoi.toml.tmpl`: init-time local config template and Windows/WSL/macOS first-apply hook wiring
 - `scripts/bootstrap.ps1`: current bootstrap entry point for Windows
 - `scripts/bootstrap-wsl.sh`: bootstrap entry point for Ubuntu on WSL
+- `scripts/bootstrap-macos.sh`: bootstrap entry point for macOS
 - `scripts/sync-mise.ps1`: installs and validates the current managed `mise` toolset
 - `scripts/sync-mise.sh`: Linux `mise` sync companion for WSL/Linux applies
-- `manifests/windows.packages.json`: winget packages, PowerShell modules, and VS Code extensions
+- `manifests/windows.packages.json`: winget packages and PowerShell modules
+- `manifests/macos.packages.json`: Homebrew formulae and casks used by the macOS setup
+- `manifests/vscode.extensions.json`: shared VS Code extensions installed on Windows and macOS
 - `manifests/wsl.packages.json`: Ubuntu bootstrap packages used by the WSL setup
 - `home/dot_ssh/config.tmpl`: shared SSH host config, including the GitHub identity stanza
 - `home/dot_ssh/allowed_signers.tmpl`: shared Git SSH allowed signers file rendered from the local public key
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`: PowerShell profile, aliases, helper functions, and shell environment defaults
-- `home/dot_zshrc`: WSL/Linux shell profile managed as `~/.zshrc`
-- `home/AppData/Roaming/Code/User/settings.json`: VS Code settings applied through `chezmoi`
+- `home/dot_zshrc`: macOS/WSL/Linux shell profile managed as `~/.zshrc`
+- `home/dot_config/ghostty/config.ghostty`: Ghostty config applied through the XDG config path
+- `home/AppData/Roaming/Code/User/settings.json`: Windows VS Code settings applied through `chezmoi`
+- `home/Library/Application Support/Code/User/settings.json`: macOS VS Code settings applied through `chezmoi`
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`: Windows Terminal settings applied through `chezmoi`
 
 Right now this repo manages:
 
 - Shell behavior in PowerShell, including editor selection and helper commands such as `edit` and `Show-Help`
-- Shell behavior in WSL `zsh`, including `zinit`, `fzf-tab`, shared prompt config, and Linux-friendly aliases
-- VS Code defaults, extensions, and document-authoring settings
+- Shell behavior in macOS/WSL `zsh`, including `zinit`, `fzf-tab`, shared prompt config, and Linux-friendly aliases
+- Ghostty defaults on macOS, including font, padding, and background styling
+- VS Code defaults, extensions, and document-authoring settings on Windows and macOS
 - Windows Terminal profiles and keybindings
-- Installed CLI tools and runtimes through the bootstrap plus `mise`
+- Installed CLI tools and runtimes through the platform bootstrap plus `mise`
 
 ## Daily Workflow
 
@@ -246,14 +335,18 @@ If the backported change belongs in this repo, follow up with normal `git add`, 
 
 ## Files You'll Actually Edit
 
-- `manifests/windows.packages.json` when you want to add or remove winget packages, modules, or VS Code extensions
+- `manifests/windows.packages.json` when you want to add or remove winget packages or PowerShell modules
+- `manifests/macos.packages.json` when you want to change the macOS Homebrew bootstrap packages
+- `manifests/vscode.extensions.json` when you want to change the shared VS Code extension set
 - `manifests/wsl.packages.json` when you want to change the Ubuntu bootstrap packages
 - `home/.chezmoi.toml.tmpl` when you want to change local `chezmoi` prompts, editor integration, or first-apply hook behavior
 - `home/dot_ssh/config.tmpl` when you want to change the shared SSH host config for GitHub or other identities
 - `home/dot_ssh/allowed_signers.tmpl` when you want to change how Git SSH signing trust is rendered from the local public key
 - `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` when you want to adjust aliases, prompt behavior, PATH-related setup, or helper commands
-- `home/dot_zshrc` when you want to adjust WSL shell behavior, plugin loading, aliases, or prompt initialization
-- `home/AppData/Roaming/Code/User/settings.json` when you want to change editor defaults or extension behavior
+- `home/dot_zshrc` when you want to adjust macOS/WSL shell behavior, plugin loading, aliases, or prompt initialization
+- `home/dot_config/ghostty/config.ghostty` when you want to change macOS terminal font, padding, opacity, or colors
+- `home/AppData/Roaming/Code/User/settings.json` when you want to change Windows editor defaults or extension behavior
+- `home/Library/Application Support/Code/User/settings.json` when you want to change macOS editor defaults or extension behavior
 - `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json` when you want to change terminal profiles, appearance, or keybindings
 
 If you change managed files, re-apply with:

@@ -18,6 +18,12 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
 .chezmoiscripts/*.sh
 {{- end }}
 
+# macOS-only files — ignore on Windows/Linux
+{{- if ne .chezmoi.os "darwin" }}
+Library/Application Support/Code/User
+.config/ghostty
+{{- end }}
+
 # Never manage local chezmoi runtime config from source state.
 .config/chezmoi/chezmoi.toml
 .config/chezmoi/chezmoi.toml.*.bak

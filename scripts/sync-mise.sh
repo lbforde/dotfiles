@@ -36,11 +36,6 @@ if ! command -v mise >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf 'python3 is required to validate the mise JSON output.\n' >&2
-  exit 1
-fi
-
 mise_config_path="${XDG_CONFIG_HOME:-$HOME/.config}/mise/config.toml"
 if [[ ! -f "$mise_config_path" ]]; then
   printf 'Managed mise config not found at %s\n' "$mise_config_path" >&2
@@ -60,9 +55,9 @@ if [[ -z "$missing_raw" ]]; then
   missing_raw='{}'
 fi
 
-missing_tools="$(python3 -c 'import json, sys; data = json.load(sys.stdin); print(",".join(data.keys()))' <<<"$missing_raw")"
-if [[ -n "$missing_tools" ]]; then
-  printf 'mise still reports missing current tools: %s\n' "$missing_tools" >&2
+missing_compact="$(printf '%s' "$missing_raw" | tr -d '[:space:]')"
+if [[ -n "$missing_compact" && "$missing_compact" != "{}" && "$missing_compact" != "[]" ]]; then
+  printf 'mise still reports missing current tools: %s\n' "$missing_raw" >&2
   exit 1
 fi
 

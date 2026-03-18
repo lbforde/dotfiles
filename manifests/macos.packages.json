@@ -1,0 +1,13 @@
+{
+  "formulae": [
+    "git",
+    "chezmoi",
+    "mise",
+    "gh"
+  ],
+  "casks": [
+    "ghostty",
+    "visual-studio-code",
+    "font-jetbrains-mono-nerd-font"
+  ]
+}

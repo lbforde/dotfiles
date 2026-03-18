@@ -2,12 +2,14 @@
 {{- $email := promptStringOnce . "email" "Git user.email" -}}
 {{- $isWindows := eq (env "OS") "Windows_NT" -}}
 {{- $isWsl := ne (env "WSL_DISTRO_NAME") "" -}}
+{{- $isMacos := eq .chezmoi.os "darwin" -}}
 {{- $homeDir := env "HOME" -}}
 {{- if $isWindows -}}
 {{- $homeDir = env "USERPROFILE" -}}
 {{- end -}}
 {{- $windowsBootstrapScript := joinPath (env "USERPROFILE") ".local" "share" "chezmoi" "scripts" "bootstrap.ps1" -}}
 {{- $wslBootstrapScript := joinPath (env "HOME") ".local" "share" "chezmoi" "scripts" "bootstrap-wsl.sh" -}}
+{{- $macosBootstrapScript := joinPath (env "HOME") ".local" "share" "chezmoi" "scripts" "bootstrap-macos.sh" -}}
 {{- $sshDir := joinPath $homeDir ".ssh" -}}
 {{- $githubKeyName := "github_personal_key" -}}
 {{- $githubKeyPath := joinPath $sshDir $githubKeyName -}}
@@ -63,4 +65,8 @@
 [hooks.read-source-state.pre]
     command = "bash"
     args    = [{{ $wslBootstrapScript | quote }}, "--from-chezmoi-hook"]
+{{- else if $isMacos }}
+[hooks.read-source-state.pre]
+    command = "bash"
+    args    = [{{ $macosBootstrapScript | quote }}, "--from-chezmoi-hook"]
 {{- end }}

@@ -44,39 +44,5 @@
       "id": "Microsoft.PowerShell",
       "source": "winget"
     }
-  ],
-  "vscode": {
-    "extensions": [
-      "zhuangtongfa.Material-theme",
-      "usernamehw.errorlens",
-      "eamodio.gitlens",
-      "openai.chatgpt",
-      "esbenp.prettier-vscode",
-      "Gruntfuggly.todo-tree",
-      "yoavbls.pretty-ts-errors",
-      "pflannery.vscode-versionlens",
-      "WallabyJs.console-ninja",
-      "pdconsec.vscode-print",
-      "dbaeumer.vscode-eslint",
-      "code-nature.nilesoft-shell-file-formatter",
-      "james-yu.latex-workshop",
-      "ltex-plus.vscode-ltex-plus",
-      "ms-python.python",
-      "charliermarsh.ruff",
-      "njpwerner.autodocstring",
-      "rust-lang.rust-analyzer",
-      "vadimcn.vscode-lldb",
-      "fill-labs.dependi",
-      "tamasfe.even-better-toml",
-      "golang.go",
-      "sumneko.lua",
-      "ziglang.vscode-zig",
-      "llvm-vs-code-extensions.vscode-clangd",
-      "ms-vscode.cmake-tools",
-      "ms-vscode-remote.vscode-remote-extensionpack",
-      "ms-azuretools.vscode-containers",
-      "redhat.vscode-yaml",
-      "ms-vscode.powershell"
-    ]
-  }
+  ]
 }

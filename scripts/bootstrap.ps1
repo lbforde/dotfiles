@@ -238,8 +238,8 @@ function Install-VSCodeExtensions {
         return
     }
 
-    $manifest = Get-ManifestJson -RelativePath "manifests/windows.packages.json"
-    $extensions = @($manifest.vscode.extensions)
+    $manifest = Get-ManifestJson -RelativePath "manifests/vscode.extensions.json"
+    $extensions = @($manifest.extensions)
     $installed = @(code --list-extensions 2>$null | ForEach-Object { $_.ToLower() })
     $legacyLtexExtension = "valentjn.vscode-ltex"
 

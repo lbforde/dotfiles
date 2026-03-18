@@ -1,0 +1,13 @@
+# Ghostty supports the XDG config path on macOS, which fits this repo's layout.
+font-family = JetBrainsMonoNL Nerd Font
+font-size = 13
+
+# Keep the terminal visually aligned with the rest of the prompt/editor setup.
+background = 23272e
+foreground = abb2bf
+background-opacity = 0.75
+
+window-padding-x = 6
+window-padding-y = 6
+window-padding-balance = true
+window-padding-color = background

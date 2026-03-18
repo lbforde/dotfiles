@@ -8,3 +8,7 @@ Host github.com
   User git
   IdentityFile ~/.ssh/{{ $keyName }}
   IdentitiesOnly yes
+{{- if eq .chezmoi.os "darwin" }}
+  AddKeysToAgent yes
+  UseKeychain yes
+{{- end }}
