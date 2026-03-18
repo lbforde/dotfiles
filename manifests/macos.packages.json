@@ -2,8 +2,7 @@
   "formulae": [
     "git",
     "chezmoi",
-    "mise",
-    "gh"
+    "mise"
   ],
   "casks": [
     "ghostty",
