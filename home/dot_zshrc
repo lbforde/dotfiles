@@ -9,6 +9,14 @@ mkdir -p "$XDG_CACHE_HOME/zsh" "$XDG_DATA_HOME" "$XDG_STATE_HOME/zsh"
 
 typeset -U path PATH
 path=("$HOME/.local/bin" "$HOME/bin" "$path[@]")
+
+if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslpath >/dev/null 2>&1; then
+  vscode_bin="$(powershell.exe -NoProfile -Command "[Environment]::GetFolderPath('LocalApplicationData')" 2>/dev/null | tr -d '\r' | xargs -I{} wslpath -u "{}")/Programs/Microsoft VS Code/bin"
+  [[ -d "$vscode_bin" ]] && path=("$vscode_bin" "$path[@]")
+  unset vscode_bin
+fi
+
+
 export PATH
 
 if command -v code >/dev/null 2>&1; then
