@@ -106,6 +106,25 @@ export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 chezmoi init --apply yourname/dotfiles
 ```
 
+Before you rely on Linux-side `mise` and other WSL-managed tools, disable automatic Windows PATH injection:
+
+```bash
+sudo nano /etc/wsl.conf
+```
+
+Add or merge:
+
+```ini
+[interop]
+appendWindowsPath=false
+```
+
+Then restart WSL from Windows:
+
+```powershell
+wsl --shutdown
+```
+
 Then run the bootstrap from inside Ubuntu on WSL:
 
 ```bash
@@ -132,11 +151,12 @@ What the bootstrap handles:
 First run notes:
 
 - `chezmoi init --apply` in WSL can now prompt for your git name and email through the first-apply bootstrap path when local `chezmoi` data does not exist yet
+- `/etc/wsl.conf` should include `[interop]` with `appendWindowsPath=false` so WSL does not inherit the Windows toolchain PATH by default
 - `bootstrap-wsl.sh` ensures `~/.local/bin` and `~/bin` are available in later login shells by appending a small PATH block to `~/.profile`
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells
-- VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies
+- VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies, with the VS Code CLI added back explicitly in `~/.zshrc`
 - The shell prompt stays on the shared `starship` config, while `zinit` manages `fzf-tab`, `zsh-completions`, `zsh-autosuggestions`, and `zsh-syntax-highlighting`
 
 After bootstrap, open a new Ubuntu shell and run a few quick checks:
