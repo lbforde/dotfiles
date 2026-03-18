@@ -6,6 +6,7 @@
   ],
   "casks": [
     "ghostty",
+    "mactex-no-gui",
     "visual-studio-code",
     "font-jetbrains-mono-nerd-font"
   ]

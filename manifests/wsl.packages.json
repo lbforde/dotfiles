@@ -4,6 +4,7 @@
     "curl",
     "keychain",
     "openssh-client",
+    "texlive-full",
     "unzip",
     "zsh"
   ]
