@@ -11,13 +11,7 @@ typeset -U path PATH
 path=("$HOME/.local/bin" "$HOME/bin" "$path[@]")
 
 if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslpath >/dev/null 2>&1; then
-  windows_cmd="/mnt/c/Windows/System32/cmd.exe"
-  if [[ -x "$windows_cmd" ]]; then
-    vscode_bin="$("$windows_cmd" /c "echo %LOCALAPPDATA%" 2>/dev/null | tr -d '\r' | sed -n '1p' | xargs -I{} wslpath -u "{}")/Programs/Microsoft VS Code/bin"
-    [[ -d "$vscode_bin" ]] && path=("$vscode_bin" "$path[@]")
-    unset vscode_bin
-  fi
-  unset windows_cmd
+  path=("/mnt/c/Users/Liam/AppData/Local/Programs/Microsoft VS Code/bin" "$path[@]")
 fi
 
 
