@@ -98,7 +98,7 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 <details>
 <summary><strong>Languages and Toolchains</strong></summary>
 
-| Name                                                                 | �   | �🧩 | 🐧  | 🍎  | Description                    |
+| Name                                                                 | 🪟  | 🧩  | 🐧  | 🍎  | Description                    |
 | -------------------------------------------------------------------- | --- | --- | --- | --- | ------------------------------ |
 | [mise](https://github.com/jdx/mise)                                  | ✅  | ✅  | ❌  | ✅  | Dev tools, env vars, and tasks |
 | [Bun](https://github.com/oven-sh/bun)                                | ✅  | ✅  | ❌  | ✅  | JS runtime and package manager |
