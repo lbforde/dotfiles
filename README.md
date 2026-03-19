@@ -57,39 +57,41 @@ These tables show what this repo installs or syncs after running the platform bo
 <details>
 <summary><strong>Visual Studio Code and Extensions</strong></summary>
 
+In WSL, `🔗` means this repo reuses the Windows host install and extension set instead of installing a separate Linux-side copy.
+
 | Name                                                                                                                           | 🪟  | 🧩  | 🐧  | 🍎  | Description                           |
 | ------------------------------------------------------------------------------------------------------------------------------ | --- | --- | --- | --- | ------------------------------------- |
-| [Visual Studio Code](https://github.com/microsoft/vscode)                                                                      | ✅  | ❌  | ❌  | ✅  | Code editor                           |
-| [One Dark Pro](https://marketplace.visualstudio.com/items?itemName=zhuangtongfa.Material-theme)                                | ✅  | ❌  | ❌  | ✅  | One Dark theme for VS Code            |
-| [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)                                         | ✅  | ❌  | ❌  | ✅  | Highlights diagnostics inline         |
-| [GitLens - Git supercharged](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)                              | ✅  | ❌  | ❌  | ✅  | Git insights and blame                |
-| [Codex - OpenAI's coding agent](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt)                            | ✅  | ❌  | ❌  | ✅  | Coding agent for VS Code              |
-| [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)                        | ✅  | ❌  | ❌  | ✅  | Formats code with Prettier            |
-| [Todo Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree)                                         | ✅  | ❌  | ❌  | ✅  | Shows TODO and FIXME tags             |
-| [Pretty TypeScript Errors](https://marketplace.visualstudio.com/items?itemName=yoavbls.pretty-ts-errors)                       | ✅  | ❌  | ❌  | ✅  | Improves TypeScript errors            |
-| [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens)                               | ✅  | ❌  | ❌  | ✅  | Shows latest package versions         |
-| [Console Ninja](https://marketplace.visualstudio.com/items?itemName=WallabyJs.console-ninja)                                   | ✅  | ❌  | ❌  | ✅  | Shows logs beside code                |
-| [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)                                           | ✅  | ❌  | ❌  | ✅  | Integrates ESLint                     |
-| [Nilesoft Shell File Formatter](https://marketplace.visualstudio.com/items?itemName=code-nature.nilesoft-shell-file-formatter) | ✅  | ❌  | ❌  | ✅  | Nilesoft Shell syntax support         |
-| [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)                                                 | ✅  | ❌  | ❌  | ✅  | Python language support               |
-| [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)                                                 | ✅  | ❌  | ❌  | ✅  | Python linter and formatter           |
-| [autoDocstring - Python Docstring Generator](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring)      | ✅  | ❌  | ❌  | ✅  | Generates Python docstrings           |
-| [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)                                   | ✅  | ❌  | ❌  | ✅  | Rust language server                  |
-| [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)                                            | ✅  | ❌  | ❌  | ✅  | LLDB debugger for native code         |
-| [Dependi](https://marketplace.visualstudio.com/items?itemName=fill-labs.dependi)                                               | ✅  | ❌  | ❌  | ✅  | Dependency and vulnerability insights |
-| [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)                               | ✅  | ❌  | ❌  | ✅  | TOML language support                 |
-| [Go](https://marketplace.visualstudio.com/items?itemName=golang.go)                                                            | ✅  | ❌  | ❌  | ✅  | Go language support                   |
-| [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua)                                                         | ✅  | ❌  | ❌  | ✅  | Lua language server                   |
-| [Zig Language](https://marketplace.visualstudio.com/items?itemName=ziglang.vscode-zig)                                         | ✅  | ❌  | ❌  | ✅  | Zig language support                  |
-| [clangd](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)                            | ✅  | ❌  | ❌  | ✅  | C/C++ completion and navigation       |
-| [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)                                       | ✅  | ❌  | ❌  | ✅  | Extended CMake support                |
-| [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)         | ✅  | ❌  | ❌  | ✅  | Remote, WSL, and container access     |
-| [Container Tools](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-containers)                         | ✅  | ❌  | ❌  | ✅  | Manage and debug containers           |
-| [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=james-yu.latex-workshop)                                  | ✅  | ❌  | ❌  | ✅  | LaTeX editing and preview             |
-| [LTeX+](https://marketplace.visualstudio.com/items?itemName=ltex-plus.vscode-ltex-plus)                                        | ✅  | ❌  | ❌  | ✅  | Grammar and spell checking            |
-| [Print](https://marketplace.visualstudio.com/items?itemName=pdconsec.vscode-print)                                             | ✅  | ❌  | ❌  | ✅  | Rendered Markdown and code            |
-| [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)                                                 | ✅  | ❌  | ❌  | ✅  | YAML support with Kubernetes schemas  |
-| [PowerShell](https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell)                                         | ✅  | ❌  | ❌  | ✅  | PowerShell language support           |
+| [Visual Studio Code](https://github.com/microsoft/vscode)                                                                      | ✅  | 🔗  | ❌  | ✅  | Code editor                           |
+| [One Dark Pro](https://marketplace.visualstudio.com/items?itemName=zhuangtongfa.Material-theme)                                | ✅  | 🔗  | ❌  | ✅  | One Dark theme for VS Code            |
+| [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)                                         | ✅  | 🔗  | ❌  | ✅  | Highlights diagnostics inline         |
+| [GitLens - Git supercharged](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)                              | ✅  | 🔗  | ❌  | ✅  | Git insights and blame                |
+| [Codex - OpenAI's coding agent](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt)                            | ✅  | 🔗  | ❌  | ✅  | Coding agent for VS Code              |
+| [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)                        | ✅  | 🔗  | ❌  | ✅  | Formats code with Prettier            |
+| [Todo Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree)                                         | ✅  | 🔗  | ❌  | ✅  | Shows TODO and FIXME tags             |
+| [Pretty TypeScript Errors](https://marketplace.visualstudio.com/items?itemName=yoavbls.pretty-ts-errors)                       | ✅  | 🔗  | ❌  | ✅  | Improves TypeScript errors            |
+| [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens)                               | ✅  | 🔗  | ❌  | ✅  | Shows latest package versions         |
+| [Console Ninja](https://marketplace.visualstudio.com/items?itemName=WallabyJs.console-ninja)                                   | ✅  | 🔗  | ❌  | ✅  | Shows logs beside code                |
+| [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)                                           | ✅  | 🔗  | ❌  | ✅  | Integrates ESLint                     |
+| [Nilesoft Shell File Formatter](https://marketplace.visualstudio.com/items?itemName=code-nature.nilesoft-shell-file-formatter) | ✅  | 🔗  | ❌  | ✅  | Nilesoft Shell syntax support         |
+| [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)                                                 | ✅  | 🔗  | ❌  | ✅  | Python language support               |
+| [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)                                                 | ✅  | 🔗  | ❌  | ✅  | Python linter and formatter           |
+| [autoDocstring - Python Docstring Generator](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring)      | ✅  | 🔗  | ❌  | ✅  | Generates Python docstrings           |
+| [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)                                   | ✅  | 🔗  | ❌  | ✅  | Rust language server                  |
+| [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)                                            | ✅  | 🔗  | ❌  | ✅  | LLDB debugger for native code         |
+| [Dependi](https://marketplace.visualstudio.com/items?itemName=fill-labs.dependi)                                               | ✅  | 🔗  | ❌  | ✅  | Dependency and vulnerability insights |
+| [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)                               | ✅  | 🔗  | ❌  | ✅  | TOML language support                 |
+| [Go](https://marketplace.visualstudio.com/items?itemName=golang.go)                                                            | ✅  | 🔗  | ❌  | ✅  | Go language support                   |
+| [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua)                                                         | ✅  | 🔗  | ❌  | ✅  | Lua language server                   |
+| [Zig Language](https://marketplace.visualstudio.com/items?itemName=ziglang.vscode-zig)                                         | ✅  | 🔗  | ❌  | ✅  | Zig language support                  |
+| [clangd](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)                            | ✅  | 🔗  | ❌  | ✅  | C/C++ completion and navigation       |
+| [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)                                       | ✅  | 🔗  | ❌  | ✅  | Extended CMake support                |
+| [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)         | ✅  | 🔗  | ❌  | ✅  | Remote, WSL, and container access     |
+| [Container Tools](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-containers)                         | ✅  | 🔗  | ❌  | ✅  | Manage and debug containers           |
+| [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=james-yu.latex-workshop)                                  | ✅  | 🔗  | ❌  | ✅  | LaTeX editing and preview             |
+| [LTeX+](https://marketplace.visualstudio.com/items?itemName=ltex-plus.vscode-ltex-plus)                                        | ✅  | 🔗  | ❌  | ✅  | Grammar and spell checking            |
+| [Print](https://marketplace.visualstudio.com/items?itemName=pdconsec.vscode-print)                                             | ✅  | 🔗  | ❌  | ✅  | Rendered Markdown and code            |
+| [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)                                                 | ✅  | 🔗  | ❌  | ✅  | YAML support with Kubernetes schemas  |
+| [PowerShell](https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell)                                         | ✅  | 🔗  | ❌  | ✅  | PowerShell language support           |
 
 </details>
 
