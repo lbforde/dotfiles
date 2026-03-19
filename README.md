@@ -1,6 +1,6 @@
 # Dotfiles
 
-Dotfiles and bootstrap scripts for rebuilding this dev environment with `chezmoi`.
+Dotfile setup to easily get a development environment started on multiple machines with `chezmoi`.
 
 ## What's Managed Here
 
@@ -96,7 +96,7 @@ These tables show what this repo installs or syncs after running the platform bo
 <details>
 <summary><strong>Languages and Toolchains</strong></summary>
 
-| Name                                                                 | �  | �🧩  | 🐧  | 🍎  | Description                    |
+| Name                                                                 | �   | �🧩 | 🐧  | 🍎  | Description                    |
 | -------------------------------------------------------------------- | --- | --- | --- | --- | ------------------------------ |
 | [mise](https://github.com/jdx/mise)                                  | ✅  | ✅  | ❌  | ✅  | Dev tools, env vars, and tasks |
 | [Bun](https://github.com/oven-sh/bun)                                | ✅  | ✅  | ❌  | ✅  | JS runtime and package manager |
