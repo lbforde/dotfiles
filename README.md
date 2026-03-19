@@ -2,16 +2,158 @@
 
 Dotfiles and bootstrap scripts for rebuilding this dev environment with `chezmoi`.
 
+## What's Managed Here
+
+This repo rebuilds the day-to-day development environment for Windows, WSL Ubuntu, and macOS with `chezmoi`, platform bootstrap scripts, and shared manifests.
+
+It currently manages:
+
+- Shell behavior in PowerShell and `zsh`, including prompt, completions, aliases, and PATH setup
+- Editor and terminal defaults for VS Code, Windows Terminal, and Ghostty
+- SSH config, Git signing setup, and first-apply bootstrap behavior
+- CLI tools, runtimes, fonts, and VS Code extensions installed through platform manifests plus `mise`
+
+Most changes land in `manifests/`, `scripts/`, or `home/` depending on whether you are changing installed tools, bootstrap behavior, or the managed dotfiles themselves.
+
 ## Platform Support
 
-| Platform | Status    | Notes                                            |
-| -------- | --------- | ------------------------------------------------ |
-| Windows  | Supported | Bootstrapped via `scripts/bootstrap.ps1`         |
-| WSL      | Supported | Bootstrapped via `scripts/bootstrap-wsl.sh`      |
-| Linux    | Planned   | No bootstrap script or manifest in this repo yet |
-| macOS    | Supported | Bootstrapped via `scripts/bootstrap-macos.sh`    |
+| Platform   | Status    | Notes                                            |
+| ---------- | --------- | ------------------------------------------------ |
+| 🪟 Windows | Supported | Bootstrapped via `scripts/bootstrap.ps1`         |
+| 🧩 WSL     | Supported | Bootstrapped via `scripts/bootstrap-wsl.sh`      |
+| 🐧 Linux   | Planned   | No bootstrap script or manifest in this repo yet |
+| 🍎 macOS   | Supported | Bootstrapped via `scripts/bootstrap-macos.sh`    |
 
-## Windows Setup
+## Tools
+
+These tables show what this repo installs or syncs after running the platform bootstrap. They are grouped by workflow so related tools stay together.
+
+<details>
+<summary><strong>Shell and Terminal</strong></summary>
+
+| Name                                                                                                        | 🪟  | 🧩  | 🐧  | 🍎  | Description                          |
+| ----------------------------------------------------------------------------------------------------------- | --- | --- | --- | --- | ------------------------------------ |
+| [PowerShell](https://github.com/PowerShell/PowerShell)                                                      | ✅  | ❌  | ❌  | ❌  | Shell and scripting language         |
+| [Zsh](https://www.zsh.org/)                                                                                 | ❌  | ✅  | ❌  | ❌  | Interactive Unix shell               |
+| [Windows Terminal](https://github.com/microsoft/terminal)                                                   | ✅  | ❌  | ❌  | ❌  | Multi-tab Windows terminal           |
+| [Ghostty](https://github.com/ghostty-org/ghostty)                                                           | ❌  | ❌  | ❌  | ✅  | GPU-accelerated terminal             |
+| [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono) | ✅  | ❌  | ❌  | ✅  | Patched developer font               |
+| [starship](https://github.com/starship/starship)                                                            | ✅  | ✅  | ❌  | ✅  | Customizable shell prompt            |
+| [atuin](https://github.com/atuinsh/atuin)                                                                   | ❌  | ✅  | ❌  | ✅  | Searchable shell history             |
+| [zoxide](https://github.com/ajeetdsouza/zoxide)                                                             | ✅  | ✅  | ❌  | ✅  | Smarter `cd` command                 |
+| [eza](https://github.com/eza-community/eza)                                                                 | ✅  | ✅  | ❌  | ✅  | Modern `ls` alternative              |
+| [bat](https://github.com/sharkdp/bat)                                                                       | ✅  | ✅  | ❌  | ✅  | `cat` clone with syntax highlighting |
+| [fd](https://github.com/sharkdp/fd)                                                                         | ✅  | ✅  | ❌  | ✅  | Fast, user-friendly `find`           |
+| [fzf](https://github.com/junegunn/fzf)                                                                      | ✅  | ✅  | ❌  | ✅  | Command-line fuzzy finder            |
+| [yazi](https://github.com/sxyazi/yazi)                                                                      | ✅  | ✅  | ❌  | ✅  | Fast terminal file manager           |
+| [opencode](https://github.com/opencode-ai/opencode)                                                         | ❌  | ✅  | ❌  | ✅  | AI coding agent for the terminal     |
+| [PSReadLine](https://github.com/PowerShell/PSReadLine)                                                      | ✅  | ❌  | ❌  | ❌  | Readline for PowerShell              |
+| [PSFzf](https://github.com/kelleyma49/PSFzf)                                                                | ✅  | ❌  | ❌  | ❌  | `fzf` wrapper for PowerShell         |
+| [Terminal-Icons](https://github.com/devblackops/Terminal-Icons)                                             | ✅  | ❌  | ❌  | ❌  | File and folder icons                |
+| [posh-git](https://github.com/dahlbyk/posh-git)                                                             | ✅  | ❌  | ❌  | ❌  | Git prompt for PowerShell            |
+
+</details>
+
+<details>
+<summary><strong>Visual Studio Code and Extensions</strong></summary>
+
+| Name                                                                                                                           | 🪟  | 🧩  | 🐧  | 🍎  | Description                           |
+| ------------------------------------------------------------------------------------------------------------------------------ | --- | --- | --- | --- | ------------------------------------- |
+| [Visual Studio Code](https://github.com/microsoft/vscode)                                                                      | ✅  | ❌  | ❌  | ✅  | Code editor                           |
+| [One Dark Pro](https://marketplace.visualstudio.com/items?itemName=zhuangtongfa.Material-theme)                                | ✅  | ❌  | ❌  | ✅  | One Dark theme for VS Code            |
+| [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)                                         | ✅  | ❌  | ❌  | ✅  | Highlights diagnostics inline         |
+| [GitLens - Git supercharged](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)                              | ✅  | ❌  | ❌  | ✅  | Git insights and blame                |
+| [Codex - OpenAI's coding agent](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt)                            | ✅  | ❌  | ❌  | ✅  | Coding agent for VS Code              |
+| [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)                        | ✅  | ❌  | ❌  | ✅  | Formats code with Prettier            |
+| [Todo Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree)                                         | ✅  | ❌  | ❌  | ✅  | Shows TODO and FIXME tags             |
+| [Pretty TypeScript Errors](https://marketplace.visualstudio.com/items?itemName=yoavbls.pretty-ts-errors)                       | ✅  | ❌  | ❌  | ✅  | Improves TypeScript errors            |
+| [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens)                               | ✅  | ❌  | ❌  | ✅  | Shows latest package versions         |
+| [Console Ninja](https://marketplace.visualstudio.com/items?itemName=WallabyJs.console-ninja)                                   | ✅  | ❌  | ❌  | ✅  | Shows logs beside code                |
+| [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)                                           | ✅  | ❌  | ❌  | ✅  | Integrates ESLint                     |
+| [Nilesoft Shell File Formatter](https://marketplace.visualstudio.com/items?itemName=code-nature.nilesoft-shell-file-formatter) | ✅  | ❌  | ❌  | ✅  | Nilesoft Shell syntax support         |
+| [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)                                                 | ✅  | ❌  | ❌  | ✅  | Python language support               |
+| [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)                                                 | ✅  | ❌  | ❌  | ✅  | Python linter and formatter           |
+| [autoDocstring - Python Docstring Generator](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring)      | ✅  | ❌  | ❌  | ✅  | Generates Python docstrings           |
+| [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)                                   | ✅  | ❌  | ❌  | ✅  | Rust language server                  |
+| [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)                                            | ✅  | ❌  | ❌  | ✅  | LLDB debugger for native code         |
+| [Dependi](https://marketplace.visualstudio.com/items?itemName=fill-labs.dependi)                                               | ✅  | ❌  | ❌  | ✅  | Dependency and vulnerability insights |
+| [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)                               | ✅  | ❌  | ❌  | ✅  | TOML language support                 |
+| [Go](https://marketplace.visualstudio.com/items?itemName=golang.go)                                                            | ✅  | ❌  | ❌  | ✅  | Go language support                   |
+| [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua)                                                         | ✅  | ❌  | ❌  | ✅  | Lua language server                   |
+| [Zig Language](https://marketplace.visualstudio.com/items?itemName=ziglang.vscode-zig)                                         | ✅  | ❌  | ❌  | ✅  | Zig language support                  |
+| [clangd](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)                            | ✅  | ❌  | ❌  | ✅  | C/C++ completion and navigation       |
+| [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)                                       | ✅  | ❌  | ❌  | ✅  | Extended CMake support                |
+| [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)         | ✅  | ❌  | ❌  | ✅  | Remote, WSL, and container access     |
+| [Container Tools](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-containers)                         | ✅  | ❌  | ❌  | ✅  | Manage and debug containers           |
+| [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=james-yu.latex-workshop)                                  | ✅  | ❌  | ❌  | ✅  | LaTeX editing and preview             |
+| [LTeX+](https://marketplace.visualstudio.com/items?itemName=ltex-plus.vscode-ltex-plus)                                        | ✅  | ❌  | ❌  | ✅  | Grammar and spell checking            |
+| [Print](https://marketplace.visualstudio.com/items?itemName=pdconsec.vscode-print)                                             | ✅  | ❌  | ❌  | ✅  | Rendered Markdown and code            |
+| [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)                                                 | ✅  | ❌  | ❌  | ✅  | YAML support with Kubernetes schemas  |
+| [PowerShell](https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell)                                         | ✅  | ❌  | ❌  | ✅  | PowerShell language support           |
+
+</details>
+
+<details>
+<summary><strong>Languages and Toolchains</strong></summary>
+
+| Name                                                                 | �  | �🧩  | 🐧  | 🍎  | Description                    |
+| -------------------------------------------------------------------- | --- | --- | --- | --- | ------------------------------ |
+| [mise](https://github.com/jdx/mise)                                  | ✅  | ✅  | ❌  | ✅  | Dev tools, env vars, and tasks |
+| [Bun](https://github.com/oven-sh/bun)                                | ✅  | ✅  | ❌  | ✅  | JS runtime and package manager |
+| [Node.js](https://github.com/nodejs/node)                            | ✅  | ✅  | ❌  | ✅  | JavaScript runtime             |
+| [pnpm](https://github.com/pnpm/pnpm)                                 | ✅  | ✅  | ❌  | ✅  | Disk-efficient package manager |
+| [Python](https://github.com/python/cpython)                          | ✅  | ✅  | ❌  | ✅  | Python programming language    |
+| [Go](https://github.com/golang/go)                                   | ✅  | ✅  | ❌  | ✅  | Go programming language        |
+| [Rust](https://github.com/rust-lang/rust)                            | ✅  | ✅  | ❌  | ✅  | Reliable systems language      |
+| [Eclipse Temurin 21](https://github.com/adoptium/temurin21-binaries) | ✅  | ✅  | ❌  | ✅  | OpenJDK 21 distribution        |
+| [Zig](https://github.com/ziglang/zig)                                | ✅  | ✅  | ❌  | ✅  | Zig programming language       |
+| [CMake](https://github.com/Kitware/CMake)                            | ✅  | ✅  | ❌  | ✅  | Cross-platform build system    |
+
+</details>
+
+<details>
+<summary><strong>Git, SSH, and Secrets</strong></summary>
+
+| Name                                                   | 🪟  | 🧩  | 🐧  | 🍎  | Description                |
+| ------------------------------------------------------ | --- | --- | --- | --- | -------------------------- |
+| [GitHub CLI](https://github.com/cli/cli)               | ✅  | ✅  | ❌  | ✅  | GitHub's official CLI      |
+| [lazygit](https://github.com/jesseduffield/lazygit)    | ✅  | ✅  | ❌  | ✅  | Terminal UI for Git        |
+| [gopass](https://github.com/gopasspw/gopass)           | ✅  | ✅  | ❌  | ✅  | Password manager for teams |
+| [Doppler CLI](https://github.com/DopplerHQ/cli)        | ✅  | ✅  | ❌  | ✅  | CLI for Doppler secrets    |
+| [OpenSSH](https://github.com/openssh/openssh-portable) | ❌  | ✅  | ❌  | ❌  | Portable SSH client tools  |
+| [keychain](https://github.com/funtoo/keychain)         | ❌  | ✅  | ❌  | ❌  | Manages SSH and GPG agents |
+
+</details>
+
+<details>
+<summary><strong>Document Authoring and LaTeX</strong></summary>
+
+| Name                                       | 🪟  | 🧩  | 🐧  | 🍎  | Description                  |
+| ------------------------------------------ | --- | --- | --- | --- | ---------------------------- |
+| [MiKTeX](https://github.com/MiKTeX/miktex) | ✅  | ❌  | ❌  | ❌  | TeX distribution for Windows |
+| [TeX Live](https://tug.org/texlive/)       | ❌  | ✅  | ❌  | ❌  | TeX distribution             |
+| [MacTeX](https://www.tug.org/mactex/)      | ❌  | ❌  | ❌  | ✅  | TeX Live for macOS           |
+
+</details>
+
+<details>
+<summary><strong>Utilities</strong></summary>
+
+| Name                                                | 🪟  | 🧩  | 🐧  | 🍎  | Description                   |
+| --------------------------------------------------- | --- | --- | --- | --- | ----------------------------- |
+| [curl](https://github.com/curl/curl)                | ❌  | ✅  | ❌  | ❌  | Transfers data with URLs      |
+| [croc](https://github.com/schollz/croc)             | ✅  | ✅  | ❌  | ✅  | Secure file transfer          |
+| [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
+| [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
+| [ripgrep](https://github.com/BurntSushi/ripgrep)    | ✅  | ✅  | ❌  | ✅  | Recursive regex search        |
+| [unzip](https://infozip.sourceforge.net/UnZip.html) | ❌  | ✅  | ❌  | ❌  | Extracts ZIP archives         |
+
+</details>
+
+## Setup
+
+<details>
+<summary><strong>Windows</strong></summary>
 
 Install the two explicit prerequisites first:
 
@@ -90,7 +232,10 @@ ssh -T git@github.com
 
 If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
 
-## macOS Setup
+</details>
+
+<details>
+<summary><strong>macOS</strong></summary>
 
 Install Homebrew first, then the two explicit prerequisites:
 
@@ -184,7 +329,10 @@ ssh -T git@github.com
 
 If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
 
-## WSL Ubuntu Setup
+</details>
+
+<details>
+<summary><strong>WSL Ubuntu</strong></summary>
 
 Install the two explicit prerequisites first inside Ubuntu on WSL using your preferred method:
 
@@ -296,85 +444,4 @@ ssh -T git@github.com
 
 If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
 
-## What's Managed Here
-
-- `home/.chezmoi.toml.tmpl`: init-time local config template and Windows/WSL/macOS first-apply hook wiring
-- `scripts/bootstrap.ps1`: current bootstrap entry point for Windows
-- `scripts/bootstrap-wsl.sh`: bootstrap entry point for Ubuntu on WSL
-- `scripts/bootstrap-macos.sh`: bootstrap entry point for macOS
-- `scripts/sync-mise.ps1`: installs and validates the current managed `mise` toolset
-- `scripts/sync-mise.sh`: Linux `mise` sync companion for WSL/Linux applies
-- `manifests/windows.packages.json`: winget packages and PowerShell modules
-- `manifests/macos.packages.json`: Homebrew formulae and casks used by the macOS setup
-- `manifests/vscode.extensions.json`: shared VS Code extensions installed on Windows and macOS
-- `manifests/wsl.packages.json`: Ubuntu bootstrap packages used by the WSL setup
-- `home/dot_ssh/config.tmpl`: shared SSH host config, including the GitHub identity stanza
-- `home/dot_ssh/allowed_signers.tmpl`: shared Git SSH allowed signers file rendered from the local public key
-- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`: PowerShell profile, aliases, helper functions, and shell environment defaults
-- `home/dot_zshrc`: macOS/WSL/Linux shell profile managed as `~/.zshrc`
-- `home/dot_config/ghostty/config.ghostty`: Ghostty config applied through the XDG config path
-- `home/AppData/Roaming/Code/User/settings.json`: Windows VS Code settings applied through `chezmoi`
-- `home/Library/Application Support/Code/User/settings.json`: macOS VS Code settings applied through `chezmoi`
-- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`: Windows Terminal settings applied through `chezmoi`
-
-Right now this repo manages:
-
-- Shell behavior in PowerShell, including editor selection and helper commands such as `edit` and `Show-Help`
-- Shell behavior in macOS/WSL `zsh`, including `zinit`, `fzf-tab`, shared prompt config, and Linux-friendly aliases
-- Ghostty defaults on macOS, including font, padding, and background styling
-- VS Code defaults, extensions, and document-authoring settings on Windows and macOS
-- Windows Terminal profiles and keybindings
-- Installed CLI tools and runtimes through the platform bootstrap plus `mise`
-
-## Daily Workflow
-
-Common `chezmoi` commands:
-
-```powershell
-chezmoi diff
-chezmoi status
-chezmoi apply
-```
-
-When you change managed tooling and want to resync it:
-
-```powershell
-.\scripts\sync-mise.ps1
-```
-
-```bash
-./scripts/sync-mise.sh
-```
-
-When you edit a destination file directly and want to backport it into source state:
-
-```powershell
-chezmoi status
-chezmoi re-add "<destination-path>"
-chezmoi diff
-chezmoi apply
-```
-
-If the backported change belongs in this repo, follow up with normal `git add`, `git commit`, and `git push`.
-
-## Files You'll Actually Edit
-
-- `manifests/windows.packages.json` when you want to add or remove winget packages or PowerShell modules
-- `manifests/macos.packages.json` when you want to change the macOS Homebrew bootstrap packages
-- `manifests/vscode.extensions.json` when you want to change the shared VS Code extension set
-- `manifests/wsl.packages.json` when you want to change the Ubuntu bootstrap packages
-- `home/.chezmoi.toml.tmpl` when you want to change local `chezmoi` prompts, editor integration, or first-apply hook behavior
-- `home/dot_ssh/config.tmpl` when you want to change the shared SSH host config for GitHub or other identities
-- `home/dot_ssh/allowed_signers.tmpl` when you want to change how Git SSH signing trust is rendered from the local public key
-- `home/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` when you want to adjust aliases, prompt behavior, PATH-related setup, or helper commands
-- `home/dot_zshrc` when you want to adjust macOS/WSL shell behavior, plugin loading, aliases, or prompt initialization
-- `home/dot_config/ghostty/config.ghostty` when you want to change macOS terminal font, padding, opacity, or colors
-- `home/AppData/Roaming/Code/User/settings.json` when you want to change Windows editor defaults or extension behavior
-- `home/Library/Application Support/Code/User/settings.json` when you want to change macOS editor defaults or extension behavior
-- `home/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json` when you want to change terminal profiles, appearance, or keybindings
-
-If you change managed files, re-apply with:
-
-```powershell
-chezmoi apply
-```
+</details>
