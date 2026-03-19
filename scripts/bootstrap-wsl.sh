@@ -650,10 +650,11 @@ cat <<'EOF'
 
 Next steps:
   1. Open a new Ubuntu shell.
-  2. Verify the shell loads with: zsh -lic 'command -v zsh starship mise zoxide fzf opencode keychain'
-  3. Verify SSH agent state with: zsh -lic 'ssh-add -l'
-  4. Verify chezmoi source state with: chezmoi source-path
-  5. Authenticate any optional tools you use:
+  2. Verify the shell loads with: zsh -lic 'command -v zsh starship mise atuin zoxide fzf opencode keychain'
+  3. Optionally import shell history once with: atuin import auto
+  4. Verify SSH agent state with: zsh -lic 'ssh-add -l'
+  5. Verify chezmoi source state with: chezmoi source-path
+  6. Authenticate any optional tools you use:
        gh auth login
        doppler login
        gopass setup

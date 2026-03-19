@@ -1,4 +1,5 @@
 [tools]
+atuin = { version = "latest", os = ["linux", "macos"] }
 bun = "latest"
 bat = "latest"
 cmake = "latest"
@@ -20,7 +21,7 @@ python = "latest"
 ripgrep = "latest"
 rust = "stable"
 starship = "latest"
-opencode = { version = "latest", os = ["linux"] }
+opencode = { version = "latest", os = ["linux", "macos"] }
 yazi = "latest"
 zig = "latest"
 zoxide = "latest"

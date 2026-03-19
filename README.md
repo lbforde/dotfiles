@@ -131,6 +131,7 @@ What the bootstrap handles:
 - Runs during the first macOS `chezmoi apply` via a `read-source-state.pre` hook, then stays out of the way on later applies
 - Runs `./scripts/sync-mise.sh` so managed CLI tools are installed and shims are refreshed
 - Changes the login shell to `zsh` when needed
+- Makes `atuin` available through the shared `mise` toolchain, with shell initialization handled from the shared `zsh` profile
 
 First run notes:
 
@@ -139,6 +140,7 @@ First run notes:
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `~/.zshrc` now initializes Homebrew early so brew-installed tools are available in new shells on both Apple Silicon and Intel Macs
+- Run `atuin import auto` once after bootstrap if you want to import existing shell history
 
 After bootstrap, open Ghostty and run a few quick checks:
 
@@ -149,7 +151,7 @@ chezmoi source-path
 git config --global --get user.signingkey
 mise --version
 code --list-extensions
-zsh -lic 'command -v brew code zsh starship mise zoxide fzf yazi'
+zsh -lic 'command -v brew code zsh starship mise atuin zoxide fzf yazi'
 ssh-add -l
 ```
 
@@ -160,6 +162,16 @@ gh auth login
 doppler login
 gopass setup
 ```
+
+Optional Atuin sync setup:
+
+```bash
+atuin import auto
+atuin register -u <username> -e <email>
+atuin sync
+```
+
+If you already registered Atuin on another machine, use `atuin login -u <username>` instead of `atuin register`, then run `atuin sync`.
 
 Register the generated SSH key with GitHub after `gh auth login`:
 
@@ -230,6 +242,7 @@ What the bootstrap handles:
 - Initializes and applies `chezmoi` from this repo by default
 - Runs `./scripts/sync-mise.sh` so managed CLI tools are installed and shims are refreshed
 - Changes the login shell to `zsh` when needed
+- Makes `atuin` available through the shared `mise` toolchain, with shell initialization handled from the shared `zsh` profile
 
 First run notes:
 
@@ -241,6 +254,7 @@ First run notes:
 - `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells
 - VS Code and Nerd Fonts are intentionally not installed in WSL; this repo expects you to use the Windows host copies, with the VS Code CLI added back explicitly in `~/.zshrc` via `wslvar LOCALAPPDATA` plus `wslpath`
 - The shell prompt stays on the shared `starship` config, while `zinit` manages `fzf-tab`, `zsh-completions`, `zsh-autosuggestions`, and `zsh-syntax-highlighting`
+- Run `atuin import auto` once after bootstrap if you want to import existing shell history
 
 After bootstrap, open a new Ubuntu shell and run a few quick checks:
 
@@ -249,7 +263,7 @@ echo "$SHELL"
 chezmoi source-path
 git config --global --get user.signingkey
 mise --version
-zsh -lic 'command -v zsh starship mise zoxide fzf opencode keychain'
+zsh -lic 'command -v zsh starship mise atuin zoxide fzf opencode keychain'
 zsh -lic 'ssh-add -l'
 ```
 
@@ -260,6 +274,16 @@ gh auth login
 doppler login
 gopass setup
 ```
+
+Optional Atuin sync setup:
+
+```bash
+atuin import auto
+atuin register -u <username> -e <email>
+atuin sync
+```
+
+If you already registered Atuin on another machine, use `atuin login -u <username>` instead of `atuin register`, then run `atuin sync`.
 
 Register the generated SSH key with GitHub after `gh auth login`:
 
