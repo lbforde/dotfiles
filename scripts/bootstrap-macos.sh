@@ -502,7 +502,11 @@ ensure_chezmoi() {
 
 install_homebrew_packages() {
   local package
-  local -a formulae casks
+  local -a formulae
+  local -a casks
+
+  formulae=()
+  casks=()
 
   read_lines_into_array formulae < <(load_json_string_array "$manifest_path" "formulae")
   read_lines_into_array casks < <(load_json_string_array "$manifest_path" "casks")
@@ -632,7 +636,13 @@ ensure_macos_ssh_setup() {
 
 install_vscode_extensions() {
   local ext ext_lower legacy_ltex_extension installed_count skipped_count
-  local -a extensions installed failed
+  local -a extensions
+  local -a installed
+  local -a failed
+
+  extensions=()
+  installed=()
+  failed=()
 
   if ! command -v code >/dev/null 2>&1; then
     write_warn "VS Code 'code' CLI not on PATH yet - restart your shell and rerun:"
@@ -644,7 +654,7 @@ install_vscode_extensions() {
   read_lines_into_array installed < <(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')
   legacy_ltex_extension="valentjn.vscode-ltex"
 
-  if array_contains "$legacy_ltex_extension" "${installed[@]}"; then
+  if [[ "${#installed[@]}" -gt 0 ]] && array_contains "$legacy_ltex_extension" "${installed[@]}"; then
     write_step "Migrating legacy LTeX extension"
     if code --uninstall-extension "$legacy_ltex_extension" --force >/dev/null 2>&1; then
       write_ok "Removed legacy extension: $legacy_ltex_extension"
@@ -663,7 +673,7 @@ install_vscode_extensions() {
   for ext in "${extensions[@]}"; do
     ext_lower="$(to_lowercase "$ext")"
 
-    if array_contains "$ext_lower" "${installed[@]}"; then
+    if [[ "${#installed[@]}" -gt 0 ]] && array_contains "$ext_lower" "${installed[@]}"; then
       printf '  - %s (already installed)\n' "$ext"
       skipped_count=$((skipped_count + 1))
       continue
