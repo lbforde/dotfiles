@@ -471,6 +471,13 @@ resolve_desired_chezmoi_source() {
   printf '%s\n' "$repo_root"
 }
 
+is_remote_chezmoi_source() {
+  local source
+  source="$1"
+
+  [[ "$source" =~ ^(https?|ssh)://|^git@|^[A-Za-z0-9][A-Za-z0-9_.-]*(/[A-Za-z0-9_.-]+)?$ ]]
+}
+
 ensure_git() {
   if command -v git >/dev/null 2>&1; then
     write_ok "git is available"
@@ -687,7 +694,7 @@ apply_chezmoi() {
   local desired_source current_source current_origin
   desired_source="$1"
 
-  if [[ "$desired_source" =~ ^(https?|ssh)://|^git@ ]]; then
+  if is_remote_chezmoi_source "$desired_source"; then
     current_source="$(get_chezmoi_source_path)"
     if [[ -z "$current_source" ]] || ! has_chezmoi_managed_files; then
       chezmoi init --apply --exclude=scripts "$desired_source"
