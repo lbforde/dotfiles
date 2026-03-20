@@ -447,3 +447,30 @@ ssh -T git@github.com
 If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is working, set `github_use_ssh_instead_of_https = true` under `[data]` in your local `chezmoi.toml`.
 
 </details>
+
+## Post-Install
+
+These steps happen after bootstrap and are easy to revisit later from one place.
+
+<details>
+<summary><strong>Add `github_personal_key` to GitHub CLI</strong></summary>
+
+After `gh auth login`, register the generated key with GitHub for both SSH auth and Git SSH signing:
+
+```bash
+gh ssh-key add ~/.ssh/github_personal_key.pub --title "{PC_NAME}"
+gh ssh-key add ~/.ssh/github_personal_key.pub --title "{PC_NAME}_SIGNING" --type signing
+```
+
+</details>
+
+<details>
+<summary><strong>macOS: store the SSH key passphrase in Keychain</strong></summary>
+
+Run this on macOS to add `github_personal_key` to the SSH agent and save its passphrase in the Apple Keychain:
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/github_personal_key
+```
+
+</details>
