@@ -131,6 +131,18 @@ for package in manifest.get("aptPackages", []):
 PY
 }
 
+read_lines_into_array() {
+  local array_name line quoted_line
+  array_name="$1"
+
+  eval "$array_name=()"
+
+  while IFS= read -r line; do
+    printf -v quoted_line '%q' "$line"
+    eval "$array_name+=( $quoted_line )"
+  done
+}
+
 get_editor_command() {
   if command -v code >/dev/null 2>&1; then
     printf 'code'
@@ -613,7 +625,7 @@ ensure_chezmoi
 ensure_user_bin_dirs_in_profile
 
 write_step "Installing apt packages"
-mapfile -t apt_packages < <(load_manifest_packages)
+read_lines_into_array apt_packages < <(load_manifest_packages)
 if [[ "${#apt_packages[@]}" -eq 0 ]]; then
   printf 'No apt packages were defined in %s\n' "$manifest_path" >&2
   exit 1

@@ -123,6 +123,22 @@ load_json_string_array() {
   ' "$json_path"
 }
 
+read_lines_into_array() {
+  local array_name line quoted_line
+  array_name="$1"
+
+  eval "$array_name=()"
+
+  while IFS= read -r line; do
+    printf -v quoted_line '%q' "$line"
+    eval "$array_name+=( $quoted_line )"
+  done
+}
+
+to_lowercase() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 array_contains() {
   local needle item
   needle="$1"
@@ -481,8 +497,8 @@ install_homebrew_packages() {
   local package
   local -a formulae casks
 
-  mapfile -t formulae < <(load_json_string_array "$manifest_path" "formulae")
-  mapfile -t casks < <(load_json_string_array "$manifest_path" "casks")
+  read_lines_into_array formulae < <(load_json_string_array "$manifest_path" "formulae")
+  read_lines_into_array casks < <(load_json_string_array "$manifest_path" "casks")
 
   if [[ "${#formulae[@]}" -eq 0 && "${#casks[@]}" -eq 0 ]]; then
     printf 'No Homebrew packages were defined in %s\n' "$manifest_path" >&2
@@ -608,7 +624,7 @@ ensure_macos_ssh_setup() {
 }
 
 install_vscode_extensions() {
-  local ext legacy_ltex_extension installed_count skipped_count
+  local ext ext_lower legacy_ltex_extension installed_count skipped_count
   local -a extensions installed failed
 
   if ! command -v code >/dev/null 2>&1; then
@@ -617,15 +633,15 @@ install_vscode_extensions() {
     return
   fi
 
-  mapfile -t extensions < <(load_json_string_array "$vscode_manifest_path" "extensions")
-  mapfile -t installed < <(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')
+  read_lines_into_array extensions < <(load_json_string_array "$vscode_manifest_path" "extensions")
+  read_lines_into_array installed < <(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')
   legacy_ltex_extension="valentjn.vscode-ltex"
 
   if array_contains "$legacy_ltex_extension" "${installed[@]}"; then
     write_step "Migrating legacy LTeX extension"
     if code --uninstall-extension "$legacy_ltex_extension" --force >/dev/null 2>&1; then
       write_ok "Removed legacy extension: $legacy_ltex_extension"
-      mapfile -t installed < <(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')
+      read_lines_into_array installed < <(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]')
     else
       write_warn "Failed to uninstall legacy extension: $legacy_ltex_extension"
     fi
@@ -638,7 +654,9 @@ install_vscode_extensions() {
   failed=()
 
   for ext in "${extensions[@]}"; do
-    if array_contains "${ext,,}" "${installed[@]}"; then
+    ext_lower="$(to_lowercase "$ext")"
+
+    if array_contains "$ext_lower" "${installed[@]}"; then
       printf '  - %s (already installed)\n' "$ext"
       skipped_count=$((skipped_count + 1))
       continue
@@ -647,7 +665,7 @@ install_vscode_extensions() {
     if code --install-extension "$ext" --force >/dev/null 2>&1; then
       write_ok "$ext"
       installed_count=$((installed_count + 1))
-      installed+=("${ext,,}")
+      installed+=("$ext_lower")
     else
       write_warn "Failed to install: $ext"
       failed+=("$ext")
