@@ -5,13 +5,15 @@ bat = "latest"
 cmake = "latest"
 croc = "latest"
 doppler = "latest"
-"github:eza-community/eza" = "latest"
+"github:eza-community/eza" = { version = "latest", os = ["linux", "windows"] }
+"cargo:eza" = { version = "latest", os = ["macos"] }
 fd = "latest"
 fzf = "latest"
 gh = "latest"
 go = "latest"
 gopass = "latest"
-grex = "latest"
+grex = { version = "latest", os = ["linux", "windows"] }
+"cargo:grex" = { version = "latest", os = ["macos"] }
 java = "temurin-21"
 jq = "latest"
 lazygit = "latest"
