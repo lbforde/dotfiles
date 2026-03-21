@@ -34,7 +34,7 @@ These tables show what this repo installs or syncs after running the platform bo
 | Name                                                                                                        | 🪟  | 🧩  | 🐧  | 🍎  | Description                          |
 | ----------------------------------------------------------------------------------------------------------- | --- | --- | --- | --- | ------------------------------------ |
 | [PowerShell](https://github.com/PowerShell/PowerShell)                                                      | ✅  | ❌  | ❌  | ❌  | Shell and scripting language         |
-| [Zsh](https://www.zsh.org/)                                                                                 | ❌  | ✅  | ❌  | ❌  | Interactive Unix shell               |
+| [Zsh](https://www.zsh.org/)                                                                                 | ❌  | ✅  | ❌  | ✅  | Interactive Unix shell               |
 | [Windows Terminal](https://github.com/microsoft/terminal)                                                   | ✅  | ❌  | ❌  | ❌  | Multi-tab Windows terminal           |
 | [Ghostty](https://github.com/ghostty-org/ghostty)                                                           | ❌  | ❌  | ❌  | ✅  | GPU-accelerated terminal             |
 | [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono) | ✅  | ❌  | ❌  | ✅  | Patched developer font               |
