@@ -6,7 +6,8 @@ font-size = 13
 background = 23272e
 foreground = abb2bf
 background-opacity = 0.95
-background-blur = true
+background-blur = macos-glass-regular
+macos-titlebar-style = hidden
 
 window-padding-x = 6
 window-padding-y = 6
