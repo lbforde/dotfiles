@@ -1,0 +1,20 @@
+#!/usr/bin/env zsh
+
+if [[ "$OSTYPE" == darwin* ]]; then
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv zsh)"
+  fi
+fi
+
+mkdir -p "$XDG_CACHE_HOME/zsh" "$XDG_DATA_HOME" "$XDG_STATE_HOME/zsh"
+
+SSH_GITHUB_KEY_PATH="${HOME}/.ssh/github_personal_key"
+if command -v keychain >/dev/null 2>&1 && [[ -f "$SSH_GITHUB_KEY_PATH" ]]; then
+  keychain_output="$(keychain --eval --quiet --agents ssh "$SSH_GITHUB_KEY_PATH" 2>/dev/null || true)"
+  if [[ -n "$keychain_output" ]]; then
+    eval "$keychain_output"
+  fi
+fi
+unset SSH_GITHUB_KEY_PATH keychain_output

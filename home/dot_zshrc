@@ -2,51 +2,6 @@
 
 [[ "$OSTYPE" == darwin* ]] && printf '\33c\e[3J'
 
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-
-if [[ "$OSTYPE" == darwin* ]]; then
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-fi
-
-mkdir -p "$XDG_CACHE_HOME/zsh" "$XDG_DATA_HOME" "$XDG_STATE_HOME/zsh"
-
-typeset -U path PATH
-path=("$HOME/.local/bin" "$HOME/bin" "$path[@]")
-
-if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslvar >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
-  localappdata="$(wslvar LOCALAPPDATA 2>/dev/null)"
-  if [[ -n "$localappdata" ]]; then
-    vscode_bin="$(wslpath -u "$localappdata")/Programs/Microsoft VS Code/bin"
-    [[ -d "$vscode_bin" ]] && path=("$vscode_bin" "$path[@]")
-    unset vscode_bin
-  fi
-  unset localappdata
-fi
-
-
-export PATH
-
-if command -v code >/dev/null 2>&1; then
-  export EDITOR="code --wait"
-elif command -v codium >/dev/null 2>&1; then
-  export EDITOR="codium --wait"
-elif command -v nvim >/dev/null 2>&1; then
-  export EDITOR="nvim"
-elif command -v vim >/dev/null 2>&1; then
-  export EDITOR="vim"
-else
-  export EDITOR="vi"
-fi
-
-export VISUAL="$EDITOR"
-
 if command -v batcat >/dev/null 2>&1; then
   export PAGER="batcat --paging=always"
   export BAT_THEME="OneHalfDark"
@@ -70,17 +25,6 @@ elif command -v bat >/dev/null 2>&1; then
 else
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --preview 'head -n 50 {}'"
 fi
-
-export PROJECTS="${PROJECTS:-$HOME/projects}"
-
-SSH_GITHUB_KEY_PATH="${HOME}/.ssh/github_personal_key"
-if command -v keychain >/dev/null 2>&1 && [[ -f "$SSH_GITHUB_KEY_PATH" ]]; then
-  keychain_output="$(keychain --eval --quiet --agents ssh "$SSH_GITHUB_KEY_PATH" 2>/dev/null || true)"
-  if [[ -n "$keychain_output" ]]; then
-    eval "$keychain_output"
-  fi
-fi
-unset SSH_GITHUB_KEY_PATH keychain_output
 
 ZINIT_HOME="${XDG_DATA_HOME}/zinit/zinit.git"
 if [[ ! -f "${ZINIT_HOME}/zinit.zsh" ]] && command -v git >/dev/null 2>&1; then
