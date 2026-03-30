@@ -266,4 +266,5 @@
   "files.associations": {
     "*rc": "shellscript",
   },
+  "git.autofetch": true,
 }

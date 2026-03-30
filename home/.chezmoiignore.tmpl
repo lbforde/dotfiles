@@ -8,8 +8,8 @@
 {{- if ne .chezmoi.os "windows" }}
 Documents/PowerShell
 .chezmoiscripts/*.ps1
-AppData/Roaming/Code/User
-AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
+AppData/
+AppData/**
 {{- end }}
 
 # Linux/macOS-only files — ignore on Windows
