@@ -22,7 +22,8 @@ AppData/**
 
 # macOS-only files — ignore on Windows/Linux
 {{- if ne .chezmoi.os "darwin" }}
-Library/Application Support/Code/User
+Library/Application Support/Code/User/
+Library/Application Support/Code/User/**
 .config/ghostty
 {{- end }}
 
