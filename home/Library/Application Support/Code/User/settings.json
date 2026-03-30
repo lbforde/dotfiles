@@ -262,4 +262,8 @@
   "editor.fontSize": 13,
   "editor.formatOnSave": true,
   "workbench.sideBar.location": "right",
+  "workbench.editor.empty.hint": "hidden",
+  "files.associations": {
+    "*rc": "shellscript",
+  },
 }
