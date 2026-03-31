@@ -8,6 +8,7 @@
   "casks": [
     "ghostty",
     "leader-key",
+    "linearmouse",
     "mactex-no-gui",
     "raycast",
     "visual-studio-code",

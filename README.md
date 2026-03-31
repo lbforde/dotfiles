@@ -149,6 +149,7 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
 | [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
 | [Leader Key](https://github.com/mikker/LeaderKey)   | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher  |
+| [LinearMouse](https://linearmouse.app/)             | ❌  | ❌  | ❌  | ✅  | Mouse and scrolling utility   |
 | [Raycast](https://www.raycast.com/)                 | ❌  | ❌  | ❌  | ✅  | Launcher and productivity hub |
 | [ripgrep](https://github.com/BurntSushi/ripgrep)    | ✅  | ✅  | ❌  | ✅  | Recursive regex search        |
 | [unzip](https://infozip.sourceforge.net/UnZip.html) | ❌  | ✅  | ❌  | ❌  | Extracts ZIP archives         |
@@ -271,7 +272,7 @@ bash ./scripts/bootstrap-macos.sh --chezmoi-repo "https://github.com/yourname/do
 What the bootstrap handles:
 
 - Installs the current macOS Homebrew formulae and casks from `manifests/macos.packages.json`
-- Installs Ghostty as the intended macOS terminal emulator, plus tmux, Raycast, and Leader Key
+- Installs Ghostty as the intended macOS terminal emulator, plus tmux, Raycast, Leader Key, and LinearMouse
 - Installs VS Code plus the shared VS Code extension set from `manifests/vscode.extensions.json`
 - Installs JetBrains Mono Nerd Font so the managed terminal and editor font settings render correctly
 - Clones TPM to `~/.tmux/plugins/tpm` so tmux plugin bootstrap is ready on first launch
