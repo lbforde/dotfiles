@@ -1,0 +1,52 @@
+#!/bin/zsh
+set -euo pipefail
+
+shell_quote() {
+  local value="$1"
+
+  if [[ "$value" =~ '^[A-Za-z0-9_./:@%#{}+,-=]+$' ]]; then
+    print -r -- "$value"
+    return
+  fi
+
+  value=${value//\'/\'\\\'\'}
+  print -r -- "'$value'"
+}
+
+session_name="$(/usr/bin/osascript <<'APPLESCRIPT'
+tell application "Ghostty"
+  if (count of windows) is 0 then error "Ghostty has no open windows."
+  activate
+end tell
+
+try
+  set sessionPrompt to display dialog "Attach or create tmux session:" default answer "" buttons {"Cancel", "OK"} default button "OK"
+  return text returned of sessionPrompt
+on error number -128
+  return ""
+end try
+APPLESCRIPT
+)"
+
+[[ -n "$session_name" ]] || exit 0
+
+quoted_session="$(shell_quote "$session_name")"
+shell_command="if [ -n \"\$TMUX\" ]; then tmux has-session -t $quoted_session 2>/dev/null || tmux new-session -d -s $quoted_session; tmux switch-client -t $quoted_session; else tmux new-session -A -s $quoted_session; fi"
+
+/usr/bin/osascript - "$shell_command" <<'APPLESCRIPT'
+on run argv
+  set shellCommand to item 1 of argv
+
+  tell application "Ghostty"
+    if (count of windows) is 0 then error "Ghostty has no open windows."
+    activate
+  end tell
+
+  delay 0.2
+
+  tell application "System Events"
+    keystroke shellCommand
+    key code 36
+  end tell
+end run
+APPLESCRIPT

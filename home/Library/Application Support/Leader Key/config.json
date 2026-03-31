@@ -58,7 +58,7 @@
               "key" : "a",
               "label" : "Attach or create session",
               "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd command-prompt -p 'session name' 'new-session -A -s \"%%\"'"
+              "value" : "$HOME/.local/bin/ghostty-tmux-session"
             },
             {
               "iconPath" : "arrow.right.square.fill",
