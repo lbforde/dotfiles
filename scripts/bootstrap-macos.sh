@@ -740,6 +740,17 @@ sync_mise() {
   bash "$sync_script"
 }
 
+install_tpm() {
+  local install_script
+  install_script="$repo_root/scripts/lib/unix/install-tpm.sh"
+  if [[ ! -f "$install_script" ]]; then
+    printf 'TPM install script not found at %s\n' "$install_script" >&2
+    exit 1
+  fi
+
+  bash "$install_script"
+}
+
 ensure_login_shell() {
   local zsh_path current_shell
   zsh_path="$(command -v zsh)"
@@ -790,6 +801,9 @@ install_homebrew_packages
 write_step "Checking prerequisites"
 ensure_git
 ensure_chezmoi
+
+write_step "Installing tmux plugin manager"
+install_tpm
 
 write_step "Configuring Chezmoi"
 ensure_local_chezmoi_config

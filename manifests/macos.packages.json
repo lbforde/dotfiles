@@ -2,10 +2,12 @@
   "formulae": [
     "git",
     "chezmoi",
-    "mise"
+    "mise",
+    "tmux"
   ],
   "casks": [
     "ghostty",
+    "leader-key",
     "mactex-no-gui",
     "visual-studio-code",
     "font-jetbrains-mono-nerd-font"

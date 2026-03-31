@@ -37,6 +37,8 @@ These tables show what this repo installs or syncs after running the platform bo
 | [Zsh](https://www.zsh.org/)                                                                                 | ❌  | ✅  | ❌  | ✅  | Interactive Unix shell               |
 | [Windows Terminal](https://github.com/microsoft/terminal)                                                   | ✅  | ❌  | ❌  | ❌  | Multi-tab Windows terminal           |
 | [Ghostty](https://github.com/ghostty-org/ghostty)                                                           | ❌  | ❌  | ❌  | ✅  | GPU-accelerated terminal             |
+| [Leader Key](https://github.com/mikker/LeaderKey)                                                           | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher         |
+| [tmux](https://github.com/tmux/tmux)                                                                        | ❌  | ✅  | ❌  | ✅  | Terminal multiplexer                 |
 | [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono) | ✅  | ❌  | ❌  | ✅  | Patched developer font               |
 | [starship](https://github.com/starship/starship)                                                            | ✅  | ✅  | ❌  | ✅  | Customizable shell prompt            |
 | [atuin](https://github.com/atuinsh/atuin)                                                                   | ❌  | ✅  | ❌  | ✅  | Searchable shell history             |
@@ -268,9 +270,10 @@ bash ./scripts/bootstrap-macos.sh --chezmoi-repo "https://github.com/yourname/do
 What the bootstrap handles:
 
 - Installs the current macOS Homebrew formulae and casks from `manifests/macos.packages.json`
-- Installs Ghostty as the intended macOS terminal emulator
+- Installs Ghostty as the intended macOS terminal emulator, plus tmux and Leader Key
 - Installs VS Code plus the shared VS Code extension set from `manifests/vscode.extensions.json`
 - Installs JetBrains Mono Nerd Font so the managed terminal and editor font settings render correctly
+- Clones TPM to `~/.tmux/plugins/tpm` so tmux plugin bootstrap is ready on first launch
 - Creates or reuses `~/.ssh/github_personal_key`, loads it into `ssh-agent`, and uses the macOS Keychain flow when available
 - Renders `~/.ssh/config` and `~/.ssh/allowed_signers` through `chezmoi`
 - Applies Ghostty config at `~/.config/ghostty/config.ghostty` using Ghostty's supported XDG config path on macOS
@@ -284,6 +287,7 @@ First run notes:
 
 - `chezmoi init` creates the local `~/.config/chezmoi/chezmoi.toml` from `home/.chezmoi.toml.tmpl` and prompts for your git name and email
 - The Homebrew VS Code cask provides the `code` CLI used for editor integration and extension installation
+- TPM is cloned during bootstrap, but tmux plugins are still installed manually the first time you attach to tmux with `prefix + I`
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `~/.zshrc` now initializes Homebrew early so brew-installed tools are available in new shells on both Apple Silicon and Intel Macs
@@ -385,9 +389,11 @@ bash ./scripts/bootstrap-wsl.sh --chezmoi-repo "https://github.com/yourname/dotf
 What the bootstrap handles:
 
 - Installs the current Ubuntu bootstrap packages from `manifests/wsl.packages.json`
+- Installs tmux from the managed apt package list
 - Requires existing `git` and `chezmoi` installs, then initialises or applies this repo
 - Runs automatically during the first WSL `chezmoi apply` via a `read-source-state.pre` hook, then stays out of the way on later applies
 - Installs `keychain` and the WSL SSH tooling from the managed apt package list
+- Clones TPM to `~/.tmux/plugins/tpm` so tmux plugin bootstrap is ready on first launch
 - Creates or reuses `~/.ssh/github_personal_key` for GitHub auth and Git SSH signing
 - Initializes and applies `chezmoi` from this repo by default
 - Runs `./scripts/sync-mise.sh` so managed CLI tools are installed and shims are refreshed
@@ -399,6 +405,7 @@ First run notes:
 - `chezmoi init --apply` in WSL can now prompt for your git name and email through the first-apply bootstrap path when local `chezmoi` data does not exist yet
 - `/etc/wsl.conf` should include `[interop]` with `appendWindowsPath=false` so WSL does not inherit the Windows toolchain PATH by default
 - `bootstrap-wsl.sh` ensures `~/.local/bin` and `~/bin` are available in later login shells by appending a small PATH block to `~/.profile`
+- TPM is cloned during bootstrap, but tmux plugins are still installed manually the first time you attach to tmux with `prefix + I`
 - If `~/.ssh/github_personal_key` does not exist yet, bootstrap prompts you to create it with a passphrase
 - Bootstrap prints the public key after setup; add it to GitHub manually for both SSH auth and Git commit signing
 - `keychain` is initialized from the shared `zsh` profile and restores the Linux-side `github_personal_key` in new shells
@@ -451,6 +458,25 @@ If you want Git to prefer SSH over HTTPS for GitHub remotes after auth is workin
 ## Post-Install
 
 These steps happen after bootstrap and are easy to revisit later from one place.
+
+<details>
+<summary><strong>Install tmux plugins with TPM</strong></summary>
+
+Bootstrap clones TPM to `~/.tmux/plugins/tpm`, but it does not install tmux plugins automatically.
+
+Open tmux and install the configured plugins with the default tmux prefix:
+
+```text
+Ctrl-b then Shift-i
+```
+
+If tmux was already running before you applied the dotfiles, reload the config first:
+
+```bash
+tmux source-file ~/.config/tmux/tmux.conf
+```
+
+</details>
 
 <details>
 <summary><strong>Add `github_personal_key` to GitHub CLI</strong></summary>

@@ -585,6 +585,17 @@ sync_mise() {
   bash "$sync_script"
 }
 
+install_tpm() {
+  local install_script
+  install_script="$repo_root/scripts/lib/unix/install-tpm.sh"
+  if [[ ! -f "$install_script" ]]; then
+    printf 'TPM install script not found at %s\n' "$install_script" >&2
+    exit 1
+  fi
+
+  bash "$install_script"
+}
+
 ensure_login_shell() {
   local zsh_path current_shell
   zsh_path="$(command -v zsh)"
@@ -640,6 +651,9 @@ fi
 sudo apt-get update -y
 sudo apt-get install -y "${apt_packages[@]}"
 write_ok "Bootstrap packages installed"
+
+write_step "Installing tmux plugin manager"
+install_tpm
 
 ensure_mise
 
