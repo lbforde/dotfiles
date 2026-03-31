@@ -30,30 +30,8 @@ APPLESCRIPT
 
 [[ -n "$session_name" ]] || exit 0
 
-latest_client_tty=""
-typeset -a client_rows
-client_rows=("${(@f)$(tmux list-clients -F '#{client_activity}	#{client_tty}' 2>/dev/null)}")
-
-if (( ${#client_rows[@]} > 0 )); then
-  integer best_activity=-1
-  typeset row activity client_tty
-
-  for row in "${client_rows[@]}"; do
-    [[ -n "$row" ]] || continue
-
-    activity="${row%%$'\t'*}"
-    client_tty="${row#*$'\t'}"
-
-    if (( activity > best_activity )); then
-      best_activity="$activity"
-      latest_client_tty="$client_tty"
-    fi
-  done
-fi
-
-if [[ -n "$latest_client_tty" ]]; then
-  tmux has-session -t "$session_name" 2>/dev/null || tmux new-session -d -s "$session_name"
-  tmux switch-client -c "$latest_client_tty" -t "$session_name"
+if /usr/bin/pgrep -x tmux >/dev/null 2>&1; then
+  "$HOME/.local/bin/ghostty-tmux-cmd" new-session -A -s "$session_name"
   exit 0
 fi
 

@@ -75,13 +75,6 @@
               "value" : "$HOME/.local/bin/ghostty-tmux-cmd choose-tree -s"
             },
             {
-              "iconPath" : "plus.rectangle.on.rectangle",
-              "key" : "n",
-              "label" : "New session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd new-session"
-            },
-            {
               "iconPath" : "arrow.right.circle.fill",
               "key" : "o",
               "label" : "Next session",
