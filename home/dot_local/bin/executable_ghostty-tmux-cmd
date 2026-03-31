@@ -1,0 +1,77 @@
+#!/bin/zsh
+set -euo pipefail
+
+if (( $# == 0 )); then
+  print -u2 "usage: ghostty-tmux-cmd [--prefix-key key] <tmux command> [args ...]"
+  exit 1
+fi
+
+mode="command"
+prefix_key=""
+
+if [[ "${1:-}" == "--prefix-key" ]]; then
+  if (( $# < 2 )); then
+    print -u2 "ghostty-tmux-cmd: --prefix-key expects an argument"
+    exit 1
+  fi
+
+  mode="prefix-key"
+  prefix_key="$2"
+  shift 2
+fi
+
+if [[ "$mode" == "command" && $# -eq 0 ]]; then
+  print -u2 "usage: ghostty-tmux-cmd [--prefix-key key] <tmux command> [args ...]"
+  exit 1
+fi
+
+tmux_quote() {
+  local arg="$1"
+
+  if [[ "$arg" =~ '^[A-Za-z0-9_./:@%#{}+,-=]+$' ]]; then
+    print -r -- "$arg"
+    return
+  fi
+
+  arg=${arg//\'/\'\\\'\'}
+  print -r -- "'$arg'"
+}
+
+cmd=""
+if [[ "$mode" == "command" ]]; then
+  typeset -a quoted_args
+  for arg in "$@"; do
+    quoted_args+=("$(tmux_quote "$arg")")
+  done
+
+  cmd="${(j: :)quoted_args}"
+fi
+
+/usr/bin/osascript - "$mode" "$prefix_key" "$cmd" <<'APPLESCRIPT'
+on run argv
+  set runMode to item 1 of argv
+  set prefixKey to item 2 of argv
+  set tmuxCommand to item 3 of argv
+
+  tell application "Ghostty"
+    if (count of windows) is 0 then error "Ghostty has no open windows."
+    activate
+  end tell
+
+  delay 0.2
+
+  tell application "System Events"
+    keystroke "b" using control down
+    delay 0.05
+
+    if runMode is "prefix-key" then
+      keystroke prefixKey
+    else
+      keystroke ":"
+      delay 0.02
+      keystroke tmuxCommand
+      key code 36
+    end if
+  end tell
+end run
+APPLESCRIPT

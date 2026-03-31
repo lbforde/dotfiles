@@ -18,6 +18,8 @@ AppData/**
 .zshenv
 .zshrc
 .chezmoiscripts/*.sh
+.config/tmux
+.config/tmux/**
 {{- end }}
 
 # macOS-only files — ignore on Windows/Linux
@@ -25,6 +27,9 @@ AppData/**
 Library/Application Support/Code/User/
 Library/Application Support/Code/User/**
 .config/ghostty
+Library/Application Support/Leader Key/
+Library/Application Support/Leader Key/**
+.local/bin/ghostty-tmux-cmd
 {{- end }}
 
 # Never manage local chezmoi runtime config from source state.
