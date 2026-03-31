@@ -37,7 +37,6 @@ These tables show what this repo installs or syncs after running the platform bo
 | [Zsh](https://www.zsh.org/)                                                                                 | ❌  | ✅  | ❌  | ✅  | Interactive Unix shell               |
 | [Windows Terminal](https://github.com/microsoft/terminal)                                                   | ✅  | ❌  | ❌  | ❌  | Multi-tab Windows terminal           |
 | [Ghostty](https://github.com/ghostty-org/ghostty)                                                           | ❌  | ❌  | ❌  | ✅  | GPU-accelerated terminal             |
-| [Leader Key](https://github.com/mikker/LeaderKey)                                                           | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher         |
 | [tmux](https://github.com/tmux/tmux)                                                                        | ❌  | ✅  | ❌  | ✅  | Terminal multiplexer                 |
 | [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono) | ✅  | ❌  | ❌  | ✅  | Patched developer font               |
 | [starship](https://github.com/starship/starship)                                                            | ✅  | ✅  | ❌  | ✅  | Customizable shell prompt            |
@@ -149,6 +148,8 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [croc](https://github.com/schollz/croc)             | ✅  | ✅  | ❌  | ✅  | Secure file transfer          |
 | [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
 | [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
+| [Leader Key](https://github.com/mikker/LeaderKey)   | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher  |
+| [Raycast](https://www.raycast.com/)                 | ❌  | ❌  | ❌  | ✅  | Launcher and productivity hub |
 | [ripgrep](https://github.com/BurntSushi/ripgrep)    | ✅  | ✅  | ❌  | ✅  | Recursive regex search        |
 | [unzip](https://infozip.sourceforge.net/UnZip.html) | ❌  | ✅  | ❌  | ❌  | Extracts ZIP archives         |
 
@@ -270,7 +271,7 @@ bash ./scripts/bootstrap-macos.sh --chezmoi-repo "https://github.com/yourname/do
 What the bootstrap handles:
 
 - Installs the current macOS Homebrew formulae and casks from `manifests/macos.packages.json`
-- Installs Ghostty as the intended macOS terminal emulator, plus tmux and Leader Key
+- Installs Ghostty as the intended macOS terminal emulator, plus tmux, Raycast, and Leader Key
 - Installs VS Code plus the shared VS Code extension set from `manifests/vscode.extensions.json`
 - Installs JetBrains Mono Nerd Font so the managed terminal and editor font settings render correctly
 - Clones TPM to `~/.tmux/plugins/tpm` so tmux plugin bootstrap is ready on first launch
