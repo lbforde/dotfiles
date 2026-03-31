@@ -30,8 +30,35 @@ APPLESCRIPT
 
 [[ -n "$session_name" ]] || exit 0
 
+latest_client_tty=""
+typeset -a client_rows
+client_rows=("${(@f)$(tmux list-clients -F '#{client_activity}	#{client_tty}' 2>/dev/null)}")
+
+if (( ${#client_rows[@]} > 0 )); then
+  integer best_activity=-1
+  typeset row activity client_tty
+
+  for row in "${client_rows[@]}"; do
+    [[ -n "$row" ]] || continue
+
+    activity="${row%%$'\t'*}"
+    client_tty="${row#*$'\t'}"
+
+    if (( activity > best_activity )); then
+      best_activity="$activity"
+      latest_client_tty="$client_tty"
+    fi
+  done
+fi
+
+if [[ -n "$latest_client_tty" ]]; then
+  tmux has-session -t "$session_name" 2>/dev/null || tmux new-session -d -s "$session_name"
+  tmux switch-client -c "$latest_client_tty" -t "$session_name"
+  exit 0
+fi
+
 quoted_session="$(shell_quote "$session_name")"
-shell_command="if [ -n \"\$TMUX\" ]; then tmux has-session -t $quoted_session 2>/dev/null || tmux new-session -d -s $quoted_session; tmux switch-client -t $quoted_session; else tmux new-session -A -s $quoted_session; fi"
+shell_command=" ~/.local/bin/tmux-session $quoted_session"
 
 /usr/bin/osascript - "$shell_command" <<'APPLESCRIPT'
 on run argv
