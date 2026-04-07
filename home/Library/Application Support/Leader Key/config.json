@@ -387,6 +387,13 @@
               "value" : "$HOME/.local/bin/ghostty-tmux-cmd list-keys"
             },
             {
+              "iconPath" : "arrow.clockwise",
+              "key" : "r",
+              "label" : "Reload tmux config",
+              "type" : "command",
+              "value" : "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key r"
+            },
+            {
               "iconPath" : "computermouse.fill",
               "key" : "m",
               "label" : "Toggle mouse mode",
