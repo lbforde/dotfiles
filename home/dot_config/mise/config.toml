@@ -27,3 +27,4 @@ opencode = { version = "latest", os = ["linux", "macos"] }
 yazi = "latest"
 zig = "latest"
 zoxide = "latest"
+terraform = "latest"
