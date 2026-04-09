@@ -267,4 +267,5 @@
     "*rc": "shellscript",
   },
   "git.autofetch": true,
+  "chat.disableAIFeatures": true,
 }

@@ -28,3 +28,4 @@ yazi = "latest"
 zig = "latest"
 zoxide = "latest"
 terraform = "latest"
+aws-cli = { version = "latest", symlink_bins = "true" }
