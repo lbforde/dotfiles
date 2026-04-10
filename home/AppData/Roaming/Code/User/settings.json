@@ -274,4 +274,5 @@
   "editor.fontSize": 13,
   "editor.formatOnSave": true,
   "workbench.sideBar.location": "right",
+  "chat.disableAIFeatures": true,
 }
