@@ -12,7 +12,7 @@ AppData/
 AppData/**
 {{- end }}
 
-# Linux/macOS-only files — ignore on Windows
+# Linux/macOS-only files - ignore on Windows
 {{- if eq .chezmoi.os "windows" }}
 .zprofile
 .zshenv
@@ -20,10 +20,18 @@ AppData/**
 .chezmoiscripts/*.sh
 .config/tmux
 .config/tmux/**
+.local/
+.local/**
+.local/bin/
+.local/bin/**
+.local/bin/tmux-session
+.local/bin/ghostty-tmux-session
 {{- end }}
 
-# macOS-only files — ignore on Windows/Linux
+# macOS-only files - ignore on Windows/Linux
 {{- if ne .chezmoi.os "darwin" }}
+Library/
+Library/**
 Library/Application Support/Code/User/
 Library/Application Support/Code/User/**
 .config/ghostty
@@ -32,6 +40,7 @@ Library/Application Support/Code/User/**
 .config/linearmouse/**
 Library/Application Support/Leader Key/
 Library/Application Support/Leader Key/**
+.local/bin/ghostty-tmux-session
 .local/bin/ghostty-tmux-cmd
 {{- end }}
 
