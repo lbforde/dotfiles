@@ -148,7 +148,7 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [croc](https://github.com/schollz/croc)             | ✅  | ✅  | ❌  | ✅  | Secure file transfer          |
 | [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
 | [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
-| [Ollama](https://github.com/ollama/ollama)         | ❌  | ✅  | ❌  | ✅  | Local model runtime and CLI   |
+| [Ollama](https://github.com/ollama/ollama)         | ✅  | ✅  | ❌  | ✅  | Local model runtime and CLI   |
 | [Leader Key](https://github.com/mikker/LeaderKey)   | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher  |
 | [LinearMouse](https://linearmouse.app/)             | ❌  | ❌  | ❌  | ✅  | Mouse and scrolling utility   |
 | [Raycast](https://www.raycast.com/)                 | ❌  | ❌  | ❌  | ✅  | Launcher and productivity hub |
@@ -157,7 +157,7 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 
 </details>
 
-On Unix-side environments, the shared `mise` config installs the `ollama` binary for `linux` and `macos`. In this repo that means WSL and macOS bootstrap flows pick it up now; Windows stays out of scope, and native Linux support will inherit the same tool entry when that platform is added. `mise` installs the binary only, so start it manually with `ollama` or `ollama serve` when needed and fetch models separately with `ollama pull <model>`.
+The shared `mise` config installs the `ollama` binary for `windows`, `linux`, and `macos`. In this repo that means Windows, WSL, and macOS bootstrap flows pick it up now, while native Linux support will inherit the same tool entry when that platform is added. `mise` installs the binary only, so run `ollama` or `ollama serve` manually when needed and fetch models separately with `ollama pull <model>`.
 
 ## Setup
 
@@ -219,6 +219,7 @@ chezmoi source-path
 ssh-add -l
 git config --global --get user.signingkey
 mise --version
+ollama --version
 code --list-extensions
 ```
 
