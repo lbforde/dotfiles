@@ -24,7 +24,7 @@ ripgrep = "latest"
 rust = "stable"
 starship = "latest"
 opencode = { version = "latest", os = ["linux", "macos"] }
-ollama = "latest"
+ollama = { version = "latest", os = ["linux", "macos"] }
 "github:Kilo-Org/kilocode" = { version = "7.2.0" }
 yazi = "latest"
 zig = "latest"
