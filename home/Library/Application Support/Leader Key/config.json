@@ -1,424 +1,424 @@
 {
-  "actions" : [
+  "actions": [
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "s",
-          "type" : "application",
-          "value" : "/Applications/Safari.app"
+          "key": "s",
+          "type": "application",
+          "value": "/Applications/Safari.app"
         },
         {
-          "key" : "e",
-          "type" : "application",
-          "value" : "/Applications/Mail.app"
+          "key": "e",
+          "type": "application",
+          "value": "/Applications/Mail.app"
         },
         {
-          "key" : "i",
-          "type" : "application",
-          "value" : "/System/Applications/Music.app"
+          "key": "i",
+          "type": "application",
+          "value": "/System/Applications/Music.app"
         },
         {
-          "key" : "m",
-          "type" : "application",
-          "value" : "/Applications/Messages.app"
+          "key": "m",
+          "type": "application",
+          "value": "/Applications/Messages.app"
         }
       ],
-      "key" : "o",
-      "type" : "group"
+      "key": "o",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "e",
-          "type" : "url",
-          "value" : "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols"
+          "key": "e",
+          "type": "url",
+          "value": "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols"
         },
         {
-          "key" : "p",
-          "type" : "url",
-          "value" : "raycast://confetti"
+          "key": "p",
+          "type": "url",
+          "value": "raycast://confetti"
         },
         {
-          "key" : "c",
-          "type" : "url",
-          "value" : "raycast://extensions/raycast/system/open-camera"
+          "key": "c",
+          "type": "url",
+          "value": "raycast://extensions/raycast/system/open-camera"
         }
       ],
-      "iconPath" : "/Applications/Raycast.app",
-      "key" : "r",
-      "label" : "Raycast",
-      "type" : "group"
+      "iconPath": "/Applications/Raycast.app",
+      "key": "r",
+      "label": "Raycast",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "actions" : [
+          "actions": [
             {
-              "iconPath" : "plus.square.on.square",
-              "key" : "a",
-              "label" : "Attach or create session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-session"
+              "iconPath": "plus.square.on.square",
+              "key": "a",
+              "label": "Attach or create session",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-session"
             },
             {
-              "iconPath" : "arrow.right.square.fill",
-              "key" : "d",
-              "label" : "Detach client",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd detach-client"
+              "iconPath": "arrow.right.square.fill",
+              "key": "d",
+              "label": "Detach client",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd detach-client"
             },
             {
-              "iconPath" : "list.bullet",
-              "key" : "l",
-              "label" : "List sessions",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd choose-tree -s"
+              "iconPath": "list.bullet",
+              "key": "l",
+              "label": "List sessions",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd choose-tree -s"
             },
             {
-              "iconPath" : "arrow.right.circle.fill",
-              "key" : "o",
-              "label" : "Next session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd switch-client -n"
+              "iconPath": "arrow.right.circle.fill",
+              "key": "o",
+              "label": "Next session",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd switch-client -n"
             },
             {
-              "iconPath" : "arrow.left.circle.fill",
-              "key" : "p",
-              "label" : "Previous session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd switch-client -p"
+              "iconPath": "arrow.left.circle.fill",
+              "key": "p",
+              "label": "Previous session",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd switch-client -p"
             },
             {
-              "iconPath" : "pencil.circle.fill",
-              "key" : "r",
-              "label" : "Rename session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key '$'"
+              "iconPath": "pencil.circle.fill",
+              "key": "r",
+              "label": "Rename session",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key '$'"
             },
             {
-              "iconPath" : "xmark.circle.fill",
-              "key" : "x",
-              "label" : "Kill session",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd kill-session"
+              "iconPath": "xmark.circle.fill",
+              "key": "x",
+              "label": "Kill session",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd kill-session"
             }
           ],
-          "iconPath" : "rectangle.stack.fill",
-          "key" : "s",
-          "label" : "Sessions",
-          "type" : "group"
+          "iconPath": "rectangle.stack.fill",
+          "key": "s",
+          "label": "Sessions",
+          "type": "group"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "iconPath" : "1.square.fill",
-              "key" : "1",
-              "label" : "Window 1",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :1"
+              "iconPath": "1.square.fill",
+              "key": "1",
+              "label": "Window 1",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :1"
             },
             {
-              "iconPath" : "2.square.fill",
-              "key" : "2",
-              "label" : "Window 2",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :2"
+              "iconPath": "2.square.fill",
+              "key": "2",
+              "label": "Window 2",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :2"
             },
             {
-              "iconPath" : "3.square.fill",
-              "key" : "3",
-              "label" : "Window 3",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :3"
+              "iconPath": "3.square.fill",
+              "key": "3",
+              "label": "Window 3",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :3"
             },
             {
-              "iconPath" : "4.alt.square.fill",
-              "key" : "4",
-              "label" : "Window 4",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :4"
+              "iconPath": "4.alt.square.fill",
+              "key": "4",
+              "label": "Window 4",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :4"
             },
             {
-              "iconPath" : "5.square.fill",
-              "key" : "5",
-              "label" : "Window 5",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :5"
+              "iconPath": "5.square.fill",
+              "key": "5",
+              "label": "Window 5",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :5"
             },
             {
-              "iconPath" : "6.square.fill",
-              "key" : "6",
-              "label" : "Window 6",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :6"
+              "iconPath": "6.square.fill",
+              "key": "6",
+              "label": "Window 6",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :6"
             },
             {
-              "iconPath" : "7.square.fill",
-              "key" : "7",
-              "label" : "Window 7",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :7"
+              "iconPath": "7.square.fill",
+              "key": "7",
+              "label": "Window 7",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :7"
             },
             {
-              "iconPath" : "8.square.fill",
-              "key" : "8",
-              "label" : "Window 8",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :8"
+              "iconPath": "8.square.fill",
+              "key": "8",
+              "label": "Window 8",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :8"
             },
             {
-              "iconPath" : "9.square.fill",
-              "key" : "9",
-              "label" : "Window 9",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :9"
+              "iconPath": "9.square.fill",
+              "key": "9",
+              "label": "Window 9",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-window -t :9"
             },
             {
-              "iconPath" : "arrow.uturn.backward.circle.fill",
-              "key" : "b",
-              "label" : "Last window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd last-window"
+              "iconPath": "arrow.uturn.backward.circle.fill",
+              "key": "b",
+              "label": "Last window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd last-window"
             },
             {
-              "iconPath" : "plus.square.on.square",
-              "key" : "n",
-              "label" : "New window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd new-window"
+              "iconPath": "plus.square.on.square",
+              "key": "n",
+              "label": "New window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key c"
             },
             {
-              "iconPath" : "arrow.right.circle.fill",
-              "key" : "o",
-              "label" : "Next window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd next-window"
+              "iconPath": "arrow.right.circle.fill",
+              "key": "o",
+              "label": "Next window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd next-window"
             },
             {
-              "iconPath" : "arrow.left.circle.fill",
-              "key" : "p",
-              "label" : "Previous window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd previous-window"
+              "iconPath": "arrow.left.circle.fill",
+              "key": "p",
+              "label": "Previous window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd previous-window"
             },
             {
-              "iconPath" : "pencil.circle.fill",
-              "key" : "r",
-              "label" : "Rename window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key ','"
+              "iconPath": "pencil.circle.fill",
+              "key": "r",
+              "label": "Rename window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key ','"
             },
             {
-              "iconPath" : "list.bullet",
-              "key" : "l",
-              "label" : "List windows",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd choose-tree -w"
+              "iconPath": "list.bullet",
+              "key": "l",
+              "label": "List windows",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd choose-tree -w"
             },
             {
-              "iconPath" : "xmark.square.fill",
-              "key" : "x",
-              "label" : "Kill window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd kill-window"
+              "iconPath": "xmark.square.fill",
+              "key": "x",
+              "label": "Kill window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd kill-window"
             }
           ],
-          "iconPath" : "square.on.square",
-          "key" : "w",
-          "label" : "Windows",
-          "type" : "group"
+          "iconPath": "square.on.square",
+          "key": "w",
+          "label": "Windows",
+          "type": "group"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "iconPath" : "arrow.uturn.backward.circle.fill",
-              "key" : "b",
-              "label" : "Last pane",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd last-pane"
+              "iconPath": "arrow.uturn.backward.circle.fill",
+              "key": "b",
+              "label": "Last pane",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd last-pane"
             },
             {
-              "iconPath" : "inset.filled.lefthalf.righthalf.rectangle",
-              "key" : "h",
-              "label" : "Pane left",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-pane -L"
+              "iconPath": "inset.filled.lefthalf.righthalf.rectangle",
+              "key": "h",
+              "label": "Pane left",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-pane -L"
             },
             {
-              "iconPath" : "inset.filled.bottomhalf.tophalf.rectangle",
-              "key" : "j",
-              "label" : "Pane down",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-pane -D"
+              "iconPath": "inset.filled.bottomhalf.tophalf.rectangle",
+              "key": "j",
+              "label": "Pane down",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-pane -D"
             },
             {
-              "iconPath" : "inset.filled.tophalf.bottomhalf.rectangle",
-              "key" : "k",
-              "label" : "Pane up",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-pane -U"
+              "iconPath": "inset.filled.tophalf.bottomhalf.rectangle",
+              "key": "k",
+              "label": "Pane up",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-pane -U"
             },
             {
-              "iconPath" : "inset.filled.righthalf.lefthalf.rectangle",
-              "key" : "l",
-              "label" : "Pane right",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-pane -R"
+              "iconPath": "inset.filled.righthalf.lefthalf.rectangle",
+              "key": "l",
+              "label": "Pane right",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-pane -R"
             },
             {
-              "iconPath" : "arrow.clockwise.circle.fill",
-              "key" : "o",
-              "label" : "Next pane",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd select-pane -t :.+"
+              "iconPath": "arrow.clockwise.circle.fill",
+              "key": "o",
+              "label": "Next pane",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd select-pane -t :.+"
             },
             {
-              "iconPath" : "number.square.fill",
-              "key" : "q",
-              "label" : "Show pane numbers",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd display-panes"
+              "iconPath": "number.square.fill",
+              "key": "q",
+              "label": "Show pane numbers",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd display-panes"
             },
             {
-              "actions" : [
+              "actions": [
                 {
-                  "iconPath" : "arrow.left",
-                  "key" : "h",
-                  "label" : "Resize left",
-                  "type" : "command",
-                  "value" : "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -L 5"
+                  "iconPath": "arrow.left",
+                  "key": "h",
+                  "label": "Resize left",
+                  "type": "command",
+                  "value": "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -L 5"
                 },
                 {
-                  "iconPath" : "arrow.down",
-                  "key" : "j",
-                  "label" : "Resize down",
-                  "type" : "command",
-                  "value" : "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -D 5"
+                  "iconPath": "arrow.down",
+                  "key": "j",
+                  "label": "Resize down",
+                  "type": "command",
+                  "value": "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -D 5"
                 },
                 {
-                  "iconPath" : "arrow.up",
-                  "key" : "k",
-                  "label" : "Resize up",
-                  "type" : "command",
-                  "value" : "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -U 5"
+                  "iconPath": "arrow.up",
+                  "key": "k",
+                  "label": "Resize up",
+                  "type": "command",
+                  "value": "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -U 5"
                 },
                 {
-                  "iconPath" : "arrow.right",
-                  "key" : "l",
-                  "label" : "Resize right",
-                  "type" : "command",
-                  "value" : "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -R 5"
+                  "iconPath": "arrow.right",
+                  "key": "l",
+                  "label": "Resize right",
+                  "type": "command",
+                  "value": "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -R 5"
                 }
               ],
-              "iconPath" : "arrow.up.left.and.arrow.down.right",
-              "key" : "r",
-              "label" : "Resize pane",
-              "type" : "group"
+              "iconPath": "arrow.up.left.and.arrow.down.right",
+              "key": "r",
+              "label": "Resize pane",
+              "type": "group"
             },
             {
-              "iconPath" : "rectangle.split.1x2.fill",
-              "key" : "s",
-              "label" : "Split down",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd split-window -v"
+              "iconPath": "rectangle.split.1x2.fill",
+              "key": "s",
+              "label": "Split down",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key '\"'"
             },
             {
-              "iconPath" : "square.grid.2x2.fill",
-              "key" : "t",
-              "label" : "Next layout",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd next-layout"
+              "iconPath": "square.grid.2x2.fill",
+              "key": "t",
+              "label": "Next layout",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd next-layout"
             },
             {
-              "iconPath" : "rectangle.split.2x1.fill",
-              "key" : "v",
-              "label" : "Split right",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd split-window -h"
+              "iconPath": "rectangle.split.2x1.fill",
+              "key": "v",
+              "label": "Split right",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key '%'"
             },
             {
-              "iconPath" : "rectangle.on.rectangle",
-              "key" : "w",
-              "label" : "Break pane to window",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd break-pane"
+              "iconPath": "rectangle.on.rectangle",
+              "key": "w",
+              "label": "Break pane to window",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key '!'"
             },
             {
-              "iconPath" : "xmark.rectangle.fill",
-              "key" : "x",
-              "label" : "Kill pane",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd kill-pane"
+              "iconPath": "xmark.rectangle.fill",
+              "key": "x",
+              "label": "Kill pane",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd kill-pane"
             },
             {
-              "iconPath" : "rectangle.connected.to.line.below",
-              "key" : "y",
-              "label" : "Toggle synchronize panes",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd setw synchronize-panes"
+              "iconPath": "rectangle.connected.to.line.below",
+              "key": "y",
+              "label": "Toggle synchronize panes",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd setw synchronize-panes"
             },
             {
-              "iconPath" : "arrow.up.left.and.down.right.magnifyingglass",
-              "key" : "z",
-              "label" : "Zoom pane",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -Z"
+              "iconPath": "arrow.up.left.and.down.right.magnifyingglass",
+              "key": "z",
+              "label": "Zoom pane",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd resize-pane -Z"
             }
           ],
-          "iconPath" : "square.grid.2x2.fill",
-          "key" : "p",
-          "label" : "Panes",
-          "type" : "group"
+          "iconPath": "square.grid.2x2.fill",
+          "key": "p",
+          "label": "Panes",
+          "type": "group"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "iconPath" : "terminal.fill",
-              "key" : "c",
-              "label" : "Command prompt",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd command-prompt"
+              "iconPath": "terminal.fill",
+              "key": "c",
+              "label": "Command prompt",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd command-prompt"
             },
             {
-              "iconPath" : "keyboard.fill",
-              "key" : "k",
-              "label" : "List tmux keys",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd list-keys"
+              "iconPath": "keyboard.fill",
+              "key": "k",
+              "label": "List tmux keys",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd list-keys"
             },
             {
-              "iconPath" : "arrow.clockwise",
-              "key" : "r",
-              "label" : "Reload tmux config",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key r"
+              "iconPath": "arrow.clockwise",
+              "key": "r",
+              "label": "Reload tmux config",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd --prefix-key r"
             },
             {
-              "iconPath" : "computermouse.fill",
-              "key" : "m",
-              "label" : "Toggle mouse mode",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd if-shell -F '#{mouse}' 'set -g mouse off' 'set -g mouse on'"
+              "iconPath": "computermouse.fill",
+              "key": "m",
+              "label": "Toggle mouse mode",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd if-shell -F '#{mouse}' 'set -g mouse off' 'set -g mouse on'"
             },
             {
-              "iconPath" : "list.bullet.indent",
-              "key" : "t",
-              "label" : "Choose tree",
-              "type" : "command",
-              "value" : "$HOME/.local/bin/ghostty-tmux-cmd choose-tree"
+              "iconPath": "list.bullet.indent",
+              "key": "t",
+              "label": "Choose tree",
+              "type": "command",
+              "value": "$HOME/.local/bin/ghostty-tmux-cmd choose-tree"
             }
           ],
-          "iconPath" : "slider.horizontal.3",
-          "key" : "m",
-          "label" : "Misc",
-          "type" : "group"
+          "iconPath": "slider.horizontal.3",
+          "key": "m",
+          "label": "Misc",
+          "type": "group"
         }
       ],
-      "iconPath" : "/Applications/Ghostty.app",
-      "key" : "t",
-      "label" : "Terminal",
-      "type" : "group"
+      "iconPath": "/Applications/Ghostty.app",
+      "key": "t",
+      "label": "Terminal",
+      "type": "group"
     }
   ],
-  "type" : "group"
+  "type": "group"
 }
