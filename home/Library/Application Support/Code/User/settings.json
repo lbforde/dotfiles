@@ -268,4 +268,6 @@
   },
   "git.autofetch": true,
   "chat.disableAIFeatures": true,
+  "workbench.secondarySideBar.showLabels": false,
+  "kilo-code.new.autocomplete.enableAutoTrigger": false,
 }
