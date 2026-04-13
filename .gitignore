@@ -23,6 +23,7 @@ node_modules/
 dist/
 build/
 junk/
+.kilo/
 
 # Secrets (never commit)
 .env
