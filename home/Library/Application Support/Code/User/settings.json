@@ -270,4 +270,10 @@
   "chat.disableAIFeatures": true,
   "workbench.secondarySideBar.showLabels": false,
   "kilo-code.new.autocomplete.enableAutoTrigger": false,
+  "terminal.integrated.commandsToSkipShell": [
+    "kilo-code.new.agentManagerOpen",
+    "kilo-code.new.agentManager.showTerminal",
+    "kilo-code.new.agentManager.runScript",
+  ],
+  "workbench.iconTheme": "material-icon-theme",
 }
