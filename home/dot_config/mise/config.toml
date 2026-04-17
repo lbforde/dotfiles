@@ -1,6 +1,6 @@
 [tools]
 atuin = { version = "latest", os = ["linux", "macos"] }
-btop = { version = "latest", os = ["linux", "macos"] }
+btop = { version = "latest", os = ["linux"] }
 bun = "latest"
 bat = "latest"
 cmake = "latest"
