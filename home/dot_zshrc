@@ -140,6 +140,10 @@ elif command -v fdfind >/dev/null 2>&1; then
   alias find='fdfind'
 fi
 
+if command -v terraform >/dev/null 2>&1; then
+  alias tf='terraform'
+fi
+
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
