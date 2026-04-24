@@ -31,3 +31,8 @@ zig = "latest"
 zoxide = "latest"
 terraform = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
+terraform-docs = "latest"
+codex = "latest"
+gemini-cli = "latest"
+lazydocker = "latest"
+yq = "latest"
