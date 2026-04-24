@@ -48,6 +48,9 @@ These tables show what this repo installs or syncs after running the platform bo
 | [fzf](https://github.com/junegunn/fzf)                                                                      | ✅  | ✅  | ❌  | ✅  | Command-line fuzzy finder            |
 | [yazi](https://github.com/sxyazi/yazi)                                                                      | ✅  | ✅  | ❌  | ✅  | Fast terminal file manager           |
 | [opencode](https://github.com/opencode-ai/opencode)                                                         | ❌  | ✅  | ❌  | ✅  | AI coding agent for the terminal     |
+| [Codex](https://github.com/openai/codex)                                                                    | ✅  | ✅  | ❌  | ✅  | OpenAI coding agent CLI              |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli)                                                   | ✅  | ✅  | ❌  | ✅  | Gemini AI assistant CLI              |
+| [Kilo Code](https://github.com/Kilo-Org/kilocode)                                                           | ✅  | ✅  | ❌  | ✅  | AI coding assistant CLI              |
 | [PSReadLine](https://github.com/PowerShell/PSReadLine)                                                      | ✅  | ❌  | ❌  | ❌  | Readline for PowerShell              |
 | [PSFzf](https://github.com/kelleyma49/PSFzf)                                                                | ✅  | ❌  | ❌  | ❌  | `fzf` wrapper for PowerShell         |
 | [Terminal-Icons](https://github.com/devblackops/Terminal-Icons)                                             | ✅  | ❌  | ❌  | ❌  | File and folder icons                |
@@ -115,6 +118,18 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 </details>
 
 <details>
+<summary><strong>Cloud, Containers, and Infrastructure</strong></summary>
+
+| Name                                                                      | 🪟  | 🧩  | 🐧  | 🍎  | Description                         |
+| ------------------------------------------------------------------------- | --- | --- | --- | --- | ----------------------------------- |
+| [AWS CLI](https://github.com/aws/aws-cli)                                 | ✅  | ✅  | ❌  | ✅  | Command-line interface for AWS      |
+| [lazydocker](https://github.com/jesseduffield/lazydocker)                 | ✅  | ✅  | ❌  | ✅  | Terminal UI for Docker              |
+| [Terraform](https://github.com/hashicorp/terraform)                       | ✅  | ✅  | ❌  | ✅  | Infrastructure as code CLI          |
+| [terraform-docs](https://github.com/terraform-docs/terraform-docs)         | ✅  | ✅  | ❌  | ✅  | Documentation generator for Terraform modules |
+
+</details>
+
+<details>
 <summary><strong>Git, SSH, and Secrets</strong></summary>
 
 | Name                                                   | 🪟  | 🧩  | 🐧  | 🍎  | Description                |
@@ -148,6 +163,8 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [croc](https://github.com/schollz/croc)             | ✅  | ✅  | ❌  | ✅  | Secure file transfer          |
 | [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
 | [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
+| [yq](https://github.com/mikefarah/yq)               | ✅  | ✅  | ❌  | ✅  | YAML, JSON, and TOML processor |
+| [btop](https://github.com/aristocratos/btop)        | ❌  | ✅  | ❌  | ❌  | Terminal resource monitor     |
 | [Leader Key](https://github.com/mikker/LeaderKey)   | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher  |
 | [LinearMouse](https://linearmouse.app/)             | ❌  | ❌  | ❌  | ✅  | Mouse and scrolling utility   |
 | [Raycast](https://www.raycast.com/)                 | ❌  | ❌  | ❌  | ✅  | Launcher and productivity hub |
