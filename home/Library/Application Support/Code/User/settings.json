@@ -276,4 +276,6 @@
     "kilo-code.new.agentManager.runScript",
   ],
   "workbench.iconTheme": "material-icon-theme",
+  "explorer.confirmDelete": false,
+  "telemetry.telemetryLevel": "off",
 }
