@@ -22,9 +22,6 @@
     allowedSignersFile = {{ .git_allowed_signers_file | quote }}
 {{- end }}
 
-[include]
-    path = ~/.gitconfig.local
-
 [core]
     autocrlf  = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
     longpaths = true
@@ -85,3 +82,7 @@
 [url "git@github.com:"]
     insteadOf = https://github.com/
 {{- end }}
+
+[includeIf "gitdir:~/projects/nhs/"]
+    path = ~/.gitconfig-nhs
+
