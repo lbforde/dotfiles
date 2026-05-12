@@ -22,6 +22,9 @@
     allowedSignersFile = {{ .git_allowed_signers_file | quote }}
 {{- end }}
 
+[include]
+    path = ~/.gitconfig.local
+
 [core]
     autocrlf  = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
     longpaths = true

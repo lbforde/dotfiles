@@ -2,6 +2,8 @@
 {{- if hasKey . "ssh_github_key_name" -}}
 {{- $keyName = .ssh_github_key_name -}}
 {{- end -}}
+Include ~/.ssh/config.local
+
 # GitHub Personal Account
 Host github.com
   HostName github.com
