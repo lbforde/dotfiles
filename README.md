@@ -79,22 +79,29 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [Nilesoft Shell File Formatter](https://marketplace.visualstudio.com/items?itemName=code-nature.nilesoft-shell-file-formatter) | ✅  | 🔗  | ❌  | ✅  | Nilesoft Shell syntax support         |
 | [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)                                                 | ✅  | 🔗  | ❌  | ✅  | Python language support               |
 | [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)                                                 | ✅  | 🔗  | ❌  | ✅  | Python linter and formatter           |
+| [Python Indent](https://marketplace.visualstudio.com/items?itemName=kevinrose.vsc-python-indent)                              | ✅  | 🔗  | ❌  | ✅  | Smarter Python indentation            |
 | [autoDocstring - Python Docstring Generator](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring)      | ✅  | 🔗  | ❌  | ✅  | Generates Python docstrings           |
 | [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)                                   | ✅  | 🔗  | ❌  | ✅  | Rust language server                  |
 | [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)                                            | ✅  | 🔗  | ❌  | ✅  | LLDB debugger for native code         |
 | [Dependi](https://marketplace.visualstudio.com/items?itemName=fill-labs.dependi)                                               | ✅  | 🔗  | ❌  | ✅  | Dependency and vulnerability insights |
 | [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)                               | ✅  | 🔗  | ❌  | ✅  | TOML language support                 |
 | [Go](https://marketplace.visualstudio.com/items?itemName=golang.go)                                                            | ✅  | 🔗  | ❌  | ✅  | Go language support                   |
+| [Go Template](https://marketplace.visualstudio.com/items?itemName=romantomjak.go-template)                                     | ✅  | 🔗  | ❌  | ✅  | Go template language support          |
 | [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua)                                                         | ✅  | 🔗  | ❌  | ✅  | Lua language server                   |
 | [Zig Language](https://marketplace.visualstudio.com/items?itemName=ziglang.vscode-zig)                                         | ✅  | 🔗  | ❌  | ✅  | Zig language support                  |
 | [clangd](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)                            | ✅  | 🔗  | ❌  | ✅  | C/C++ completion and navigation       |
 | [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)                                       | ✅  | 🔗  | ❌  | ✅  | Extended CMake support                |
+| [C/C++ Dev Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpp-devtools)                                  | ✅  | 🔗  | ❌  | ✅  | C/C++ development utilities           |
 | [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)         | ✅  | 🔗  | ❌  | ✅  | Remote, WSL, and container access     |
 | [Container Tools](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-containers)                         | ✅  | 🔗  | ❌  | ✅  | Manage and debug containers           |
 | [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=james-yu.latex-workshop)                                  | ✅  | 🔗  | ❌  | ✅  | LaTeX editing and preview             |
 | [LTeX+](https://marketplace.visualstudio.com/items?itemName=ltex-plus.vscode-ltex-plus)                                        | ✅  | 🔗  | ❌  | ✅  | Grammar and spell checking            |
 | [Print](https://marketplace.visualstudio.com/items?itemName=pdconsec.vscode-print)                                             | ✅  | 🔗  | ❌  | ✅  | Rendered Markdown and code            |
+| [Rainbow CSV](https://marketplace.visualstudio.com/items?itemName=mechatroner.rainbow-csv)                                     | ✅  | 🔗  | ❌  | ✅  | CSV and TSV highlighting              |
+| [Indent Rainbow](https://marketplace.visualstudio.com/items?itemName=oderwat.indent-rainbow)                                   | ✅  | 🔗  | ❌  | ✅  | Highlights indentation levels         |
+| [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=pkief.material-icon-theme)                           | ✅  | 🔗  | ❌  | ✅  | File and folder icons                 |
 | [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)                                                 | ✅  | 🔗  | ❌  | ✅  | YAML support with Kubernetes schemas  |
+| [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)                | ✅  | 🔗  | ❌  | ✅  | Spelling checks for code and docs     |
 | [PowerShell](https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell)                                         | ✅  | 🔗  | ❌  | ✅  | PowerShell language support           |
 
 </details>
