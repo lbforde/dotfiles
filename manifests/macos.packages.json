@@ -3,7 +3,12 @@
     "git",
     "chezmoi",
     "mise",
-    "tmux"
+    "tmux",
+    "btop",
+    "colima",
+    "docker",
+    "docker-buildx",
+    "docker-compose"
   ],
   "casks": [
     "ghostty",
@@ -11,6 +16,7 @@
     "linearmouse",
     "mactex-no-gui",
     "raycast",
+    "zen",
     "visual-studio-code",
     "font-jetbrains-mono-nerd-font"
   ]

@@ -130,6 +130,10 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | Name                                                                      | 🪟  | 🧩  | 🐧  | 🍎  | Description                         |
 | ------------------------------------------------------------------------- | --- | --- | --- | --- | ----------------------------------- |
 | [AWS CLI](https://github.com/aws/aws-cli)                                 | ✅  | ✅  | ❌  | ✅  | Command-line interface for AWS      |
+| [Colima](https://github.com/abiosoft/colima)                              | ❌  | ❌  | ❌  | ✅  | Container runtime for macOS         |
+| [Docker CLI](https://github.com/docker/cli)                               | ❌  | ❌  | ❌  | ✅  | Command-line interface for Docker   |
+| [Docker Buildx](https://github.com/docker/buildx)                         | ❌  | ❌  | ❌  | ✅  | Extended Docker build capabilities  |
+| [Docker Compose](https://github.com/docker/compose)                       | ❌  | ❌  | ❌  | ✅  | Multi-container Docker applications |
 | [lazydocker](https://github.com/jesseduffield/lazydocker)                 | ✅  | ✅  | ❌  | ✅  | Terminal UI for Docker              |
 | [Terraform](https://github.com/hashicorp/terraform)                       | ✅  | ✅  | ❌  | ✅  | Infrastructure as code CLI          |
 | [terraform-docs](https://github.com/terraform-docs/terraform-docs)         | ✅  | ✅  | ❌  | ✅  | Documentation generator for Terraform modules |
@@ -171,10 +175,11 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [grex](https://github.com/pemistahl/grex)           | ✅  | ✅  | ❌  | ✅  | Generates regex from examples |
 | [jq](https://github.com/jqlang/jq)                  | ✅  | ✅  | ❌  | ✅  | Command-line JSON processor   |
 | [yq](https://github.com/mikefarah/yq)               | ✅  | ✅  | ❌  | ✅  | YAML, JSON, and TOML processor |
-| [btop](https://github.com/aristocratos/btop)        | ❌  | ✅  | ❌  | ❌  | Terminal resource monitor     |
+| [btop](https://github.com/aristocratos/btop)        | ❌  | ✅  | ❌  | ✅  | Terminal resource monitor     |
 | [Leader Key](https://github.com/mikker/LeaderKey)   | ❌  | ❌  | ❌  | ✅  | Keyboard-driven app launcher  |
 | [LinearMouse](https://linearmouse.app/)             | ❌  | ❌  | ❌  | ✅  | Mouse and scrolling utility   |
 | [Raycast](https://www.raycast.com/)                 | ❌  | ❌  | ❌  | ✅  | Launcher and productivity hub |
+| [Zen Browser](https://zen-browser.app/)             | ❌  | ❌  | ❌  | ✅  | Privacy-focused web browser   |
 | [ripgrep](https://github.com/BurntSushi/ripgrep)    | ✅  | ✅  | ❌  | ✅  | Recursive regex search        |
 | [unzip](https://infozip.sourceforge.net/UnZip.html) | ❌  | ✅  | ❌  | ❌  | Extracts ZIP archives         |
 
