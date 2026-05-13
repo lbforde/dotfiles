@@ -51,6 +51,7 @@ These tables show what this repo installs or syncs after running the platform bo
 | [Codex](https://github.com/openai/codex)                                                                    | ✅  | ✅  | ❌  | ✅  | OpenAI coding agent CLI              |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli)                                                   | ✅  | ✅  | ❌  | ✅  | Gemini AI assistant CLI              |
 | [Kilo Code](https://github.com/Kilo-Org/kilocode)                                                           | ✅  | ✅  | ❌  | ✅  | AI coding assistant CLI              |
+| [NotebookLM MCP CLI](https://github.com/johnlinp/notebooklm-mcp-cli)                                        | ✅  | ✅  | ❌  | ✅  | NotebookLM MCP server CLI            |
 | [PSReadLine](https://github.com/PowerShell/PSReadLine)                                                      | ✅  | ❌  | ❌  | ❌  | Readline for PowerShell              |
 | [PSFzf](https://github.com/kelleyma49/PSFzf)                                                                | ✅  | ❌  | ❌  | ❌  | `fzf` wrapper for PowerShell         |
 | [Terminal-Icons](https://github.com/devblackops/Terminal-Icons)                                             | ✅  | ❌  | ❌  | ❌  | File and folder icons                |
@@ -116,6 +117,7 @@ In WSL, `🔗` means this repo reuses the Windows host install and extension set
 | [Node.js](https://github.com/nodejs/node)                            | ✅  | ✅  | ❌  | ✅  | JavaScript runtime             |
 | [pnpm](https://github.com/pnpm/pnpm)                                 | ✅  | ✅  | ❌  | ✅  | Disk-efficient package manager |
 | [Python](https://github.com/python/cpython)                          | ✅  | ✅  | ❌  | ✅  | Python programming language    |
+| [uv](https://github.com/astral-sh/uv)                                | ✅  | ✅  | ❌  | ✅  | Python package and project tool |
 | [Go](https://github.com/golang/go)                                   | ✅  | ✅  | ❌  | ✅  | Go programming language        |
 | [Rust](https://github.com/rust-lang/rust)                            | ✅  | ✅  | ❌  | ✅  | Reliable systems language      |
 | [Eclipse Temurin 21](https://github.com/adoptium/temurin21-binaries) | ✅  | ✅  | ❌  | ✅  | OpenJDK 21 distribution        |
